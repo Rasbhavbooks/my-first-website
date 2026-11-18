@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "seed:books": "node src/scripts/seedBooks.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
