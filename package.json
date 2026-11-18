@@ -3,12 +3,16 @@
   "private": true,
   "version": "3.0.0",
   "type": "module",
-  "workspaces": ["client", "server"],
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "scripts": {
     "dev": "npm run dev --workspace @rasbhav/client",
     "dev:server": "npm run dev --workspace @rasbhav/server",
     "build": "npm run build --workspace @rasbhav/client",
     "preview": "npm run preview --workspace @rasbhav/client",
-    "start:server": "npm run start --workspace @rasbhav/server"
+    "start:server": "npm run start --workspace @rasbhav/server",
+    "test": "npm run test --workspace @rasbhav/server"
   }
 }

@@ -7,7 +7,7 @@ This file records implementation status; the complete requirements remain in the
 - Responsive homepage with hero, book discovery, categories, author introduction, and footer.
 - Sample catalogue search and category filtering.
 - Gujarati, Hindi, and English UI selection.
-- Express API workspace with a liveness/health endpoint.
+- Express API workspace with a liveness/health endpoint and a Node test for its response.
 - Optional MongoDB connection configuration.
 
 ## Not implemented
