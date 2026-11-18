@@ -12,4 +12,4 @@ Security controls must be designed before account, book-file, and payment featur
 - Add audit records for administrative and financial actions, backups, retention controls, and a documented incident process.
 - Provide privacy controls, consent-aware author messaging, unsubscribe handling, copyright reports, refunds, and dispute workflows.
 
-This document is a plan. These controls are not yet implemented because the backend has not been started.
+This is a design plan; these backend protections are not implemented in the frontend.

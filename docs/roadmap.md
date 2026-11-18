@@ -1,16 +1,16 @@
 # Development roadmap
 
 ## Phase 1 — Foundation
-- [x] React/Vite project scaffold
-- [x] Premium responsive homepage
-- [x] Catalogue search and category filters
-- [x] Gujarati, Hindi, and English UI foundation
-- [ ] Visual review on target devices
-- [ ] Add automated lint/build checks in CI
+- [x] Vite/React application and responsive homepage
+- [x] Search and category filters with sample catalogue
+- [x] Gujarati, Hindi, and English interface foundation
+- [x] Split routes, layouts, page, components, state, data, and styles into modules
+- [ ] Run production build and review on desktop/mobile
+- [ ] Add CI build checks
 
 ## Phase 2 — Reader platform
 - [ ] Secure authentication and reader profile
-- [ ] Catalogue API, details, preview, and reading history
+- [ ] Catalogue API, book details, preview, and reading history
 - [ ] Wishlist, follows, reviews, and reading experience
 
 ## Phase 3 — Author platform
@@ -25,7 +25,7 @@
 - [ ] Reports and operational dashboards
 
 ## Phase 5 — Business platform
-- [ ] Membership and pricing validation
+- [ ] Validate membership and pricing
 - [ ] Orders and verified payment webhooks
 - [ ] Immutable royalty ledger and payout requests
 
@@ -35,4 +35,4 @@
 - [ ] AI features after cost and privacy review
 - [ ] Expo mobile app using shared APIs
 
-Items in phases 2–6 are plans, not completed features.
+Items beyond the frontend foundation are plans, not completed features.

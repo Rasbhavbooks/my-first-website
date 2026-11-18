@@ -1,24 +1,32 @@
-# Rasbhav Books V3.0 — Architecture
+# Rasbhav Books V3.0 architecture
 
-## Current foundation
-The repository starts as a React + Vite client in `client/`. The first release is a responsive discovery homepage with a local sample catalogue and Gujarati, Hindi, and English interface copy. React Router is installed for upcoming reader, author, and admin routes; no server or persistent data is connected yet.
+## Current application
 
-## Planned modular monolith
-When backend work begins, keep one deployable Express application with feature modules under `server/src/modules/`. Modules should own their routes, validation, services, and Mongoose models. Shared authentication, configuration, logging, and error handling belong in shared middleware/services. Keep REST interfaces reusable by a future Expo client.
+The repository is a modular React/Vite frontend foundation. The homepage, catalogue fixtures, language state, shared layout, routes, and UI components have separate responsibilities.
 
-## Frontend boundaries
-- `client/src/components`: reusable UI
-- `client/src/pages`: route-level views as the product grows
-- `client/src/data`: temporary presentation fixtures; replace with API services
-- `client/src/i18n`: translation dictionaries and locale helpers when the catalogue expands
-- `client/src/styles.css`: design tokens, responsive styles, and current homepage system
+- `client/src/routes` — route table
+- `client/src/layouts` — shared site shell
+- `client/src/pages` — page-level screens
+- `client/src/components/common` — reusable interface primitives
+- `client/src/components/navigation` — header and footer
+- `client/src/components/books` — book catalogue UI
+- `client/src/context` and `hooks` — shared client state and reusable behavior
+- `client/src/services` — data access boundary; currently local sample data
+- `client/src/data` — demo fixtures
+- `client/src/i18n` — Gujarati, Hindi, and English interface messages
+- `client/src/styles` — design tokens and responsive global styles
 
-## First milestones
-1. Foundation and discovery homepage (this change)
+## Planned backend
+
+Build a modular monolith in `server/` using Node.js, Express, MongoDB, and Mongoose. Feature modules own their routes, validation, services, and models. Shared configuration, authentication middleware, error handling, and logging sit in shared infrastructure. REST APIs should be reusable by a future Expo app.
+
+## Delivery order
+
+1. Frontend foundation and homepage
 2. Reader accounts, catalogue API, and reading experience
-3. Author studio and book submission workflow
+3. Author profile, book management, and storefront
 4. Admin moderation and CMS
 5. Orders, verified payment webhooks, royalty ledger, and payouts
 6. Analytics, marketing, and mobile client
 
-Payment, authentication, book storage, membership, and royalty flows are not implemented in this foundation.
+The current frontend uses demonstration data. There is no server, database, account system, payment integration, or email delivery yet.

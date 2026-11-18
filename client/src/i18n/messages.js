@@ -1,17 +1,6 @@
-export const categories = ["All books", "Fiction", "Poetry", "Wisdom", "Culture"];
-
-export const books = [
-  { id: 1, title: "The Quiet Between", gu: "શબ્દોની વચ્ચે", hi: "शब्दों के बीच", author: "Mira Desai", category: "Fiction", language: "English", price: 249, tone: "rose", mark: "01", description: "A tender story about finding home in unexpected places." },
-  { id: 2, title: "પવનની પાંખે", gu: "પવનની પાંખે", hi: "हवा के पंखों पर", author: "કાવ્યા ત્રિવેદી", category: "Poetry", language: "Gujarati", price: 180, tone: "sage", mark: "02", description: "નાની નાની ક્ષણોમાંથી જન્મેલી કવિતાઓનો સંગ્રહ." },
-  { id: 3, title: "The Art of Enough", gu: "પૂરતું હોવાની કળા", hi: "पर्याप्त होने की कला", author: "Arjun Mehta", category: "Wisdom", language: "English", price: 320, tone: "ochre", mark: "03", description: "Simple reflections for a life with more room to breathe." },
-  { id: 4, title: "શહેર અને હું", gu: "શહેર અને હું", hi: "शहर और मैं", author: "નિધિ શાહ", category: "Culture", language: "Gujarati", price: 210, tone: "blue", mark: "04", description: "એક શહેરની ગલીઓમાં છુપાયેલી પોતાની ઓળખની શોધ." },
-  { id: 5, title: "A Map of Small Things", gu: "નાની વાતોનો નકશો", hi: "छोटी बातों का नक्शा", author: "Devika Rao", category: "Fiction", language: "English", price: 275, tone: "plum", mark: "05", description: "A family, a forgotten recipe and the stories that bind them." },
-  { id: 6, title: "मन की रोशनी", gu: "મનની રોશની", hi: "मन की रोशनी", author: "अनया शर्मा", category: "Poetry", language: "Hindi", price: 195, tone: "sun", mark: "06", description: "दिल की खामोशियों से निकली कुछ सच्ची कविताएँ।" },
-];
-
 export const copy = {
   en: {
-    discover: "Discover", authors: "For authors", about: "Our story", signIn: "Sign in", join: "Join the community",
+    discover: "Discover", authors: "For authors", about: "Our story", signIn: "Sign in", join: "Join the community",\n    chooseLanguage: "Choose language", by: "by", filterCategories: "Filter books by category", clearSearch: "Clear search", subscribed: "You’re on the list. Thank you.", consent: "By subscribing, you agree to receive occasional updates from Rasbhav Books.", notFound: "This page could not be found.", backHome: "Back to home",
     eyebrow: "Stories rooted in India, shared with the world",
     headline: "Every book has a soul.",
     intro: "Find your next favourite read. Meet the independent voices shaping stories in Gujarati, Hindi and English.",
@@ -30,7 +19,7 @@ export const copy = {
     categories: { Fiction: "Fiction", Poetry: "Poetry", Wisdom: "Wisdom", Culture: "Culture" },
   },
   gu: {
-    discover: "શોધો", authors: "લેખકો માટે", about: "અમારી વાત", signIn: "લૉગ ઇન", join: "સમુદાયમાં જોડાઓ",
+    discover: "શોધો", authors: "લેખકો માટે", about: "અમારી વાત", signIn: "લૉગ ઇન", join: "સમુદાયમાં જોડાઓ",\n    chooseLanguage: "ભાષા પસંદ કરો", by: "લેખક", filterCategories: "પ્રકાર પ્રમાણે પુસ્તકો ગાળો", clearSearch: "શોધ સાફ કરો", subscribed: "નોંધણી બદલ આભાર!", consent: "નોંધણી કરીને તમે રसभાવ બુક્સના ક્યારેક આવતા સંદેશા મેળવવા સંમત થાઓ છો.", notFound: "આ પાનું મળ્યું નથી.", backHome: "મુખ્ય પાને જાઓ",
     eyebrow: "ભારતની માટીમાંથી ઊગેલી, દુનિયા સુધી પહોંચતી વાર્તાઓ",
     headline: "દરેક પુસ્તકમાં એક આત્મા છે.",
     intro: "તમારું મનગમતું પુસ્તક શોધો. ગુજરાતી, હિન્દી અને અંગ્રેજીમાં લખતા સ્વતંત્ર અવાજોને મળો.",
@@ -49,7 +38,7 @@ export const copy = {
     categories: { Fiction: "કથા", Poetry: "કવિતા", Wisdom: "વિચાર", Culture: "સંસ્કૃતિ" },
   },
   hi: {
-    discover: "खोजें", authors: "लेखकों के लिए", about: "हमारी कहानी", signIn: "लॉग इन", join: "समुदाय से जुड़ें",
+    discover: "खोजें", authors: "लेखकों के लिए", about: "हमारी कहानी", signIn: "लॉग इन", join: "समुदाय से जुड़ें",\n    chooseLanguage: "भाषा चुनें", by: "लेखक", filterCategories: "श्रेणी के अनुसार किताबें छाँटें", clearSearch: "खोज मिटाएँ", subscribed: "जुड़ने के लिए धन्यवाद!", consent: "जुड़कर आप रसभव बुक्स के कभी-कभार अपडेट पाने के लिए सहमत हैं।", notFound: "यह पृष्ठ नहीं मिला।", backHome: "मुखपृष्ठ पर जाएँ",
     eyebrow: "भारत की मिट्टी से जन्मी, दुनिया तक पहुँचती कहानियाँ",
     headline: "हर किताब में एक आत्मा है।",
     intro: "अपनी अगली पसंदीदा किताब खोजें। गुजराती, हिंदी और अंग्रेज़ी में लिखने वाली स्वतंत्र आवाज़ों से मिलें।",
