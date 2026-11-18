@@ -13,6 +13,6 @@
     "build": "npm run build --workspace @rasbhav/client",
     "preview": "npm run preview --workspace @rasbhav/client",
     "start:server": "npm run start --workspace @rasbhav/server",
-    "test": "npm run test --workspace @rasbhav/server"
+    "test": "npm run test --workspaces --if-present"
   }
 }
