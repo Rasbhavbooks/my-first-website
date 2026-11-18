@@ -1,55 +1,43 @@
-# my-first-website
-this is my first website and repository 
+# Rasbhav Books V3.0
 
-Rasbhav Books V3.0
+**Every book has a soul.**
 
-Your Book. Your Brand. Your Business.
+Rasbhav Books is an Indian digital book and author platform for readers and independent authors, starting with Gujarati, Hindi, and English.
 
-Rasbhav Books is an Indian digital book publishing and reading platform designed to connect authors and readers.
+## Current foundation
 
-Project Vision
+The repository currently contains the responsive React + Vite frontend foundation and homepage:
 
-To build a creator-first platform where authors can publish books, build their own brand, manage readers and sell their books.
+- Browse a sample catalogue of books
+- Search by title, author, category, or language
+- Filter books by category
+- Switch the interface between Gujarati, Hindi, and English
+- View a responsive author/community introduction and newsletter form
 
-Main Goals
+The catalogue and newsletter are frontend demonstrations only. No accounts, API, database, payments, or email service are connected yet.
 
-- Help authors publish and manage their books.
-- Give readers an easy digital reading experience.
-- Provide author profiles and personal storefronts.
-- Support Gujarati, Hindi and other Indian languages.
-- Build a secure and user-friendly platform.
+## Run locally
 
-Technology Stack
+Requirements: Node.js 20.19+ or 22.12+ and npm.
 
-- Frontend: HTML, CSS, JavaScript, React
-- Backend: Node.js and Express.js
-- Database: MongoDB
-- Future Mobile App: React Native / Expo
+```sh
+npm install
+npm run dev
+```
 
-Main Modules
+Open the URL printed by Vite (normally `http://localhost:5173`). Create a production build with `npm run build`; preview it with `npm run preview`.
 
-1. Reader Website
-2. Author Studio
-3. Admin Panel
-4. Book Management
-5. Membership Plans
-6. Author Store
-7. Payments and Royalties
+## Project layout
 
-Development Approach
+- `client/` — React/Vite application
+- `client/src/components/` — shared interface components
+- `client/src/data/` — sample catalogue and initial UI translations
+- `docs/` — architecture, security plan, and roadmap
 
-This project will be developed step by step while learning the MERN Stack.
+## Product direction
 
-We will implement each technology after learning and practising it.
+The planned product includes reader discovery and reading, author storefronts and book management, admin moderation and CMS, membership, payments, and a transaction-level royalty ledger. These features are not implemented yet. See [the architecture](docs/architecture.md), [security plan](docs/security.md), and [roadmap](docs/roadmap.md).
 
-Project Status
+The legacy Flask project in the separate old repository remains reference-only. V3.0 is developed in this repository.
 
-Current Stage: Project Setup
-
-Version: 3.0
-
-Development: In Progress
-
-----
-
-© Rasbhav Books. All rights reserved.
+© 2026 Rasbhav Books.

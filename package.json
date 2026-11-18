@@ -1,0 +1,12 @@
+{
+  "name": "rasbhav-books-v3",
+  "private": true,
+  "version": "3.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "npm run dev --workspace @rasbhav/client",
+    "build": "npm run build --workspace @rasbhav/client",
+    "preview": "npm run preview --workspace @rasbhav/client"
+  },
+  "workspaces": ["client"]
+}
