@@ -1,14 +1,14 @@
 :root {
-  font-family: "DM Sans", Arial, sans-serif;
+  font-family: "Montserrat", Arial, sans-serif;
   color: #242424;
-  background: #f6f3ee;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  --paper: #f6f3ee;
+  background: #F6F3EE;
+  --paper: #F6F3EE;
   --ink: #242424;
-  --gold: #d6ae68;
-  --muted: #77736e;
-  --line: #e6e0d7;
+  --gold: #D6AE68;
+  --gold-dark: #B08A45;
+  --secondary: #777777;
+  --white: #FFFFFF;
+  --line: #E6E0D7;
   --serif: "Playfair Display", Georgia, serif;
-  --sans: "DM Sans", Arial, sans-serif;
+  --sans: "Montserrat", Arial, sans-serif;
 }

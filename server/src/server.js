@@ -7,20 +7,15 @@ async function startServer() {
   if (env.mongoUri) {
     await connectDatabase(env.mongoUri);
   } else {
-    console.warn("MONGODB_URI is not set. Starting API without a database connection.");
+    console.warn("MONGODB_URI is not set; the API will start without database access.");
   }
 
-  const httpServer = app.listen(env.port, "0.0.0.0", () => {
-    console.info(`Rasbhav Books API listening on port ${env.port}.`);
-  });
-
+  const server = app.listen(env.port, "0.0.0.0", () => console.info(`API listening on port ${env.port}.`));
   for (const signal of ["SIGINT", "SIGTERM"]) {
-    process.on(signal, () => {
-      httpServer.close(async () => {
-        await disconnectDatabase();
-        process.exit(0);
-      });
-    });
+    process.on(signal, () => server.close(async () => {
+      await disconnectDatabase();
+      process.exit(0);
+    }));
   }
 }
 
