@@ -16,7 +16,7 @@ These documents are the source of truth for future work. Follow the phases in or
 
 ## Current phase
 
-Phase 0/1 foundation: React + Vite frontend, mobile-first homepage, sample book discovery, Gujarati/Hindi/English UI, and an Express API for health and the sample book catalogue. The book data is demonstration data. No user accounts, book file storage, purchases, payment gateway, or production MongoDB is connected.
+Initial frontend + backend foundation: React + Vite, responsive book discovery, Gujarati/Hindi/English UI, Express API, and MongoDB Atlas development storage for the demonstration catalogue. No user accounts, book-file storage, purchases, payment gateway, or production database is configured.
 
 ## Run in GitHub Codespaces
 
@@ -24,22 +24,27 @@ Node.js is required in the Codespace environment, not on your personal computer.
 
 ```sh
 npm install
-npm run dev
 ```
 
-The frontend uses port 5173. To run the API in another terminal:
-
-```sh
-npm run dev:server
-```
-
-The API uses port 4000 and exposes `/api/v1/health`, `/api/v1/books`, and `/api/v1/books/:bookId`. Set the `MONGODB_URI` Codespaces secret and restart the Codespace. Before the first API start, load the sample books once:
+Set the `MONGODB_URI` Codespaces secret and restart the Codespace. Before the first API start, load the sample books once:
 
 ```sh
 npm run seed:books --workspace @rasbhav/server
 ```
 
-Then start the API in one terminal and the frontend in another. The API reads books from MongoDB. If no database connection is configured, health remains available but the book endpoints report that the database is unavailable.
+Start the API in one terminal:
+
+```sh
+npm run dev:server
+```
+
+Then open a second terminal and start the frontend:
+
+```sh
+npm run dev
+```
+
+The frontend uses port 5173. The API uses port 4000 and exposes `/api/v1/health`, `/api/v1/books`, and `/api/v1/books/:bookId`. The API reads books from MongoDB. Without a database connection, health remains available but the book endpoints report that the database is unavailable.
 
 ## Local setup
 
