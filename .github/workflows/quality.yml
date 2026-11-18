@@ -23,7 +23,7 @@ jobs:
       - name: Summarize dependency advisories
         run: |
           npm audit --json > /tmp/npm-audit.json || true
-          node -e 'const fs=require("node:fs"); const a=JSON.parse(fs.readFileSync("/tmp/npm-audit.json","utf8")); console.log("Audit totals:", JSON.stringify(a.metadata?.vulnerabilities)); for (const [name,v] of Object.entries(a.vulnerabilities||{})) console.log(name+": "+v.severity+"; direct="+v.isDirect+"; fix="+JSON.stringify(v.fixAvailable));'
+          node -e 'const fs=require("node:fs"); const a=JSON.parse(fs.readFileSync("/tmp/npm-audit.json","utf8")); console.log("Audit totals:", JSON.stringify(a.metadata?.vulnerabilities)); for (const [name,v] of Object.entries(a.vulnerabilities||{})) console.log(name+": "+v.severity+"; range="+v.range+"; fix="+JSON.stringify(v.fixAvailable)+"; via="+JSON.stringify(v.via.map(x=>typeof x==="string"?x:{name:x.name,title:x.title,range:x.range,url:x.url})));'
       - name: Build frontend
         run: npm run build
       - name: Test workspaces
