@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router";
 import { getBookTitle } from "../../data/books.js";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { getBookById } from "../../services/bookService.js";

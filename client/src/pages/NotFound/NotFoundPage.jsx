@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { useLanguage } from "../../hooks/useLanguage.js";
 
 export default function NotFoundPage() {
