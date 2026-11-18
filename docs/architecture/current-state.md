@@ -14,9 +14,10 @@ This file records implementation status; the complete requirements remain in the
 - Mongoose Book model validates multilingual titles/descriptions, language, category, author, and price; a repeatable seed command imports the demo catalogue.
 - API health endpoint test runs in GitHub Actions.
 - MongoDB Atlas connection configuration and a per-database read/write application user.
+- Initial reader User model: email normalization, reader default role, pending-verification status, and Argon2id password-hash helpers. Registration, login, verification emails, and session handling are not implemented yet.
 
 ## Not implemented
 Reader/author/admin accounts, permissions, book uploads, paid book access, reviews, account-synced reader library, CMS, subscriptions, payments, royalty ledger, affiliates, institutions, audiobooks, AI tools, production storage, and mobile apps.
 
 ## Next phase
-Run the sample-book seed command in Codespaces and verify the MongoDB-backed API. Then continue with secure reader accounts and permissions; admin and paid access remain future work. Do not mark a planned feature complete until it meets the Definition of Done in the master architecture.
+Run the sample-book seed command in Codespaces and verify the MongoDB-backed API. Then add secure registration, email verification, login sessions, and server-side authorization; admin and paid access remain future work. Do not mark a planned feature complete until it meets the Definition of Done in the master architecture.
