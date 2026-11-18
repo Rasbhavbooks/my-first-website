@@ -2,42 +2,50 @@
 
 **Every book has a soul.**
 
-Rasbhav Books is an Indian digital book and author platform for readers and independent authors, starting with Gujarati, Hindi, and English.
+A digital book and author platform for readers and independent authors, starting with Gujarati, Hindi, and English.
 
 ## Current foundation
 
-The repository currently contains the responsive React + Vite frontend foundation and homepage:
+- Responsive React + Vite homepage with a sample book catalogue
+- Search and category filters
+- Gujarati, Hindi, and English UI language selection
+- Modular Express API foundation with a health endpoint
+- MongoDB connection configuration, ready for a connection string
 
-- Browse a sample catalogue of books
-- Search by title, author, category, or language
-- Filter books by category
-- Switch the interface between Gujarati, Hindi, and English
-- View a responsive author/community introduction and newsletter form
+The sample catalogue is local demo data. Reader accounts, book uploads, payments, and email delivery are not implemented.
 
-The catalogue and newsletter are frontend demonstrations only. No accounts, API, database, payments, or email service are connected yet.
+## Run in GitHub Codespaces
 
-## Run locally
-
-Requirements: Node.js 20.19+ or 22.12+ and npm.
+The repository needs Node.js 20.19+ or 22.12+ in the development environment. In the Codespaces terminal:
 
 ```sh
 npm install
 npm run dev
 ```
 
-Open the URL printed by Vite (normally `http://localhost:5173`). Create a production build with `npm run build`; preview it with `npm run preview`.
+The frontend runs on port 5173. To start the API in a second terminal:
+
+```sh
+npm run dev:server
+```
+
+The API listens on port 4000. Check `/api/v1/health` on that port. Without a MongoDB URI, the API starts in database-disconnected mode.
+
+## Run locally
+
+```sh
+npm install
+npm run dev
+```
+
+Create a local `server/.env` from `server/.env.example` to configure MongoDB. Never commit real secrets or credentials.
 
 ## Project layout
 
-- `client/` — React/Vite application
-- `client/src/components/` — shared interface components
-- `client/src/data/` — sample catalogue and initial UI translations
-- `docs/` — architecture, security plan, and roadmap
+- `client/` — modular React/Vite application
+- `server/src/config/` — environment and database setup
+- `server/src/modules/` — API feature modules
+- `server/src/middleware/` — shared request and error handling
+- `docs/` — architecture, API plan, database plan, security, and roadmap
 
-## Product direction
-
-The planned product includes reader discovery and reading, author storefronts and book management, admin moderation and CMS, membership, payments, and a transaction-level royalty ledger. These features are not implemented yet. See [the architecture](docs/architecture.md), [security plan](docs/security.md), and [roadmap](docs/roadmap.md).
-
-The legacy Flask project in the separate old repository remains reference-only. V3.0 is developed in this repository.
-
-© 2026 Rasbhav Books.
+The legacy Flask project lives in a separate reference repository. V3.0 is developed here.

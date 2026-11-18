@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "npm run dev --workspace @rasbhav/client",
+    "dev:server": "npm run dev --workspace @rasbhav/server",
     "build": "npm run build --workspace @rasbhav/client",
-    "preview": "npm run preview --workspace @rasbhav/client"
+    "preview": "npm run preview --workspace @rasbhav/client",
+    "start:server": "npm run start --workspace @rasbhav/server"
   },
-  "workspaces": ["client"]
+  "workspaces": ["client", "server"]
 }

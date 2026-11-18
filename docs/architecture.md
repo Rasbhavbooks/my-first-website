@@ -1,32 +1,30 @@
 # Rasbhav Books V3.0 architecture
 
-## Current application
+## Frontend
 
-The repository is a modular React/Vite frontend foundation. The homepage, catalogue fixtures, language state, shared layout, routes, and UI components have separate responsibilities.
+The React/Vite client separates route definitions, layouts, pages, reusable UI, language state, hooks, data access, translations, and styling.
 
 - `client/src/routes` — route table
 - `client/src/layouts` — shared site shell
 - `client/src/pages` — page-level screens
-- `client/src/components/common` — reusable interface primitives
-- `client/src/components/navigation` — header and footer
-- `client/src/components/books` — book catalogue UI
-- `client/src/context` and `hooks` — shared client state and reusable behavior
-- `client/src/services` — data access boundary; currently local sample data
-- `client/src/data` — demo fixtures
-- `client/src/i18n` — Gujarati, Hindi, and English interface messages
-- `client/src/styles` — design tokens and responsive global styles
+- `client/src/components` — common, navigation, and book UI
+- `client/src/context` and `hooks` — shared client state and behavior
+- `client/src/services` — data access boundary (currently demo fixtures)
+- `client/src/data` and `i18n` — catalogue fixtures and translations
+- `client/src/styles` — design tokens and responsive styles
 
-## Planned backend
+## Backend
 
-Build a modular monolith in `server/` using Node.js, Express, MongoDB, and Mongoose. Feature modules own their routes, validation, services, and models. Shared configuration, authentication middleware, error handling, and logging sit in shared infrastructure. REST APIs should be reusable by a future Expo app.
+The Node.js/Express server is a modular monolith. Each feature module owns its routes and controller/service/model as it grows. Shared environment configuration, database connection, and middleware live in `server/src/config` and `server/src/middleware`. The first module is a health endpoint under `/api/v1/health`.
+
+MongoDB is optional for the health endpoint. Set `MONGODB_URI` to connect the server to a database. No business collections or account routes exist yet.
 
 ## Delivery order
 
 1. Frontend foundation and homepage
-2. Reader accounts, catalogue API, and reading experience
-3. Author profile, book management, and storefront
-4. Admin moderation and CMS
-5. Orders, verified payment webhooks, royalty ledger, and payouts
-6. Analytics, marketing, and mobile client
-
-The current frontend uses demonstration data. There is no server, database, account system, payment integration, or email delivery yet.
+2. API/database foundation
+3. Reader accounts, catalogue API, and reading experience
+4. Author profile, book management, and storefront
+5. Admin moderation and CMS
+6. Orders, verified payment webhooks, royalty ledger, and payouts
+7. Analytics, marketing, and mobile client
