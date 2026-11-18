@@ -33,7 +33,13 @@ The frontend uses port 5173. To run the API in another terminal:
 npm run dev:server
 ```
 
-The API uses port 4000 and exposes `/api/v1/health`, `/api/v1/books`, and `/api/v1/books/:bookId`. Start the API before the frontend to load books through Express. Without `MONGODB_URI`, the sample catalogue still works without a database connection.
+The API uses port 4000 and exposes `/api/v1/health`, `/api/v1/books`, and `/api/v1/books/:bookId`. Set the `MONGODB_URI` Codespaces secret and restart the Codespace. Before the first API start, load the sample books once:
+
+```sh
+npm run seed:books --workspace @rasbhav/server
+```
+
+Then start the API in one terminal and the frontend in another. The API reads books from MongoDB. If no database connection is configured, health remains available but the book endpoints report that the database is unavailable.
 
 ## Local setup
 
