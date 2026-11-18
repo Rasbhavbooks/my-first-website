@@ -5,6 +5,7 @@ This file records implementation status; the complete requirements remain in the
 ## Implemented foundation
 - React/Vite and Tailwind frontend workspace.
 - Responsive homepage with hero, book discovery, categories, author introduction, and footer.
+- Book details route for sample catalogue entries, including localized description, price, language, and category.
 - Sample catalogue search and category filtering.
 - Gujarati, Hindi, and English UI selection.
 - Express API workspace with a liveness/health endpoint and a Node test for its response.

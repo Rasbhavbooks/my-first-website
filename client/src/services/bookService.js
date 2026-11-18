@@ -4,3 +4,7 @@ import { books } from "../data/books.js";
 export async function getBooks() {
   return books;
 }
+
+export async function getBookById(bookId) {
+  return books.find((book) => book.id === bookId) || null;
+}
