@@ -16,7 +16,7 @@ These documents are the source of truth for future work. Follow the phases in or
 
 ## Current phase
 
-Phase 0/1 foundation: React + Vite frontend, mobile-first homepage, sample book discovery, Gujarati/Hindi/English UI, and a small Express health API. The book data is demonstration data. No user accounts, book file storage, purchases, payment gateway, or production MongoDB is connected.
+Phase 0/1 foundation: React + Vite frontend, mobile-first homepage, sample book discovery, Gujarati/Hindi/English UI, and an Express API for health and the sample book catalogue. The book data is demonstration data. No user accounts, book file storage, purchases, payment gateway, or production MongoDB is connected.
 
 ## Run in GitHub Codespaces
 
@@ -33,7 +33,7 @@ The frontend uses port 5173. To run the API in another terminal:
 npm run dev:server
 ```
 
-The API uses port 4000 and exposes `/api/v1/health`. Without `MONGODB_URI`, it starts without a database connection.
+The API uses port 4000 and exposes `/api/v1/health`, `/api/v1/books`, and `/api/v1/books/:bookId`. Start the API before the frontend to load books through Express. Without `MONGODB_URI`, the sample catalogue still works without a database connection.
 
 ## Local setup
 
