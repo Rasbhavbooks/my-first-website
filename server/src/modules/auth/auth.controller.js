@@ -220,3 +220,53 @@ export async function logoutReader(request, response) {
   response.setHeader("Cache-Control", "no-store");
   return response.json({ data: { message: "Signed out." } });
 }
+
+
+export function getReaderProfile(request, response) {
+  response.setHeader("Cache-Control", "no-store");
+  return response.json({ data: { user: safeUser(request.reader) } });
+}
+
+export async function updateReaderProfile(request, response) {
+  const displayName = typeof request.body?.displayName === "string" ? request.body.displayName.trim() : "";
+  if (displayName.length < 2 || displayName.length > 80) {
+    return response.status(400).json({
+      error: { code: "INVALID_PROFILE", message: "Name must be between 2 and 80 characters." },
+    });
+  }
+
+  request.reader.displayName = displayName;
+  await request.reader.save();
+  response.setHeader("Cache-Control", "no-store");
+  return response.json({ data: { user: safeUser(request.reader) } });
+}
+
+export async function changeReaderPassword(request, response) {
+  const currentPassword = typeof request.body?.currentPassword === "string" ? request.body.currentPassword : "";
+  const newPassword = typeof request.body?.newPassword === "string" ? request.body.newPassword : "";
+  const validPassword = newPassword.length >= 12
+    && newPassword.length <= 128
+    && /[a-z]/.test(newPassword)
+    && /[A-Z]/.test(newPassword)
+    && /\d/.test(newPassword);
+
+  if (!currentPassword || !validPassword) {
+    return response.status(400).json({
+      error: { code: "INVALID_PASSWORD", message: "Enter your current password and a new password with at least 12 characters, including uppercase, lowercase, and a number." },
+    });
+  }
+
+  const user = await User.findById(request.reader._id).select("+passwordHash");
+  if (!user || !(await user.verifyPassword(currentPassword))) {
+    return response.status(400).json({
+      error: { code: "CURRENT_PASSWORD_INCORRECT", message: "Current password is incorrect." },
+    });
+  }
+
+  await user.setPassword(newPassword);
+  await user.save();
+  await ReaderSession.deleteMany({ userId: user._id });
+  response.clearCookie(SESSION_COOKIE, sessionCookieOptions());
+  response.setHeader("Cache-Control", "no-store");
+  return response.json({ data: { message: "Password changed. Sign in again on this device." } });
+}
