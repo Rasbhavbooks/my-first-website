@@ -17,7 +17,7 @@ async function bootstrapAdmin() {
     const email = (await terminal.question("Enter the email of an existing verified reader account: "))
       .trim()
       .toLowerCase();
-    if (!email || email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+    if (!email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw new Error("Enter a valid account email.");
     }
 
