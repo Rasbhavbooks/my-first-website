@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { requestReaderPasswordReset, resetReaderPassword } from "../../services/authService.js";
 
@@ -18,13 +18,18 @@ const styles = `
 
 export default function PasswordResetPage() {
   const { t } = useLanguage();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
-  const [token, setToken] = useState("");
+  const [token, setToken] = useState(() => searchParams.get("token") || "");
   const [password, setPassword] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [complete, setComplete] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.has("token")) window.history.replaceState({}, "", "/password-reset");
+  }, [searchParams]);
 
   async function requestReset(event) {
     event.preventDefault();
