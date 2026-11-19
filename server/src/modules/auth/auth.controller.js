@@ -3,6 +3,8 @@ import User from "../users/user.model.js";
 import VerificationToken from "./verification-token.model.js";
 import ReaderSession from "./reader-session.model.js";
 import PasswordResetToken from "./password-reset-token.model.js";
+import { env } from "../../config/env.js";
+import { sendPasswordResetEmail, sendVerificationEmail } from "../../services/email.service.js";
 
 const VERIFICATION_TTL_MS = 30 * 60 * 1000;
 
@@ -33,7 +35,7 @@ function safeUser(user) {
 }
 
 export async function registerReader(request, response) {
-  if (process.env.NODE_ENV === "production") {
+  if (process.env.NODE_ENV === "production" && !env.emailConfigured) {
     return response.status(503).json({
       error: {
         code: "EMAIL_DELIVERY_NOT_CONFIGURED",
@@ -84,11 +86,25 @@ export async function registerReader(request, response) {
       throw error;
     }
 
+    if (env.emailConfigured) {
+      try {
+        await sendVerificationEmail({ email, displayName, token });
+      } catch {
+        await Promise.all([
+          VerificationToken.deleteOne({ _id: verificationToken._id }),
+          User.deleteOne({ _id: user._id }),
+        ]);
+        return response.status(503).json({
+          error: { code: "EMAIL_DELIVERY_FAILED", message: "We could not send the verification email. Please try again." },
+        });
+      }
+    }
+
     return response.status(201).json({
       data: {
         message: "Reader account created. Verify the email to activate it.",
         user: safeUser(user),
-        verificationToken: token,
+        ...(env.emailConfigured ? {} : { verificationToken: token }),
         verificationExpiresAt: verificationToken.expiresAt,
       },
     });
@@ -100,6 +116,39 @@ export async function registerReader(request, response) {
     }
     throw error;
   }
+}
+
+export async function requestReaderVerification(request, response) {
+  const email = typeof request.body?.email === "string" ? request.body.email.trim().toLowerCase() : "";
+  const generic = { data: { message: "If the account needs verification, a new link is available." } };
+  if (process.env.NODE_ENV === "production" && !env.emailConfigured) {
+    return response.status(503).json({ error: { code: "EMAIL_DELIVERY_NOT_CONFIGURED", message: "Email delivery is temporarily unavailable." } });
+  }
+  if (!email || email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+    return response.json(generic);
+  }
+
+  const user = await User.findOne({ email, accountStatus: "pending_verification" });
+  if (!user) return response.json(generic);
+  await VerificationToken.deleteMany({ userId: user._id });
+  const token = randomBytes(32).toString("base64url");
+  const verificationToken = await VerificationToken.create({
+    userId: user._id,
+    tokenHash: hashToken(token),
+    expiresAt: new Date(Date.now() + VERIFICATION_TTL_MS),
+  });
+  if (env.emailConfigured) {
+    try {
+      await sendVerificationEmail({ email: user.email, displayName: user.displayName, token });
+    } catch {
+      await VerificationToken.deleteOne({ _id: verificationToken._id });
+      return response.status(503).json({ error: { code: "EMAIL_DELIVERY_FAILED", message: "Email delivery is temporarily unavailable." } });
+    }
+  } else {
+    generic.data.verificationToken = token;
+  }
+  response.setHeader("Cache-Control", "no-store");
+  return response.json(generic);
 }
 
 export async function verifyReaderEmail(request, response) {
@@ -317,15 +366,14 @@ export async function requestPasswordReset(request, response) {
   const validEmail = email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const generic = { data: { message: "If an active account matches that email, password reset instructions are available." } };
 
-  // Email delivery is not configured yet. In production, do not reveal account existence
-  // or issue a reset token that cannot be delivered safely.
-  if (process.env.NODE_ENV === "production") {
-    response.setHeader("Cache-Control", "no-store");
-    return response.status(503).json({ error: { code: "RESET_EMAIL_UNAVAILABLE", message: "Password reset is temporarily unavailable." } });
-  }
+  // Avoid account enumeration and do not issue an undeliverable production token.
   if (!validEmail) {
     response.setHeader("Cache-Control", "no-store");
     return response.json(generic);
+  }
+  if (!env.emailConfigured && process.env.NODE_ENV === "production") {
+    response.setHeader("Cache-Control", "no-store");
+    return response.status(503).json({ error: { code: "RESET_EMAIL_UNAVAILABLE", message: "Password reset is temporarily unavailable." } });
   }
 
   const user = await User.findOne({ email, accountStatus: "active" });
@@ -336,18 +384,25 @@ export async function requestPasswordReset(request, response) {
 
   await PasswordResetToken.deleteMany({ userId: user._id });
   const token = randomBytes(32).toString("base64url");
-  await PasswordResetToken.create({
+  const resetToken = await PasswordResetToken.create({
     userId: user._id,
     tokenHash: hashToken(token),
     expiresAt: new Date(Date.now() + PASSWORD_RESET_TTL_MS),
   });
+  if (env.emailConfigured) {
+    try {
+      await sendPasswordResetEmail({ email: user.email, displayName: user.displayName, token });
+    } catch {
+      await PasswordResetToken.deleteOne({ _id: resetToken._id });
+      response.setHeader("Cache-Control", "no-store");
+      return response.status(503).json({ error: { code: "RESET_EMAIL_UNAVAILABLE", message: "Password reset is temporarily unavailable." } });
+    }
+  }
   response.setHeader("Cache-Control", "no-store");
   return response.json({
     data: {
       ...generic.data,
-      // Development-only token; production must send a one-time link by email.
-      resetToken: token,
-      expiresInSeconds: PASSWORD_RESET_TTL_MS / 1000,
+      ...(!env.emailConfigured ? { resetToken: token, expiresInSeconds: PASSWORD_RESET_TTL_MS / 1000 } : {}),
     },
   });
 }
