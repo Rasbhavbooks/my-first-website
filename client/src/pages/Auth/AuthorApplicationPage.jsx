@@ -55,7 +55,7 @@ export default function AuthorApplicationPage() {
   }, [user?.id, user?.role, refreshSession]);
 
   if (loading) return <main className="author-apply"><p>{t.loadingAccount}</p></main>;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/reader/login" replace />;
   if (user.role === "author") return <Navigate to="/author/studio" replace />;
   if (user.role !== "reader") return <main className="author-apply"><h1>{t.authorApplyTitle}</h1><p>{t.adminOnly}</p></main>;
 
