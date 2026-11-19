@@ -9,6 +9,7 @@ import bookRoutes from "./modules/books/books.routes.js";
 import authRoutes from "./modules/auth/auth.routes.js";
 import wishlistRoutes from "./modules/wishlist/wishlist.routes.js";
 import followsRoutes from "./modules/auth/follows.routes.js";
+import reviewModerationRoutes from "./modules/books/review-moderation.routes.js";
 
 const app = express();
 app.disable("x-powered-by");
@@ -21,6 +22,7 @@ app.use("/api/v1/books", bookRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/wishlist", wishlistRoutes);
 app.use("/api/v1/reader/follows", followsRoutes);
+app.use("/api/v1/admin/reviews", reviewModerationRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
