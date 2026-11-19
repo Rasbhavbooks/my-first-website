@@ -179,14 +179,14 @@ export default function AuthorBooksPage() {
                   </label>
                 </div>
                 <label className="author-book-field">{t.bookTitle} · {LOCALE_NAMES[contentKey]}
-                  <input value={form.title?.[contentKey] || ""} disabled={!editable} minLength={2} maxLength={160} required onChange={(event) => setForm((current) => ({ ...current, title: { ...current.title, [contentKey]: event.target.value } }))} />
+                  <input value={form.title?.[contentKey] || ""} disabled={!editable} minLength={2} maxLength={160} onChange={(event) => setForm((current) => ({ ...current, title: { ...current.title, [contentKey]: event.target.value } }))} />
                 </label>
                 <label className="author-book-field">{t.bookSummary} · {LOCALE_NAMES[contentKey]}
-                  <textarea value={form.description?.[contentKey] || ""} disabled={!editable} maxLength={4000} required onChange={(event) => setForm((current) => ({ ...current, description: { ...current.description, [contentKey]: event.target.value } }))} />
+                  <textarea value={form.description?.[contentKey] || ""} disabled={!editable} maxLength={4000} onChange={(event) => setForm((current) => ({ ...current, description: { ...current.description, [contentKey]: event.target.value } }))} />
                 </label>
                 <p className="author-book-hint">{t.bookSummaryHelp}</p>
                 <label className="author-book-field">{t.bookPriceInr}
-                  <input type="number" min="0" max="100000" step="0.01" value={form.price} disabled={!editable} required onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))} />
+                  <input type="number" min="0" max="100000" step="0.01" value={form.price} disabled={!editable} onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))} />
                 </label>
                 {editable && <div className="author-book-actions">
                   <button type="submit" disabled={busy}>{busy ? t.savingChanges : t.saveBookDraft}</button>
