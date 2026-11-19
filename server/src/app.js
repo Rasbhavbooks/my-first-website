@@ -7,6 +7,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import healthRoutes from "./modules/health/health.routes.js";
 import bookRoutes from "./modules/books/books.routes.js";
 import authRoutes from "./modules/auth/auth.routes.js";
+import wishlistRoutes from "./modules/wishlist/wishlist.routes.js";
 
 const app = express();
 app.disable("x-powered-by");
@@ -17,6 +18,7 @@ app.get("/", (_request, response) => response.json({ name: "Rasbhav Books API", 
 app.use("/api/v1/health", healthRoutes);
 app.use("/api/v1/books", bookRoutes);
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/wishlist", wishlistRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
