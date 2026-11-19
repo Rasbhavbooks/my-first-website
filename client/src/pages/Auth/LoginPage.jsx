@@ -47,7 +47,7 @@ export default function LoginPage({ expectedRole = "reader" }) {
         setError(t.roleLoginMismatch);
         return;
       }
-      navigate(expectedRole === "author" ? "/author/studio" : expectedRole === "admin" ? "/admin/author-applications" : "/", { replace: true });
+      navigate(expectedRole === "author" ? "/author/studio" : expectedRole === "admin" ? "/admin" : "/", { replace: true });
     } catch (requestError) {
       if (requestError.code === "EMAIL_NOT_VERIFIED") setError(t.verifyFirst);
       else setError(requestError.code === "INVALID_CREDENTIALS" ? t.loginError : t.registrationError);
@@ -84,7 +84,7 @@ export default function LoginPage({ expectedRole = "reader" }) {
             <p>{user.displayName}</p>
             <p>{user.email}</p>
             {user.role === expectedRole
-              ? <Link to={expectedRole === "author" ? "/author/studio" : expectedRole === "admin" ? "/admin/author-applications" : "/account"}>{expectedRole === "author" ? t.authorStudio : expectedRole === "admin" ? t.authorApplicationsTitle : t.accountPage}</Link>
+              ? <Link to={expectedRole === "author" ? "/author/studio" : expectedRole === "admin" ? "/admin" : "/account"}>{expectedRole === "author" ? t.authorStudio : expectedRole === "admin" ? t.authorApplicationsTitle : t.accountPage}</Link>
               : <><p className="login-message error">{t.roleLoginMismatch}</p><Link to="/login">{t.chooseLoginPortal}</Link></>}
             <button className="login-submit" type="button" disabled={busy} onClick={handleLogout}>
               {busy ? t.signingOut : t.signOut}
