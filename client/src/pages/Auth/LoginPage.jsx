@@ -84,7 +84,7 @@ export default function LoginPage({ expectedRole = "reader" }) {
             <p>{user.displayName}</p>
             <p>{user.email}</p>
             {user.role === expectedRole
-              ? <Link to={expectedRole === "author" ? "/author/studio" : expectedRole === "admin" ? "/admin" : "/account"}>{expectedRole === "author" ? t.authorStudio : expectedRole === "admin" ? t.authorApplicationsTitle : t.accountPage}</Link>
+              ? <Link to={expectedRole === "author" ? "/author/studio" : expectedRole === "admin" ? "/admin" : "/account"}>{expectedRole === "author" ? t.authorStudio : expectedRole === "admin" ? t.adminDashboardTitle : t.accountPage}</Link>
               : <><p className="login-message error">{t.roleLoginMismatch}</p><Link to="/login">{t.chooseLoginPortal}</Link></>}
             <button className="login-submit" type="button" disabled={busy} onClick={handleLogout}>
               {busy ? t.signingOut : t.signOut}
