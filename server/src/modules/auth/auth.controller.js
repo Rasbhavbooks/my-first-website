@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import User from "../users/user.model.js";
 import VerificationToken from "./verification-token.model.js";
+import ReaderSession from "./reader-session.model.js";
 
 const VERIFICATION_TTL_MS = 30 * 60 * 1000;
 
@@ -132,4 +133,90 @@ export async function verifyReaderEmail(request, response) {
   return response.json({
     data: { message: "Email verified. Your reader account is active." },
   });
+}
+
+
+const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const SESSION_COOKIE = "rasbhav_reader_session";
+
+function sessionCookieOptions() {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+    maxAge: SESSION_TTL_MS,
+  };
+}
+
+function readSessionCookie(request) {
+  const cookies = request.headers.cookie || "";
+  const entry = cookies.split(";").map((part) => part.trim()).find((part) => part.startsWith(`${SESSION_COOKIE}=`));
+  return entry ? entry.slice(SESSION_COOKIE.length + 1) : "";
+}
+
+export async function loginReader(request, response) {
+  const email = typeof request.body?.email === "string" ? request.body.email.trim().toLowerCase() : "";
+  const password = typeof request.body?.password === "string" ? request.body.password : "";
+  if (!email || email.length > 254 || !password || password.length > 128) {
+    return response.status(400).json({
+      error: { code: "INVALID_CREDENTIALS", message: "Enter a valid email and password." },
+    });
+  }
+
+  const user = await User.findOne({ email }).select("+passwordHash");
+  const passwordMatches = user ? await user.verifyPassword(password) : false;
+  if (!user || !passwordMatches) {
+    return response.status(401).json({
+      error: { code: "INVALID_CREDENTIALS", message: "Email or password is incorrect." },
+    });
+  }
+  if (user.accountStatus !== "active") {
+    return response.status(403).json({
+      error: { code: user.accountStatus === "pending_verification" ? "EMAIL_NOT_VERIFIED" : "ACCOUNT_UNAVAILABLE",
+        message: user.accountStatus === "pending_verification" ? "Verify your email before signing in." : "This account is unavailable." },
+    });
+  }
+
+  const existingToken = readSessionCookie(request);
+  if (existingToken) await ReaderSession.deleteOne({ tokenHash: hashToken(existingToken) });
+
+  const token = randomBytes(32).toString("base64url");
+  const session = new ReaderSession({
+    userId: user._id,
+    tokenHash: hashToken(token),
+    expiresAt: new Date(Date.now() + SESSION_TTL_MS),
+  });
+  await session.save();
+  response.setHeader("Cache-Control", "no-store");
+  response.cookie(SESSION_COOKIE, token, sessionCookieOptions());
+  return response.json({ data: { user: safeUser(user), expiresAt: session.expiresAt } });
+}
+
+export async function getReaderSession(request, response) {
+  const token = readSessionCookie(request);
+  if (!token) {
+    return response.status(401).json({ error: { code: "NOT_AUTHENTICATED", message: "Sign in to continue." } });
+  }
+
+  const session = await ReaderSession.findOne({
+    tokenHash: hashToken(token),
+    expiresAt: { $gt: new Date() },
+  }).populate("userId");
+  if (!session || !session.userId || session.userId.accountStatus !== "active") {
+    if (session) await ReaderSession.deleteOne({ _id: session._id });
+    response.clearCookie(SESSION_COOKIE, sessionCookieOptions());
+    return response.status(401).json({ error: { code: "NOT_AUTHENTICATED", message: "Sign in to continue." } });
+  }
+
+  response.setHeader("Cache-Control", "no-store");
+  return response.json({ data: { user: safeUser(session.userId), expiresAt: session.expiresAt } });
+}
+
+export async function logoutReader(request, response) {
+  const token = readSessionCookie(request);
+  if (token) await ReaderSession.deleteOne({ tokenHash: hashToken(token) });
+  response.clearCookie(SESSION_COOKIE, sessionCookieOptions());
+  response.setHeader("Cache-Control", "no-store");
+  return response.json({ data: { message: "Signed out." } });
 }
