@@ -7,6 +7,7 @@ import {
   loginReader,
   logoutReader,
   registerReader,
+  requestReaderVerification,
   requestPasswordReset,
   resetReaderPassword,
   updateReaderProfile,
@@ -48,6 +49,7 @@ const passwordChangeLimiter = rateLimit({
 
 router.post("/register", registrationLimiter, registerReader);
 router.post("/verify-email", verificationLimiter, verifyReaderEmail);
+router.post("/resend-verification", verificationLimiter, requestReaderVerification);
 router.post("/login", loginLimiter, loginReader);
 router.get("/session", getReaderSession);
 router.post("/logout", logoutReader);
