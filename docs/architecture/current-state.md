@@ -18,10 +18,12 @@ This file records implementation status; the complete requirements remain in the
 - A responsive reader registration page is available in English, Gujarati, and Hindi and is wired to the development API.
 - Development-only reader registration and email-verification endpoints validate inputs and rate-limit requests. Verification tokens are stored as hashes with expiry.
 - Reader login checks Argon2id password hashes, blocks unverified accounts, and rate-limits attempts. Successful sign-in creates a seven-day database-backed session with a random HttpOnly, SameSite cookie; logout revokes the session. The frontend supports sign-in, session restore, and sign-out in English, Gujarati, and Hindi.
+- Signed-in readers can update their display name and change their password. Password changes revoke all existing reader sessions. Account endpoints require a valid server-side session.
+- Guest wishlists remain browser-local. Signed-in readers can sync saved catalogue books to an account-owned MongoDB wishlist with validated book references and per-account limits.
 - Outbound email, password reset, and production registration are still pending.
 
 ## Not implemented
-Password reset, full reader account management, author/admin permissions, book uploads, paid book access, reviews, account-synced reader library, CMS, subscriptions, payments, royalty ledger, affiliates, institutions, audiobooks, AI tools, production storage, and mobile apps.
+Password reset, account deletion/export, full reader account management, author/admin permissions, book uploads, paid book access, reviews, account-synced reader library, CMS, subscriptions, payments, royalty ledger, affiliates, institutions, audiobooks, AI tools, production storage, and mobile apps.
 
 ## Next phase
-Add registration, verification, and login flow checks; configure email delivery; then implement server-side authorization before exposing registration outside development. Admin and paid access remain future work. Do not mark a planned feature complete until it meets the Definition of Done in the master architecture.
+Add registration, verification, session, profile, password-change, and wishlist synchronization checks; configure email delivery; then extend server-side authorization to author/admin workflows before exposing registration outside development. Admin and paid access remain future work. Do not mark a planned feature complete until it meets the Definition of Done in the master architecture.
