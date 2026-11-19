@@ -58,7 +58,6 @@ export async function createAuthorBookChapter(request, response) {
   }
   const currentCount = await AuthorBookChapter.countDocuments({ bookId: book._id, authorId: request.reader._id });
   if (currentCount >= MAX_CHAPTERS) return errorResponse(response, 400, "CHAPTER_LIMIT_REACHED", "A book can contain at most 100 chapters.");
-  const latest = await AuthorBookChapter.findOne({ bookId: book._id, authorId: request.reader._id }).sort({ order: -1 }).select("order").lean();
   const chapter = await AuthorBookChapter.create({
     bookId: book._id,
     authorId: request.reader._id,
