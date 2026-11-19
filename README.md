@@ -16,7 +16,7 @@ These documents are the source of truth for future work. Follow the phases in or
 
 ## Current phase
 
-Initial frontend + backend foundation: React + Vite, responsive book discovery, Gujarati/Hindi/English UI, Express API, and MongoDB Atlas development storage for the demonstration catalogue. A development-only registration and email-verification API is present; email delivery, login sessions, purchases, and production authentication are not configured.
+Initial frontend + backend foundation: React + Vite, responsive book discovery, Gujarati/Hindi/English UI, Express API, and MongoDB Atlas development storage for the demonstration catalogue. A development-only registration form and email-verification API are present; email delivery, login sessions, purchases, and production authentication are not configured.
 
 ## Run in GitHub Codespaces
 
