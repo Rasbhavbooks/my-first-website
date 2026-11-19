@@ -18,7 +18,7 @@ const emailFrom = process.env.EMAIL_FROM || "";
 export const env = {
   port,
   clientOrigin,
-  appBaseUrl: appBaseUrl.replace(/\\/$/, ""),
+  appBaseUrl: new URL(appBaseUrl).origin,
   mongoUri: process.env.MONGODB_URI || "",
   resendApiKey,
   emailFrom,
