@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -16,6 +16,10 @@ const accountStyles = `
 .account-field input{width:100%;min-height:43px;padding:10px 12px;border:1px solid #d7cec0;background:#fff;font-size:12px}
 .account-field input:focus{outline:2px solid #d6ae68;outline-offset:1px}
 .account-field input[readonly]{background:#f4f1eb;color:#82796e}
+.account-field textarea{width:100%;min-height:94px;resize:vertical;padding:10px 12px;border:1px solid #d7cec0;background:#fff;font:12px/1.6 var(--sans)}
+.account-field textarea:focus{outline:2px solid #d6ae68;outline-offset:1px}
+.account-photo-preview{width:96px;height:96px;margin:2px 0 4px;border:1px solid #ded7ce;border-radius:50%;object-fit:cover;background:#eee8de}
+.account-photo-fallback{display:grid;place-items:center;color:#493944;font:500 32px var(--serif)}
 .account-submit{min-height:43px;margin-top:3px;border:0;background:#30252c;color:#fff;font-size:10px;letter-spacing:.4px;cursor:pointer}
 .account-submit:disabled{opacity:.6;cursor:wait}
 .account-message{margin:0 0 18px;padding:12px 14px;font-size:11px;line-height:1.6;background:#edf3e9;color:#39513d}
@@ -30,11 +34,22 @@ export default function AccountPage() {
   const { t } = useLanguage();
   const { user, loading, refreshSession, signOut } = useAuth();
   const [displayName, setDisplayName] = useState(user?.displayName || "");
+  const [bio, setBio] = useState(user?.bio || "");
+  const [hobbies, setHobbies] = useState(user?.hobbies?.join(", ") || "");
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || "");
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [passwordChanged, setPasswordChanged] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    setDisplayName(user.displayName || "");
+    setBio(user.bio || "");
+    setHobbies(user.hobbies?.join(", ") || "");
+    setAvatarUrl(user.avatarUrl || "");
+  }, [user?.id, user?.displayName, user?.bio, user?.hobbies?.join(", "), user?.avatarUrl]);
 
   if (loading) return <main className="account-page"><p>{t.loadingAccount}</p></main>;
   if (!user && !passwordChanged) return <Navigate to="/login" replace />;
@@ -45,7 +60,12 @@ export default function AccountPage() {
     setError("");
     setBusy(true);
     try {
-      await updateReaderProfile({ displayName });
+      await updateReaderProfile({
+        displayName,
+        bio,
+        hobbies: hobbies.split(",").map((hobby) => hobby.trim()).filter(Boolean),
+        avatarUrl,
+      });
       await refreshSession();
       setNotice(t.profileUpdated);
     } catch {
@@ -112,8 +132,15 @@ export default function AccountPage() {
         <section className="account-panel">
           <h2>{t.profileTitle}</h2>
           <form className="account-form" onSubmit={handleProfile}>
+            {avatarUrl
+              ? <img key={avatarUrl} className="account-photo-preview" src={avatarUrl} alt={t.profilePhoto} onError={(event) => { event.currentTarget.hidden = true; }} />
+              : <div className="account-photo-preview account-photo-fallback" aria-label={t.profilePhoto}>{displayName.trim().charAt(0).toUpperCase()}</div>}
+            <label className="account-field"><span>{t.profilePhotoUrl}</span><input type="url" inputMode="url" autoComplete="url" value={avatarUrl} onChange={(event) => setAvatarUrl(event.target.value)} maxLength={500} placeholder="https://…" /></label>
             <label className="account-field"><span>{t.displayName}</span><input value={displayName} onChange={(event) => setDisplayName(event.target.value)} minLength={2} maxLength={80} required /></label>
             <label className="account-field"><span>{t.emailAddress}</span><input value={user.email} readOnly /></label>
+            <label className="account-field"><span>{t.readerBio}</span><textarea value={bio} onChange={(event) => setBio(event.target.value)} maxLength={280} rows={4} /></label>
+            <label className="account-field"><span>{t.readerHobbies}</span><input value={hobbies} onChange={(event) => setHobbies(event.target.value)} maxLength={420} placeholder={t.hobbiesHint} /></label>
+            <p className="password-hint">{t.hobbiesHint}</p>
             <button className="account-submit" disabled={busy}>{busy ? t.savingChanges : t.saveChanges}</button>
           </form>
         </section>
