@@ -33,7 +33,13 @@ const loginLimiter = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
 });
-const passwordResetLimiter = rateLimit({\n  windowMs: 15 * 60 * 1000,\n  limit: 5,\n  standardHeaders: "draft-8",\n  legacyHeaders: false,\n});\nconst passwordChangeLimiter = rateLimit({
+const passwordResetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+});
+const passwordChangeLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 5,
   standardHeaders: "draft-8",
@@ -47,6 +53,8 @@ router.get("/session", getReaderSession);
 router.post("/logout", logoutReader);
 router.get("/profile", requireReader, getReaderProfile);
 router.patch("/profile", requireReader, updateReaderProfile);
-router.post("/change-password", requireReader, passwordChangeLimiter, changeReaderPassword);\nrouter.post("/password-reset/request", passwordResetLimiter, requestPasswordReset);\nrouter.post("/password-reset/confirm", passwordResetLimiter, resetReaderPassword);
+router.post("/change-password", requireReader, passwordChangeLimiter, changeReaderPassword);
+router.post("/password-reset/request", passwordResetLimiter, requestPasswordReset);
+router.post("/password-reset/confirm", passwordResetLimiter, resetReaderPassword);
 
 export default router;
