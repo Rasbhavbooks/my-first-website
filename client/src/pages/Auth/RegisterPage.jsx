@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { registerReader, resendReaderVerification, verifyReaderEmail } from "../../services/authService.js";
 
@@ -31,9 +31,11 @@ const pageStyles = `
 
 export default function RegisterPage() {
   const { t } = useLanguage();
+  const [searchParams] = useSearchParams();
   const [form, setForm] = useState({ displayName: "", email: "", password: "", confirmPassword: "" });
   const [verificationToken, setVerificationToken] = useState("");
   const [verificationPending, setVerificationPending] = useState(false);
+  const [resendMode, setResendMode] = useState(() => searchParams.get("resend") === "1");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -86,7 +88,8 @@ export default function RegisterPage() {
     }
   }
 
-  async function handleResendVerification() {
+  async function handleResendVerification(event) {
+    event.preventDefault();
     setBusy(true);
     setError("");
     setNotice("");
@@ -127,10 +130,22 @@ export default function RegisterPage() {
               {busy ? t.verifyingEmail : t.verifyEmail}
             </button>
           ) : verificationPending ? (
-            <button className="register-submit" type="button" disabled={busy} onClick={handleResendVerification}>
-              {busy ? t.savingChanges : t.resendVerification}
+            <button className="register-submit" type="button" disabled={busy} onClick={() => setResendMode(true)}>
+              {t.resendVerification}
             </button>
+          ) : resendMode ? (
+            <form className="register-form" onSubmit={handleResendVerification}>
+              <label className="register-field">
+                <span>{t.emailAddress}</span>
+                <input name="email" type="email" autoComplete="email" required maxLength={254} value={form.email} onChange={updateField} />
+              </label>
+              <button className="register-submit" type="submit" disabled={busy}>
+                {busy ? t.savingChanges : t.resendVerification}
+              </button>
+              <button className="register-back" type="button" onClick={() => setResendMode(false)}>{t.backToRegister}</button>
+            </form>
           ) : (
+            <>
             <form className="register-form" onSubmit={handleSubmit}>
               <label className="register-field">
                 <span>{t.displayName}</span>
@@ -163,6 +178,8 @@ export default function RegisterPage() {
                 {busy ? t.creatingAccount : t.createAccount}
               </button>
             </form>
+            <button className="register-back" type="button" onClick={() => setResendMode(true)}>{t.resendVerification}</button>
+            </>
           )}
 
           <Link className="register-back" to="/">{t.backHome}</Link>
