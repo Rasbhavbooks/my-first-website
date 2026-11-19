@@ -1,47 +1,34 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router";
 import { useLanguage } from "../../hooks/useLanguage.js";
-import { getReaderSession, loginReader, logoutReader } from "../../services/authService.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 const loginStyles = `
 .login-page{min-height:calc(100vh - 82px);padding:58px 20px;display:grid;place-items:center;background:radial-gradient(ellipse at 80% 15%,#eee7da 0,transparent 38%),#f8f6f1}
 .login-card{width:min(100%,470px);padding:48px;background:#fffdfa;border:1px solid #e4ddd1;box-shadow:0 24px 70px #30252c12}
-.login-eyebrow{display:flex;align-items:center;gap:9px;color:#927646;font-size:9px;letter-spacing:1.6px;text-transform:uppercase}
-.login-eyebrow i{width:20px;height:1px;background:#927646}
+.login-eyebrow{display:flex;align-items:center;gap:9px;color:#927646;font-size:9px;letter-spacing:1.6px;text-transform:uppercase}.login-eyebrow i{width:20px;height:1px;background:#927646}
 .login-card h1{margin:18px 0 9px;font:500 clamp(34px,5vw,48px)/1.1 var(--serif);color:#30252c}
 .login-intro{margin:0 0 27px;color:#77716a;font-size:12px;line-height:1.8}
-.login-form{display:grid;gap:17px}
-.login-field{display:grid;gap:7px}.login-field>span{font-size:10px;font-weight:600;color:#514a44}
+.login-form{display:grid;gap:17px}.login-field{display:grid;gap:7px}.login-field>span{font-size:10px;font-weight:600;color:#514a44}
 .login-field input{width:100%;height:47px;padding:0 13px;border:1px solid #d8d0c4;background:white;color:#30252c;font-size:12px;outline:none}
-.login-field input:focus{border-color:#a8844b;box-shadow:0 0 0 3px #d6ae682b}
-.login-password{position:relative}.login-password input{padding-right:75px}
+.login-field input:focus{border-color:#a8844b;box-shadow:0 0 0 3px #d6ae682b}.login-password{position:relative}.login-password input{padding-right:75px}
 .login-reveal{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:transparent;padding:7px;color:#796747;font-size:10px;font-weight:600;cursor:pointer}
 .login-submit{width:100%;min-height:48px;margin-top:6px;border:0;background:#30252c;color:white;font-size:11px;font-weight:600;letter-spacing:.4px;cursor:pointer}
 .login-submit:hover{background:#493944}.login-submit:disabled{opacity:.65;cursor:wait}
-.login-message{padding:12px 14px;margin:0 0 16px;font-size:11px;line-height:1.6}.login-message.error{background:#f8ece8;color:#863d32}.login-message.success{background:#edf3e9;color:#39513d}
+.login-message{padding:12px 14px;margin:0 0 16px;font-size:11px;line-height:1.6}.login-message.error{background:#f8ece8;color:#863d32}
 .login-foot{margin-top:24px;text-align:center;color:#716b63;font-size:11px}.login-foot a{color:#795f39;text-decoration:underline;text-underline-offset:3px}
 .login-home{display:block;margin-top:21px;text-align:center;color:#716b63;font-size:10px;text-decoration:underline;text-underline-offset:3px}
-.login-welcome{text-align:center;padding:16px 0}.login-welcome p{color:#77716a;font-size:12px;line-height:1.8}
+.login-welcome{text-align:center;padding:16px 0}.login-welcome p{color:#77716a;font-size:12px;line-height:1.8}.login-welcome a{display:block;margin-top:15px;font-size:11px;text-decoration:underline}
 @media(max-width:620px){.login-page{min-height:68vh;padding:35px 17px}.login-card{padding:32px 24px}}
 `;
 
 export default function LoginPage() {
   const { t } = useLanguage();
+  const { user, loading, signIn, signOut } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
-  const [user, setUser] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    getReaderSession()
-      .then((session) => { if (active) setUser(session?.user || null); })
-      .catch(() => { if (active) setError(t.registrationError); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [t.registrationError]);
 
   function updateField(event) {
     setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
@@ -52,8 +39,7 @@ export default function LoginPage() {
     setError("");
     setBusy(true);
     try {
-      const result = await loginReader(form);
-      setUser(result.user);
+      await signIn(form);
       setForm((current) => ({ ...current, password: "" }));
     } catch (requestError) {
       if (requestError.code === "EMAIL_NOT_VERIFIED") setError(t.verifyFirst);
@@ -67,8 +53,7 @@ export default function LoginPage() {
     setBusy(true);
     setError("");
     try {
-      await logoutReader();
-      setUser(null);
+      await signOut();
       setForm({ email: "", password: "" });
     } catch {
       setError(t.registrationError);
@@ -91,6 +76,7 @@ export default function LoginPage() {
           <div className="login-welcome">
             <p>{user.displayName}</p>
             <p>{user.email}</p>
+            <Link to="/account">{t.accountPage}</Link>
             <button className="login-submit" type="button" disabled={busy} onClick={handleLogout}>
               {busy ? t.signingOut : t.signOut}
             </button>
