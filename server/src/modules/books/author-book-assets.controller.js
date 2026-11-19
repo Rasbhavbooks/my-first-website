@@ -81,7 +81,7 @@ export async function uploadAuthorBookAsset(request, response) {
     _id: bookId,
     authorId: request.reader._id,
     status: { $in: ["draft", "rejected"] },
-  });
+  }).select("+assets.cover.key +assets.manuscript.key");
   if (!book) return errorResponse(response, 404, "AUTHOR_BOOK_NOT_EDITABLE", "This draft was not found or can no longer be edited.");
 
   const buffer = request.body;
