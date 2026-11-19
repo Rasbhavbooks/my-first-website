@@ -45,7 +45,7 @@ export default function ReviewModerationPage() {
   }, [user?.id, user?.role, status]);
 
   if (loading) return <main className="admin-reviews"><p>{t.loadingAccount}</p></main>;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/admin/login" replace />;
   if (user.role !== "admin") return <main className="admin-reviews"><h1>{t.adminOnly}</h1><p>{t.backHome}</p><Link to="/">{t.backHome}</Link></main>;
 
   async function moderate(review) {
