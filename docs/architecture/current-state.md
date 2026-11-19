@@ -14,13 +14,17 @@ This file records implementation status; the complete requirements remain in the
 - Signed-in readers can update display name, bio, up to 10 hobbies, and an HTTPS profile-photo URL. Photo upload/storage is not configured. Password changes and resets revoke existing sessions.
 - Guest wishlists are browser-local. Signed-in readers can sync saved catalogue books to an account-owned MongoDB wishlist.
 - Readers can write one 1–5 star review per catalogue book, edit/delete their own review, report other reviews, and follow/unfollow catalogue authors. Public review summaries omit reader email and credentials.
-- Admin-only review moderation routes and page can list reports, resolve them, and hide/restore reviews. No admin account is automatically created; an operator must grant the role through a trusted database procedure.
+- Admin-only review moderation routes and page can list reports, resolve them, and hide/restore reviews.
+- Signed-in readers can submit a writer application with biography, writing languages, genres, and an optional HTTPS sample link. Applications are rate-limited; pending applications cannot be duplicated, and rejected applications can be resubmitted.
+- Admins can view and approve/reject author applications. Approval uses a database transaction to create a public author profile and promote the reader to the author role. Author profile writes require the author role and are rate-limited.
+- Approved authors can update their public biography and HTTPS website link. Public author pages show approved profiles and catalogue books under the author's original catalogue credit.
+- No admin account is automatically created; an operator must grant the admin role through a trusted database procedure before using admin pages.
 - GitHub Actions runs the repository's existing quality checks on pushes.
 
 ## Not implemented
 
-Author applications and author studio, admin user/role management, account deletion/export, verified-purchase review labels, helpful-review voting, production email deliverability monitoring, book-file storage and reading, purchases/payments, subscriptions, royalty ledger, CMS, affiliates, institutions, audiobooks, AI tools, and mobile apps.
+Admin user/role management, author book drafts/uploads and publishing workflow, account deletion/export, verified-purchase review labels, helpful-review voting, production email deliverability monitoring, book-file storage and reading, purchases/payments, subscriptions, royalty ledger, CMS, affiliates, institutions, audiobooks, AI tools, and mobile apps.
 
 ## Next phase
 
-Configure the Codespaces/production email secrets and public frontend URL, then build a reviewed author application flow and secure admin provisioning. Keep public registration and reset disabled in production until email delivery and its verified sender are configured. Follow the phases and Definition of Done in the master architecture.
+Add secure admin provisioning and the first author book-draft workflow. Configure email secrets and the public frontend URL before enabling production registration or password reset. Follow the phases and Definition of Done in the master architecture.
