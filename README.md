@@ -16,7 +16,7 @@ These documents are the source of truth for future work. Follow the phases in or
 
 ## Current phase
 
-Reader engagement foundation: React + Vite, responsive book discovery, Gujarati/Hindi/English UI, Express API, and MongoDB Atlas development storage. Reader accounts include development-only registration and verification, rate-limited login, seven-day database-backed HttpOnly sessions, profile/password settings, and account-synced wishlist. Signed-in readers can review books, report reviews, and follow catalogue authors. Administrators can moderate review reports and hide/restore reviews. Development password reset returns a one-time token because email delivery is not configured; production password reset, commerce, and public registration remain disabled.
+Reader engagement foundation: React + Vite, book discovery, Gujarati/Hindi/English UI, Express API, and MongoDB Atlas storage. Readers can register, verify email, sign in, manage their profile/wishlist, write reviews, and follow authors. Admins can moderate review reports and hide/restore reviews. Transactional verification and password-reset emails use Resend when configured. Production registration and password reset stay disabled until email settings and public app URL are configured.
 
 ## Run in GitHub Codespaces
 
@@ -26,7 +26,7 @@ Node.js is required in the Codespace environment, not on your personal computer.
 npm install
 ```
 
-Set the `MONGODB_URI` Codespaces secret and restart the Codespace. Before the first API start, load the sample books once:
+Set these Codespaces secrets, then restart the Codespace:\n\n- `MONGODB_URI` — MongoDB Atlas connection string.\n- `RESEND_API_KEY` — private API key from Resend.\n- `EMAIL_FROM` — sender address verified with Resend, for example `Rasbhav Books <noreply@your-domain.example>`.\n- `APP_BASE_URL` — public HTTPS URL for the frontend on port 5173, without a path.\n\nSet `CLIENT_ORIGIN` to that same frontend origin so the API accepts browser requests. Keep all keys private; never commit them. Without email settings, development returns a manual one-time token. Production will not create accounts or reset passwords until email is configured. Before the first API start, load the sample books once:
 
 ```sh
 npm run seed:books --workspace @rasbhav/server
@@ -44,7 +44,7 @@ Then open a second terminal and start the frontend:
 npm run dev
 ```
 
-The frontend uses port 5173. The API uses port 4000 and exposes `/api/v1/health`, `/api/v1/books`, `/api/v1/books/:bookId`, registration/verification, login/session/logout, reader profile and password routes, an authenticated account wishlist, book review/report routes, authenticated author-follow routes, and admin-only review moderation routes. Registration is development-only until email delivery is configured; in development, it returns a short-lived verification token in the response. Signed-in readers need an active verified account. The API reads books from MongoDB. Without a database connection, health remains available but the book endpoints report that the database is unavailable.
+The frontend uses port 5173. The API uses port 4000 and exposes `/api/v1/health`, `/api/v1/books`, `/api/v1/books/:bookId`, registration, verification/resend, login/session/logout, reader profile/password and password-reset routes, account wishlist, book review/report routes, author-follow routes, and admin-only review moderation routes. Without email configuration in development, registration and password reset return short-lived tokens for manual use. With Resend configured, the API emails links instead. Signed-in readers need an active verified account. The API reads books from MongoDB. Without a database connection, health remains available but the book endpoints report that the database is unavailable.
 
 ## Local setup
 
