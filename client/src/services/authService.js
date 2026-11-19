@@ -52,3 +52,12 @@ export function updateReaderProfile(payload) {
 export function changeReaderPassword(payload) {
   return postAuthRequest("/api/v1/auth/change-password", payload);
 }
+
+
+export function requestReaderPasswordReset(email) {
+  return postAuthRequest("/api/v1/auth/password-reset/request", { email });
+}
+
+export function resetReaderPassword(payload) {
+  return postAuthRequest("/api/v1/auth/password-reset/confirm", payload);
+}
