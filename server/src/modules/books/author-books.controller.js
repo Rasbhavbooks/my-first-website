@@ -38,6 +38,11 @@ function validFields(body, requireDescription = false) {
   return { title, description, language, category, price };
 }
 
+function assetDto(asset) {
+  if (!asset) return null;
+  return { fileName: asset.fileName, contentType: asset.contentType, size: asset.size, scanStatus: asset.scanStatus, uploadedAt: asset.uploadedAt };
+}
+
 function authorBookDto(book) {
   return {
     id: book.id,
@@ -49,6 +54,7 @@ function authorBookDto(book) {
     price: book.price,
     status: book.status,
     adminNote: book.adminNote,
+    assets: { cover: assetDto(book.assets?.cover), manuscript: assetDto(book.assets?.manuscript) },
     submittedAt: book.submittedAt,
     reviewedAt: book.reviewedAt,
     createdAt: book.createdAt,
@@ -104,7 +110,8 @@ export async function submitAuthorBook(request, response) {
   });
   if (!current) return errorResponse(response, 404, "AUTHOR_BOOK_NOT_EDITABLE", "This draft was not found or can no longer be submitted.");
   const fields = validFields(current, true);
-  if (!fields) return errorResponse(response, 400, "AUTHOR_BOOK_INCOMPLETE", "Add a title and a description of at least 40 characters in the book's language before submitting.");
+  if (!current.assets?.cover?.key || !current.assets?.manuscript?.key) return errorResponse(response, 400, "AUTHOR_BOOK_ASSETS_REQUIRED", "Upload a cover and a manuscript and wait for the security scan before submitting.");
+  if (!fields return errorResponse(response, 400, "AUTHOR_BOOK_INCOMPLETE", "Add a title and a description of at least 40 characters in the book's language before submitting.");
   const book = await AuthorBook.findOneAndUpdate(
     { _id: current._id, authorId: request.reader._id, status: { $in: ["draft", "rejected"] } },
     { $set: { ...fields, status: "submitted", submittedAt: new Date(), adminNote: "" } },
