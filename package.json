@@ -14,5 +14,8 @@
     "preview": "npm run preview --workspace @rasbhav/client",
     "start:server": "npm run start --workspace @rasbhav/server",
     "test": "npm run test --workspaces --if-present"
+  },
+  "allowScripts": {
+    "argon2@0.45.2": true
   }
 }
