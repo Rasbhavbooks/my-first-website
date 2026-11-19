@@ -108,10 +108,6 @@ export default function AuthorBooksAdminPage() {
             {book.assets?.cover && <p><a href={`/api/v1/admin/author-books/${encodeURIComponent(book.id)}/assets/cover`} target="_blank" rel="noreferrer">{t.adminViewCover}: {book.assets.cover.fileName}</a></p>}
             {book.assets?.manuscript && <p><a href={`/api/v1/admin/author-books/${encodeURIComponent(book.id)}/assets/manuscript`} target="_blank" rel="noreferrer">{t.adminViewManuscript}: {book.assets.manuscript.fileName}</a></p>}
           </div>
-          <div className="admin-book-meta">
-            {book.assets?.cover && <p><a href={`/api/v1/admin/author-books/${encodeURIComponent(book.id)}/assets/cover`} target="_blank" rel="noreferrer">{t.adminViewCover}: {book.assets.cover.fileName}</a></p>}
-            {book.assets?.manuscript && <p><a href={`/api/v1/admin/author-books/${encodeURIComponent(book.id)}/assets/manuscript`} target="_blank" rel="noreferrer">{t.adminViewManuscript}: {book.assets.manuscript.fileName}</a></p>}
-          </div>
           <button type="button" disabled={chapterLoadingId === book.id} onClick={() => toggleChapters(book)}>
             {chapterLoadingId === book.id ? t.loadingChapters : expandedBookId === book.id ? t.hideChapters : t.viewChapters}
           </button>
