@@ -22,7 +22,7 @@ export default function AuthorStudioPage() {
   const { user, loading } = useAuth();
   const { t } = useLanguage();
   const [profile, setProfile] = useState(null);
-  const [form, setForm] = useState({ authorName: "", biography: "", websiteUrl: "" });
+  const [form, setForm] = useState({ authorName: "", biography: "", websiteUrl: "", profilePhotoUrl: "", coverImageUrl: "" });
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -32,7 +32,7 @@ export default function AuthorStudioPage() {
     getMyAuthorProfile()
       .then(({ author }) => {
         setProfile(author);
-        setForm({ authorName: author.authorName, biography: author.biography, websiteUrl: author.websiteUrl || "" });
+        setForm({ authorName: author.authorName, biography: author.biography, websiteUrl: author.websiteUrl || "", profilePhotoUrl: author.profilePhotoUrl || "", coverImageUrl: author.coverImageUrl || "" });
       })
       .catch(() => setError(t.authorProfileError));
   }, [user?.id, user?.role]);
@@ -67,6 +67,8 @@ export default function AuthorStudioPage() {
           <label className="author-studio-field">{t.authorName}<input value={form.authorName} required minLength={2} maxLength={100} onChange={(event) => setForm({ ...form, authorName: event.target.value })} /></label>
           <label className="author-studio-field">{t.authorBiography}<textarea value={form.biography} required minLength={40} maxLength={2000} onChange={(event) => setForm({ ...form, biography: event.target.value })} /></label>
           <label className="author-studio-field">{t.authorWebsite}<input type="url" inputMode="url" placeholder="https://…" value={form.websiteUrl} maxLength={500} onChange={(event) => setForm({ ...form, websiteUrl: event.target.value })} /></label>
+          <label className="author-studio-field">{t.authorProfilePhoto}<input type="url" inputMode="url" placeholder="https://…" value={form.profilePhotoUrl} maxLength={500} onChange={(event) => setForm({ ...form, profilePhotoUrl: event.target.value })} /></label>
+          <label className="author-studio-field">{t.authorCoverImage}<input type="url" inputMode="url" placeholder="https://…" value={form.coverImageUrl} maxLength={500} onChange={(event) => setForm({ ...form, coverImageUrl: event.target.value })} /></label>
           <button className="author-studio-submit" disabled={busy || !profile}>{busy ? t.savingChanges : t.saveChanges}</button>
         </form>
       </section>
