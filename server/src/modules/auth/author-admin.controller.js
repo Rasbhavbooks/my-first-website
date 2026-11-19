@@ -88,6 +88,7 @@ export async function reviewAuthorApplication(request, response) {
             $set: {
               slug,
               authorName: application.authorName,
+              catalogueAuthorName: application.authorName,
               biography: application.biography,
               writingLanguages: application.writingLanguages,
               genres: application.genres,
