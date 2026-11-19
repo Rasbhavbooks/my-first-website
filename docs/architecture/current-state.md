@@ -21,14 +21,15 @@ This file records implementation status; the complete requirements remain in the
 - Authors can create and edit book drafts and submit completed metadata for administrator review. Admins can approve or request changes with a note. Author-owned routes enforce author role and ownership; admin review routes require admin access.
 - Author book drafts accept JPEG/PNG/WebP covers up to 5 MB and PDF manuscripts up to 25 MB. The API checks MIME type and file signatures, requires a successful ClamAV scan, then stores files in a private Cloudflare R2 bucket. MongoDB stores metadata and private object keys; API responses never expose keys or public object URLs.
 - Authors can retrieve only their own book files; admins can retrieve files for submitted or approved books. Upload endpoints are rate-limited, filenames are sanitized, and downloads are sent as attachments with no-store and nosniff headers.
+- Authors can create, edit, and delete up to 100 plain-text chapters per draft, with a 100,000-character limit per chapter. Chapter records are separate from book documents, private to the owning author, and visible to admins only while the book is under review. Public chapter reading is not enabled.
 - File upload stays unavailable until R2 credentials and a reachable ClamAV daemon are configured. Admin approval currently records a review decision only; it does not publish to the public catalogue or enable sales/read access.
 - No admin account is automatically created; an operator must grant the admin role through a trusted database procedure before using admin pages.
 - GitHub Actions runs the repository's existing quality checks on pushes.
 
 ## Not implemented
 
-Secure admin provisioning, book publication to the public catalogue, account deletion/export, verified-purchase review labels, helpful-review voting, production email deliverability monitoring, book-file storage and reading, purchases/payments, subscriptions, royalty ledger, CMS, affiliates, institutions, audiobooks, AI tools, and mobile apps.
+Secure admin provisioning, book publication to the public catalogue, account deletion/export, verified-purchase review labels, helpful-review voting, production email deliverability monitoring, paid reader access and reading, purchases/payments, subscriptions, royalty ledger, CMS, affiliates, institutions, audiobooks, AI tools, and mobile apps.
 
 ## Next phase
 
-Continue Phase 5: configure the private Cloudflare R2 bucket and ClamAV daemon for the runtime, then complete the admin approval-to-catalogue publishing workflow. Upload code is in place but fails closed until both services are configured. Configure email secrets and the public frontend URL before enabling production registration or password reset. Follow the phases and Definition of Done in the master architecture.
+Continue Phase 5: configure the private Cloudflare R2 bucket and ClamAV daemon for the runtime, then complete the admin approval-to-catalogue publishing workflow when author rights wording is approved. Storefront improvements, sales analytics, and reader CRM remain pending. Upload code is in place but fails closed until both services are configured. Configure email secrets and the public frontend URL before enabling production registration or password reset. Follow the phases and Definition of Done in the master architecture.
