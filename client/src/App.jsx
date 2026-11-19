@@ -6,9 +6,11 @@ import AppRoutes from "./routes/AppRoutes.jsx";
 export default function App() {
   return (
     <LanguageProvider>
-      <WishlistProvider>
-        <AppRoutes />
-      </WishlistProvider>
+      <AuthProvider>
+        <WishlistProvider>
+          <AppRoutes />
+        </WishlistProvider>
+      </AuthProvider>
     </LanguageProvider>
   );
 }
