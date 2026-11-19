@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Link, useParams } from "react-router";
 import { getBookTitle } from "../../data/books.js";
+import BookReviews from "../../components/books/BookReviews.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { getBookById } from "../../services/bookService.js";
 
@@ -47,6 +48,7 @@ export default function BookDetailsPage() {
           <p className="demo-note">{t.demoNotice}</p>
         </article>
       </div>
+      <BookReviews bookId={book.id} />
     </main>
   );
 }
