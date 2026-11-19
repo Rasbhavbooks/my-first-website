@@ -1,6 +1,7 @@
 import AuthorProfile from "./author-profile.model.js";
 import Book from "../books/book.model.js";
 import AuthorFollow from "./author-follow.model.js";
+import AuthorBook from "../books/author-book.model.js";
 
 function validOptionalHttpsUrl(value) {
   if (!value) return true;
@@ -29,7 +30,7 @@ function publicAuthorDto(profile) {
 
 async function getAuthorStats(profile) {
   const authorKey = profile.catalogueAuthorName.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
-  const [followerIds, catalogueBookCount] = await Promise.all([
+  const [followerIds, catalogueBookCount, draftCount, submittedCount, approvedCount, changesRequestedCount] = await Promise.all([
     AuthorFollow.distinct("userId", {
       $or: [
         { authorProfileId: profile._id },
@@ -37,8 +38,19 @@ async function getAuthorStats(profile) {
       ],
     }),
     Book.countDocuments({ author: profile.catalogueAuthorName }),
+    AuthorBook.countDocuments({ authorId: profile.userId, status: "draft" }),
+    AuthorBook.countDocuments({ authorId: profile.userId, status: "submitted" }),
+    AuthorBook.countDocuments({ authorId: profile.userId, status: "approved" }),
+    AuthorBook.countDocuments({ authorId: profile.userId, status: "rejected" }),
   ]);
-  return { followerCount: followerIds.length, catalogueBookCount };
+  return {
+    followerCount: followerIds.length,
+    catalogueBookCount,
+    draftCount,
+    submittedCount,
+    approvedCount,
+    changesRequestedCount,
+  };
 }
 
 export async function getPublicAuthorProfile(request, response) {
