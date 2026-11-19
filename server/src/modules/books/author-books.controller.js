@@ -107,7 +107,7 @@ export async function submitAuthorBook(request, response) {
     _id: request.params.bookId,
     authorId: request.reader._id,
     status: { $in: ["draft", "rejected"] },
-  });
+  }).select("+assets.cover.key +assets.manuscript.key");
   if (!current) return errorResponse(response, 404, "AUTHOR_BOOK_NOT_EDITABLE", "This draft was not found or can no longer be submitted.");
   const fields = validFields(current, true);
   if (!current.assets?.cover?.key || !current.assets?.manuscript?.key) return errorResponse(response, 400, "AUTHOR_BOOK_ASSETS_REQUIRED", "Upload a cover and a manuscript and wait for the security scan before submitting.");
