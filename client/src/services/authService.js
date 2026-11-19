@@ -40,3 +40,15 @@ export async function getReaderSession() {
 export function logoutReader() {
   return postAuthRequest("/api/v1/auth/logout", {});
 }
+
+export function getReaderProfile() {
+  return postAuthRequest("/api/v1/auth/profile", undefined, "GET");
+}
+
+export function updateReaderProfile(payload) {
+  return postAuthRequest("/api/v1/auth/profile", payload, "PATCH");
+}
+
+export function changeReaderPassword(payload) {
+  return postAuthRequest("/api/v1/auth/change-password", payload);
+}
