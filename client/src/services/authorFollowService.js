@@ -32,3 +32,11 @@ export async function followAuthor(authorName) {
 export function unfollowAuthor(authorName) {
   return request(`/api/v1/reader/follows/${encodeURIComponent(authorName)}`, { method: "DELETE" });
 }
+
+export function followAuthorProfile(slug) {
+  return request(`/api/v1/reader/follows/profiles/${encodeURIComponent(slug)}`, { method: "POST" });
+}
+
+export function unfollowAuthorProfile(slug) {
+  return request(`/api/v1/reader/follows/profiles/${encodeURIComponent(slug)}`, { method: "DELETE" });
+}
