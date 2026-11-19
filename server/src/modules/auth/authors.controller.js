@@ -27,6 +27,20 @@ function publicAuthorDto(profile) {
   };
 }
 
+async function getAuthorStats(profile) {
+  const authorKey = profile.catalogueAuthorName.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
+  const [followerIds, catalogueBookCount] = await Promise.all([
+    AuthorFollow.distinct("userId", {
+      $or: [
+        { authorProfileId: profile._id },
+        { authorKey },
+      ],
+    }),
+    Book.countDocuments({ author: profile.catalogueAuthorName }),
+  ]);
+  return { followerCount: followerIds.length, catalogueBookCount };
+}
+
 export async function getPublicAuthorProfile(request, response) {
   const profile = await AuthorProfile.findOne({ slug: request.params.slug, status: "active" }).lean();
   if (!profile) {
@@ -38,16 +52,11 @@ export async function getPublicAuthorProfile(request, response) {
     .sort({ createdAt: -1 })
     .limit(50)
     .lean();
-  const followerIds = await AuthorFollow.distinct("userId", {
-    $or: [
-      { authorProfileId: profile._id },
-      { authorKey: profile.catalogueAuthorName.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US") },
-    ],
-  });
+  const stats = await getAuthorStats(profile);
   response.setHeader("Cache-Control", "public, max-age=60");
   return response.json({
     data: {
-      author: { ...publicAuthorDto(profile), followerCount: followerIds.length },
+      author: { ...publicAuthorDto(profile), ...stats },
       books: books.map(({ _id, catalogueId, ...book }) => ({ ...book, id: catalogueId })),
     },
   });
@@ -59,7 +68,7 @@ export async function getMyAuthorProfile(request, response) {
     return response.status(404).json({ error: { code: "AUTHOR_PROFILE_NOT_FOUND", message: "Your author profile was not found." } });
   }
   response.setHeader("Cache-Control", "no-store");
-  return response.json({ data: { author: { ...publicAuthorDto(profile), id: profile.id } } });
+  return response.json({ data: { author: { ...publicAuthorDto(profile), id: profile.id, ...await getAuthorStats(profile) } } });
 }
 
 export async function updateMyAuthorProfile(request, response) {
@@ -90,5 +99,5 @@ export async function updateMyAuthorProfile(request, response) {
   profile.coverImageUrl = coverImageUrl;
   await profile.save();
   response.setHeader("Cache-Control", "no-store");
-  return response.json({ data: { author: { ...publicAuthorDto(profile), id: profile.id } } });
+  return response.json({ data: { author: { ...publicAuthorDto(profile), id: profile.id, ...await getAuthorStats(profile) } } });
 }
