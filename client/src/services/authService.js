@@ -61,3 +61,8 @@ export function requestReaderPasswordReset(email) {
 export function resetReaderPassword(payload) {
   return postAuthRequest("/api/v1/auth/password-reset/confirm", payload);
 }
+
+
+export function resendReaderVerification(email) {
+  return postAuthRequest("/api/v1/auth/resend-verification", { email });
+}
