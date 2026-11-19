@@ -6,6 +6,7 @@ import WishlistPage from "../pages/Wishlist/WishlistPage.jsx";
 import RegisterPage from "../pages/Auth/RegisterPage.jsx";
 import VerifyEmailPage from "../pages/Auth/VerifyEmailPage.jsx";
 import LoginPage from "../pages/Auth/LoginPage.jsx";
+import LoginPortalPage from "../pages/Auth/LoginPortalPage.jsx";
 import AccountPage from "../pages/Auth/AccountPage.jsx";
 import PasswordResetPage from "../pages/Auth/PasswordResetPage.jsx";
 import ReviewModerationPage from "../pages/Admin/ReviewModerationPage.jsx";
@@ -24,7 +25,10 @@ export default function AppRoutes() {
         <Route path="wishlist" element={<WishlistPage />} />
         <Route path="register" element={<RegisterPage />} />
         <Route path="verify-email" element={<VerifyEmailPage />} />
-        <Route path="login" element={<LoginPage />} />
+        <Route path="login" element={<LoginPortalPage />} />
+        <Route path="reader/login" element={<LoginPage expectedRole="reader" />} />
+        <Route path="author/login" element={<LoginPage expectedRole="author" />} />
+        <Route path="admin/login" element={<LoginPage expectedRole="admin" />} />
         <Route path="password-reset" element={<PasswordResetPage />} />
         <Route path="admin/review-moderation" element={<ReviewModerationPage />} />
         <Route path="admin/author-applications" element={<AuthorApplicationsPage />} />
