@@ -83,7 +83,7 @@ export default function AuthorBooksAdminPage() {
         <article className="admin-book-card" key={book.id}>
           <h2>{localizedText(book.title, book.language)}</h2>
           <p className="admin-book-meta">{book.authorName} · {book.author?.displayName} · {book.author?.email}</p>
-          <p className="admin-book-meta">{t.bookLanguage}: {t.languages[book.language]} · {t.bookCategory}: {t.categories[book.category] || book.category} · {t.bookPriceInr}: ₹{Number(book.price).toFixed(2)}</p>
+          <p className="admin-book-meta">{t.bookLanguage}: {t.bookLanguages[book.language]} · {t.bookCategory}: {t.categories[book.category] || book.category} · {t.bookPriceInr}: ₹{Number(book.price).toFixed(2)}</p>
           <p className="admin-book-description">{localizedText(book.description, book.language)}</p>
           <label className="admin-book-note">{t.adminBookNote}
             <input value={notes[book.id] || ""} maxLength={800} onChange={(event) => setNotes((current) => ({ ...current, [book.id]: event.target.value }))} />
