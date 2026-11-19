@@ -39,13 +39,14 @@ async function getPublicAuthorStats(profile) {
 
 async function getAuthorStats(profile) {
   const authorKey = profile.catalogueAuthorName.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
-  const [followerIds, catalogueBookCount, draftCount, submittedCount, approvedCount, changesRequestedCount] = await Promise.all([
-    AuthorFollow.distinct("userId", {
-      $or: [
-        { authorProfileId: profile._id },
-        { authorKey },
-      ],
-    }),
+  const followFilter = { $or: [{ authorProfileId: profile._id }, { authorKey }] };
+  const now = Date.now();
+  const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+  const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+  const [followerIds, newFollowers7Days, newFollowers30Days, catalogueBookCount, draftCount, submittedCount, approvedCount, changesRequestedCount] = await Promise.all([
+    AuthorFollow.distinct("userId", followFilter),
+    AuthorFollow.distinct("userId", { $and: [followFilter, { createdAt: { $gte: sevenDaysAgo } }] }),
+    AuthorFollow.distinct("userId", { $and: [followFilter, { createdAt: { $gte: thirtyDaysAgo } }] }),
     Book.countDocuments({ author: profile.catalogueAuthorName }),
     AuthorBook.countDocuments({ authorId: profile.userId, status: "draft" }),
     AuthorBook.countDocuments({ authorId: profile.userId, status: "submitted" }),
@@ -54,6 +55,8 @@ async function getAuthorStats(profile) {
   ]);
   return {
     followerCount: followerIds.length,
+    newFollowers7Days: newFollowers7Days.length,
+    newFollowers30Days: newFollowers30Days.length,
     catalogueBookCount,
     draftCount,
     submittedCount,
