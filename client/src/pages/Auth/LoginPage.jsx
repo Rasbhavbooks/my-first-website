@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 
@@ -24,6 +24,7 @@ const loginStyles = `
 
 export default function LoginPage() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const { user, loading, signIn, signOut } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
@@ -41,6 +42,7 @@ export default function LoginPage() {
     try {
       await signIn(form);
       setForm((current) => ({ ...current, password: "" }));
+      navigate("/", { replace: true });
     } catch (requestError) {
       if (requestError.code === "EMAIL_NOT_VERIFIED") setError(t.verifyFirst);
       else setError(requestError.code === "INVALID_CREDENTIALS" ? t.loginError : t.registrationError);
