@@ -126,7 +126,7 @@ export default function AuthorBooksPage() {
       await reload();
       setNotice(t.bookSubmitted);
     } catch (requestError) {
-      setError(requestError.code === "AUTHOR_BOOK_INCOMPLETE" ? t.bookSummaryHelp : t.authorBookError);
+      setError(requestError.code === "AUTHOR_BOOK_INCOMPLETE" ? t.bookSubmissionIncomplete : t.authorBookError);
     } finally {
       setBusy(false);
     }
@@ -167,9 +167,9 @@ export default function AuthorBooksPage() {
                 <div className="author-book-grid">
                   <label className="author-book-field">{t.bookLanguage}
                     <select value={form.language} disabled={!editable} onChange={(event) => setForm((current) => ({ ...current, language: event.target.value }))}>
-                      <option value="Gujarati">{t.languages.Gujarati}</option>
-                      <option value="Hindi">{t.languages.Hindi}</option>
-                      <option value="English">{t.languages.English}</option>
+                      <option value="Gujarati">{t.bookLanguages.Gujarati}</option>
+                      <option value="Hindi">{t.bookLanguages.Hindi}</option>
+                      <option value="English">{t.bookLanguages.English}</option>
                     </select>
                   </label>
                   <label className="author-book-field">{t.bookCategory}
