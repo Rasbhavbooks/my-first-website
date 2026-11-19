@@ -159,7 +159,7 @@ export default function BookReviews({ bookId }) {
       <style>{styles}</style>
       <div className="reviews-heading">
         <h2 id="reviews-title">{t.reviewsTitle}</h2>
-        <div className="reviews-summary" aria-label={t.ratingSummary(data.averageRating, data.ratingCount)}>
+        <div className="reviews-summary" aria-label={`${data.averageRating} ${t.averageRating}, ${data.ratingCount} ${t.reviewCount}`}>
           {data.ratingCount ? <><strong>{data.averageRating.toFixed(1)}</strong> ★ · {data.ratingCount} {t.reviewCount}</> : t.noRatings}
         </div>
       </div>
@@ -199,7 +199,7 @@ export default function BookReviews({ bookId }) {
                     : <span className="review-avatar" aria-hidden="true" />}
                   <div><div className="review-reader-name">{review.reader.displayName}</div><div className="review-date">{new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(review.createdAt))}</div></div>
                 </div>
-                <span className="review-stars" aria-label={t.ratingOutOfFive(review.rating)}>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
+                <span className="review-stars" aria-label={`${review.rating} ${t.outOfFive}`}>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
               </div>
               <p className="review-body">{review.body}</p>
               {user && myReview?.id !== review.id && (
