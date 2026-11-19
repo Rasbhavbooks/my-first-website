@@ -30,7 +30,7 @@ export async function getPublicAuthorProfile(request, response) {
     .limit(50)
     .lean();
   response.setHeader("Cache-Control", "public, max-age=60");
-  return response.json({ data: { author: publicAuthorDto(profile), books } });
+  return response.json({ data: { author: publicAuthorDto(profile), books: books.map(({ _id, catalogueId, ...book }) => ({ ...book, id: catalogueId })) } });
 }
 
 export async function getMyAuthorProfile(request, response) {
