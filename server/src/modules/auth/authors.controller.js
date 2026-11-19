@@ -29,12 +29,21 @@ function publicAuthorDto(profile) {
 }
 
 async function listAuthorCatalogueBooks(profile) {
-  const books = await Book.find({ author: profile.catalogueAuthorName })
-    .select("catalogueId title author language category")
-    .sort({ createdAt: -1 })
-    .limit(50)
-    .lean();
-  return books.map(({ _id, catalogueId, ...book }) => ({ ...book, id: catalogueId }));
+  const featuredBookIds = profile.featuredBookIds || [];
+  const [recentBooks, featuredBooks] = await Promise.all([
+    Book.find({ author: profile.catalogueAuthorName })
+      .select("catalogueId title author language category")
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean(),
+    featuredBookIds.length
+      ? Book.find({ author: profile.catalogueAuthorName, catalogueId: { $in: featuredBookIds } })
+        .select("catalogueId title author language category")
+        .lean()
+      : Promise.resolve([]),
+  ]);
+  const uniqueBooks = new Map([...recentBooks, ...featuredBooks].map((book) => [book.catalogueId, book]));
+  return [...uniqueBooks.values()].map(({ _id, catalogueId, ...book }) => ({ ...book, id: catalogueId }));
 }
 
 async function getPublicAuthorStats(profile) {
@@ -80,12 +89,21 @@ export async function getPublicAuthorProfile(request, response) {
     return response.status(404).json({ error: { code: "AUTHOR_NOT_FOUND", message: "Author profile not found." } });
   }
 
-  const books = await Book.find({ author: profile.catalogueAuthorName })
-    .select("catalogueId title author language category price tone badge")
-    .sort({ createdAt: -1 })
-    .limit(50)
-    .lean();
-  const bookDtos = books.map(({ _id, catalogueId, ...book }) => ({ ...book, id: catalogueId }));
+  const featuredBookIds = profile.featuredBookIds || [];
+  const [recentBooks, selectedBooks] = await Promise.all([
+    Book.find({ author: profile.catalogueAuthorName })
+      .select("catalogueId title author language category price tone badge")
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean(),
+    featuredBookIds.length
+      ? Book.find({ author: profile.catalogueAuthorName, catalogueId: { $in: featuredBookIds } })
+        .select("catalogueId title author language category price tone badge")
+        .lean()
+      : Promise.resolve([]),
+  ]);
+  const uniqueBooks = new Map([...recentBooks, ...selectedBooks].map((book) => [book.catalogueId, book]));
+  const bookDtos = [...uniqueBooks.values()].map(({ _id, catalogueId, ...book }) => ({ ...book, id: catalogueId }));
   const featuredById = new Map(bookDtos.map((book) => [book.id, book]));
   const featuredBooks = (profile.featuredBookIds || []).map((id) => featuredById.get(id)).filter(Boolean);
   const stats = await getPublicAuthorStats(profile);
@@ -105,10 +123,12 @@ export async function getMyAuthorProfile(request, response) {
     return response.status(404).json({ error: { code: "AUTHOR_PROFILE_NOT_FOUND", message: "Your author profile was not found." } });
   }
   const [stats, catalogueBooks] = await Promise.all([getAuthorStats(profile), listAuthorCatalogueBooks(profile)]);
+  const availableBookIds = new Set(catalogueBooks.map((book) => book.id));
+  const featuredBookIds = (profile.featuredBookIds || []).filter((id) => availableBookIds.has(id));
   response.setHeader("Cache-Control", "no-store");
   return response.json({
     data: {
-      author: { ...publicAuthorDto(profile), id: profile.id, featuredBookIds: profile.featuredBookIds || [], ...stats },
+      author: { ...publicAuthorDto(profile), id: profile.id, featuredBookIds, ...stats },
       catalogueBooks,
     },
   });
