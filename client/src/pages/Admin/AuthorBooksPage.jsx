@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
-import { decideAuthorBook, getSubmittedAuthorBooks } from "../../services/adminBookService.js";
+import { decideAuthorBook, getSubmittedAuthorBookChapters, getSubmittedAuthorBooks } from "../../services/adminBookService.js";
 
 const LANGUAGE_KEYS = { Gujarati: "gu", Hindi: "hi", English: "en" };
 const styles = `
@@ -34,6 +34,9 @@ export default function AuthorBooksAdminPage() {
   const [books, setBooks] = useState([]);
   const [notes, setNotes] = useState({});
   const [busyId, setBusyId] = useState("");
+  const [expandedBookId, setExpandedBookId] = useState("");
+  const [chaptersByBook, setChaptersByBook] = useState({});
+  const [chapterLoadingId, setChapterLoadingId] = useState("");
   const [error, setError] = useState("");
 
   async function loadBooks() {
@@ -53,6 +56,22 @@ export default function AuthorBooksAdminPage() {
   if (loading) return <main className="admin-books"><p>{t.loadingAccount}</p></main>;
   if (!user) return <Navigate to="/admin/login" replace />;
   if (user.role !== "admin") return <main className="admin-books"><h1>{t.adminOnly}</h1><Link to="/">{t.backHome}</Link></main>;
+
+  async function toggleChapters(book) {
+    if (expandedBookId === book.id) { setExpandedBookId(""); return; }
+    setExpandedBookId(book.id);
+    if (chaptersByBook[book.id]) return;
+    setChapterLoadingId(book.id);
+    try {
+      const result = await getSubmittedAuthorBookChapters(book.id);
+      setChaptersByBook((current) => ({ ...current, [book.id]: result.chapters || [] }));
+    } catch {
+      setError(t.bookReviewError);
+      setExpandedBookId("");
+    } finally {
+      setChapterLoadingId("");
+    }
+  }
 
   async function review(book, decision) {
     setBusyId(book.id); setError("");
@@ -89,6 +108,22 @@ export default function AuthorBooksAdminPage() {
             {book.assets?.cover && <p><a href={`/api/v1/admin/author-books/${encodeURIComponent(book.id)}/assets/cover`} target="_blank" rel="noreferrer">{t.adminViewCover}: {book.assets.cover.fileName}</a></p>}
             {book.assets?.manuscript && <p><a href={`/api/v1/admin/author-books/${encodeURIComponent(book.id)}/assets/manuscript`} target="_blank" rel="noreferrer">{t.adminViewManuscript}: {book.assets.manuscript.fileName}</a></p>}
           </div>
+          <div className="admin-book-meta">
+            {book.assets?.cover && <p><a href={`/api/v1/admin/author-books/${encodeURIComponent(book.id)}/assets/cover`} target="_blank" rel="noreferrer">{t.adminViewCover}: {book.assets.cover.fileName}</a></p>}
+            {book.assets?.manuscript && <p><a href={`/api/v1/admin/author-books/${encodeURIComponent(book.id)}/assets/manuscript`} target="_blank" rel="noreferrer">{t.adminViewManuscript}: {book.assets.manuscript.fileName}</a></p>}
+          </div>
+          <button type="button" disabled={chapterLoadingId === book.id} onClick={() => toggleChapters(book)}>
+            {chapterLoadingId === book.id ? t.loadingChapters : expandedBookId === book.id ? t.hideChapters : t.viewChapters}
+          </button>
+          {expandedBookId === book.id && <section aria-label={t.bookChapters}>
+            <p className="admin-book-meta">{t.chapterPrivacyNote}</p>
+            {!chaptersByBook[book.id]?.length ? <p className="admin-book-meta">{t.noChapters}</p> : chaptersByBook[book.id].map((chapter) => (
+              <article className="admin-book-card" key={chapter.id}>
+                <h3>{chapter.order}. {chapter.title}</h3>
+                <p className="admin-book-description">{chapter.content}</p>
+              </article>
+            ))}
+          </section>}
           <label className="admin-book-note">{t.adminBookNote}
             <input value={notes[book.id] || ""} maxLength={800} onChange={(event) => setNotes((current) => ({ ...current, [book.id]: event.target.value }))} />
           </label>
