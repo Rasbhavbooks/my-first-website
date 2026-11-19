@@ -4,7 +4,12 @@ import AuthorFollow from "./author-follow.model.js";
 
 function validOptionalHttpsUrl(value) {
   if (!value) return true;
-  try { return new URL(value).protocol === "https:"; } catch { return false; }
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && Boolean(url.hostname) && !url.username && !url.password;
+  } catch {
+    return false;
+  }
 }
 
 function publicAuthorDto(profile) {
