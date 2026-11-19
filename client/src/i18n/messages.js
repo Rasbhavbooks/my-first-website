@@ -1,6 +1,6 @@
 export const messages = {
   en: {
-    discover: "Discover", authors: "For authors", about: "Our story", language: "Language", join: "Join the community",
+    discover: "Discover", authors: "For authors", about: "Our story", language: "Language", join: "Join the community", createAccount: "Create account", creatingAccount: "Creating account…", registerTitle: "Create your reader account", registerIntro: "Join Rasbhav Books and keep stories close.", displayName: "Your name", emailAddress: "Email address", password: "Password", confirmPassword: "Confirm password", passwordHint: "Use at least 12 characters with an uppercase letter, a lowercase letter and a number.", passwordsDoNotMatch: "The passwords do not match.", registrationSuccess: "Account created. Verify your email to activate it.", emailVerified: "Email verified. Your reader account is active.", verifyEmail: "Verify email", verifyingEmail: "Verifying email…", registrationError: "We could not complete this request. Please try again.", accountExists: "An account with this email already exists.",
     eyebrow: "Stories rooted in India, shared with the world", headline: "Every book has a soul.",
     intro: "Find your next favourite read. Meet independent voices writing in Gujarati, Hindi and English.",
     explore: "Explore books", authorCta: "I'm an author", note: "A home for stories that stay with you.",
@@ -19,7 +19,7 @@ export const messages = {
     copyright: "© 2026 Rasbhav Books. Every book has a soul.", by: "by", filter: "Filter books by category", notFound: "This page could not be found.", backHome: "Back home",
   },
   gu: {
-    discover: "શોધો", authors: "લેખકો માટે", about: "અમારી વાત", language: "ભાષા", join: "સમુદાયમાં જોડાઓ",
+    discover: "શોધો", authors: "લેખકો માટે", about: "અમારી વાત", language: "ભાષા", join: "સમુદાયમાં જોડાઓ", createAccount: "ખાતું બનાવો", creatingAccount: "ખાતું બની રહ્યું છે…", registerTitle: "વાચક તરીકે ખાતું બનાવો", registerIntro: "રસભાવ બુક્સ સાથે જોડાઓ અને મનગમતી વાર્તાઓ સાચવો.", displayName: "તમારું નામ", emailAddress: "ઈમેલ સરનામું", password: "પાસવર્ડ", confirmPassword: "પાસવર્ડ ફરી લખો", passwordHint: "ઓછામાં ઓછા 12 અક્ષર, એક મોટો અક્ષર, એક નાનો અક્ષર અને એક આંકડો વાપરો.", passwordsDoNotMatch: "બંને પાસવર્ડ સરખા નથી.", registrationSuccess: "ખાતું બન્યું. તેને ચાલુ કરવા ઈમેલ ચકાસો.", emailVerified: "ઈમેલ ચકાસાયું. તમારું વાચક ખાતું ચાલુ છે.", verifyEmail: "ઈમેલ ચકાસો", verifyingEmail: "ઈમેલ ચકાસાઈ રહ્યું છે…", registrationError: "આ વિનંતી પૂરી થઈ શકી નથી. ફરી પ્રયત્ન કરો.", accountExists: "આ ઈમેલથી પહેલેથી ખાતું છે.",
     eyebrow: "ભારતની માટીમાંથી ઊગેલી, દુનિયા સુધી પહોંચતી વાર્તાઓ", headline: "દરેક પુસ્તકમાં એક આત્મા છે.",
     intro: "તમારું મનગમતું પુસ્તક શોધો. ગુજરાતી, હિન્દી અને અંગ્રેજીમાં લખતા સ્વતંત્ર અવાજોને મળો.",
     explore: "પુસ્તકો જુઓ", authorCta: "હું લેખક છું", note: "તમારી સાથે રહેતી વાર્તાઓનું ઘર.",
@@ -38,7 +38,7 @@ export const messages = {
     copyright: "© 2026 Rasbhav Books. દરેક પુસ્તકમાં એક આત્મા છે.", by: "લેખક", filter: "પ્રકાર પ્રમાણે પુસ્તકો ગાળો", notFound: "આ પાનું મળ્યું નથી.", backHome: "મુખ્ય પાને જાઓ",
   },
   hi: {
-    discover: "खोजें", authors: "लेखकों के लिए", about: "हमारी कहानी", language: "भाषा", join: "समुदाय से जुड़ें",
+    discover: "खोजें", authors: "लेखकों के लिए", about: "हमारी कहानी", language: "भाषा", join: "समुदाय से जुड़ें", createAccount: "खाता बनाएँ", creatingAccount: "खाता बनाया जा रहा है…", registerTitle: "पाठक खाता बनाएँ", registerIntro: "Rasbhav Books से जुड़ें और कहानियों को अपने पास रखें।", displayName: "आपका नाम", emailAddress: "ईमेल पता", password: "पासवर्ड", confirmPassword: "पासवर्ड की पुष्टि करें", passwordHint: "कम से कम 12 अक्षर, एक बड़ा अक्षर, एक छोटा अक्षर और एक अंक इस्तेमाल करें।", passwordsDoNotMatch: "दोनों पासवर्ड मेल नहीं खाते।", registrationSuccess: "खाता बन गया। इसे सक्रिय करने के लिए ईमेल सत्यापित करें।", emailVerified: "ईमेल सत्यापित। आपका पाठक खाता सक्रिय है।", verifyEmail: "ईमेल सत्यापित करें", verifyingEmail: "ईमेल सत्यापित हो रहा है…", registrationError: "यह अनुरोध पूरा नहीं हो सका। फिर कोशिश करें।", accountExists: "इस ईमेल से पहले से खाता मौजूद है.",
     eyebrow: "भारत की मिट्टी से जन्मी, दुनिया तक पहुँचती कहानियाँ", headline: "हर किताब में एक आत्मा है।",
     intro: "अपनी अगली पसंदीदा किताब खोजें। गुजराती, हिंदी और अंग्रेज़ी की स्वतंत्र आवाज़ों से मिलें।",
     explore: "किताबें देखें", authorCta: "मैं लेखक हूँ", note: "उन कहानियों का घर जो आपके साथ रहती हैं।",
