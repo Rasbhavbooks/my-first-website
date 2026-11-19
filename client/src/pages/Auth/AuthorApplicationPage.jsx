@@ -25,7 +25,7 @@ const styles = `
 
 export default function AuthorApplicationPage() {
   const { t } = useLanguage();
-  const { user, loading } = useAuth();
+  const { user, loading, refreshSession } = useAuth();
   const [application, setApplication] = useState(null);
   const [form, setForm] = useState({ authorName: "", biography: "", writingLanguages: [], genres: "", writingSampleUrl: "" });
   const [busy, setBusy] = useState(false);
@@ -37,6 +37,7 @@ export default function AuthorApplicationPage() {
     getMyAuthorApplication()
       .then(({ application: saved }) => {
         setApplication(saved);
+        if (saved?.status === "approved") refreshSession();
         if (saved?.status === "rejected") {
           setForm({
             authorName: saved.authorName,
@@ -51,7 +52,7 @@ export default function AuthorApplicationPage() {
       })
       .catch(() => setError(t.applicationLoadError))
       .finally(() => setLoaded(true));
-  }, [user?.id, user?.role]);
+  }, [user?.id, user?.role, refreshSession]);
 
   if (loading) return <main className="author-apply"><p>{t.loadingAccount}</p></main>;
   if (!user) return <Navigate to="/login" replace />;
