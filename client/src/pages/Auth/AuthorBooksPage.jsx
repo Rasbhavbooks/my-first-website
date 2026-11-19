@@ -319,7 +319,6 @@ export default function AuthorBooksPage() {
                 </form>}
               </section>
             </>
-            </>
           )}
         </section>
       </div>
