@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
-import { createAuthorBookDraft, getMyAuthorBooks, saveAuthorBookDraft, submitAuthorBook, uploadAuthorBookAsset } from "../../services/authorBookService.js";
+import { createAuthorBookChapter, createAuthorBookDraft, deleteAuthorBookChapter, getMyAuthorBookChapters, getMyAuthorBooks, saveAuthorBookDraft, submitAuthorBook, updateAuthorBookChapter, uploadAuthorBookAsset } from "../../services/authorBookService.js";
 
 const LANGUAGE_KEYS = { Gujarati: "gu", Hindi: "hi", English: "en" };
 const LOCALE_NAMES = { en: "English", gu: "ગુજરાતી", hi: "हिन्दी" };
@@ -39,7 +39,7 @@ const styles = `
 .author-book-notice,.author-book-error,.author-book-warning{padding:12px;margin:12px 0;font-size:11px;line-height:1.7}
 .author-book-notice{background:#edf3e9;color:#39513d}.author-book-error{background:#f8ece8;color:#863d32}
 .author-book-warning{background:#fbf3df;color:#6c542a}
-.author-book-admin-note{color:#863d32;font-size:11px;line-height:1.7}
+.author-book-admin-note{color:#863d32;font-size:11px;line-height:1.7}\n.author-chapters{margin-top:22px;padding-top:20px;border-top:1px solid #e4ddd1}.author-chapters h3{font:500 20px var(--serif);color:#30252c}.author-chapter-card{margin:10px 0;padding:14px;border:1px solid #e4ddd1;background:#fff}.author-chapter-card p{white-space:pre-wrap;color:#514a44;font-size:11px;line-height:1.8}.author-chapter-actions{display:flex;flex-wrap:wrap;gap:8px}.author-chapter-actions button{min-height:34px;padding:0 10px;border:1px solid #30252c;background:transparent;color:#30252c;font-size:10px;cursor:pointer}.author-chapter-form{display:grid;gap:10px;margin-top:14px}
 .author-books-back{display:inline-block;margin:0 0 12px;color:#796747;font-size:11px}
 .author-books-empty{color:#77716a;font-size:12px;line-height:1.8}
 @media(max-width:720px){.author-books-layout{grid-template-columns:1fr}.author-book-grid{grid-template-columns:1fr}.author-books{padding:36px 16px 70px}}
@@ -58,6 +58,9 @@ export default function AuthorBooksPage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [uploadingAsset, setUploadingAsset] = useState("");
+  const [chapters, setChapters] = useState([]);
+  const [chapterForm, setChapterForm] = useState(null);
+  const [chapterBusy, setChapterBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
@@ -75,6 +78,17 @@ export default function AuthorBooksPage() {
       .finally(() => setPageLoading(false));
   }, [user?.id, user?.role, t.authorBookError]);
 
+  useEffect(() => {
+    if (!selectedId) { setChapters([]); setChapterForm(null); return undefined; }
+    setChapters([]);
+    setChapterForm(null);
+    let active = true;
+    getMyAuthorBookChapters(selectedId)
+      .then((result) => { if (active) setChapters(result.chapters || []); })
+      .catch(() => { if (active) setError(t.chapterLoadError); });
+    return () => { active = false; };
+  }, [selectedId, t.chapterLoadError]);
+
   if (loading) return <main className="author-books"><p>{t.loadingAccount}</p></main>;
   if (!user) return <Navigate to="/author/login" replace />;
   if (user.role !== "author") return <Navigate to="/author/apply" replace />;
@@ -84,6 +98,7 @@ export default function AuthorBooksPage() {
     setForm({ ...book, title: { ...book.title }, description: { ...book.description } });
     setError("");
     setNotice("");
+    setChapterForm(null);
   }
 
   async function createDraft() {
@@ -114,6 +129,53 @@ export default function AuthorBooksPage() {
       setError(t.authorBookError);
     } finally {
       setBusy(false);
+    }
+  }
+
+  function startNewChapter() {
+    setChapterForm({ id: "", title: "", content: "" });
+    setError("");
+  }
+
+  function editChapter(chapter) {
+    setChapterForm({ id: chapter.id, title: chapter.title, content: chapter.content });
+    setError("");
+  }
+
+  async function reloadChapters() {
+    const result = await getMyAuthorBookChapters(selectedId);
+    setChapters(result.chapters || []);
+  }
+
+  async function saveChapter(event) {
+    event.preventDefault();
+    if (!selectedId || !chapterForm) return;
+    setChapterBusy(true); setError(""); setNotice("");
+    try {
+      const payload = { title: chapterForm.title, content: chapterForm.content };
+      if (chapterForm.id) await updateAuthorBookChapter(selectedId, chapterForm.id, payload);
+      else await createAuthorBookChapter(selectedId, payload);
+      await reloadChapters();
+      setChapterForm(null);
+      setNotice(t.chapterSaved);
+    } catch (chapterError) {
+      setError(chapterError.code === "CHAPTER_LIMIT_REACHED" ? t.chapterLimitReached : t.chapterSaveError);
+    } finally {
+      setChapterBusy(false);
+    }
+  }
+
+  async function removeChapter(chapter) {
+    if (!window.confirm(t.confirmDeleteChapter)) return;
+    setChapterBusy(true); setError("");
+    try {
+      await deleteAuthorBookChapter(selectedId, chapter.id);
+      await reloadChapters();
+      if (chapterForm?.id === chapter.id) setChapterForm(null);
+    } catch {
+      setError(t.chapterSaveError);
+    } finally {
+      setChapterBusy(false);
     }
   }
 
@@ -228,6 +290,34 @@ export default function AuthorBooksPage() {
                   <button type="button" className="secondary" disabled={busy} onClick={sendForReview}>{busy ? t.savingChanges : t.submitBookForReview}</button>
                 </div>}
               </form>
+              <section className="author-chapters" aria-labelledby="author-chapters-title">
+                <h3 id="author-chapters-title">{t.bookChapters}</h3>
+                <p className="author-book-hint">{t.chapterPrivacyNote}</p>
+                {!chapters.length ? <p className="author-books-empty">{t.noChapters}</p> : chapters.map((chapter) => (
+                  <article className="author-chapter-card" key={chapter.id}>
+                    <strong>{chapter.order}. {chapter.title}</strong>
+                    <p>{chapter.content}</p>
+                    {editable && <div className="author-chapter-actions">
+                      <button type="button" disabled={chapterBusy} onClick={() => editChapter(chapter)}>{t.editChapter}</button>
+                      <button type="button" disabled={chapterBusy} onClick={() => removeChapter(chapter)}>{t.deleteChapter}</button>
+                    </div>}
+                  </article>
+                ))}
+                {editable && !chapterForm && <button className="author-book-new" type="button" disabled={chapterBusy} onClick={startNewChapter}>{t.addChapter}</button>}
+                {editable && chapterForm && <form className="author-chapter-form" onSubmit={saveChapter}>
+                  <label className="author-book-field">{t.chapterTitle}
+                    <input value={chapterForm.title} maxLength={160} required disabled={chapterBusy} onChange={(event) => setChapterForm((current) => ({ ...current, title: event.target.value }))} />
+                  </label>
+                  <label className="author-book-field">{t.chapterContent}
+                    <textarea value={chapterForm.content} maxLength={100000} required disabled={chapterBusy} onChange={(event) => setChapterForm((current) => ({ ...current, content: event.target.value }))} />
+                  </label>
+                  <p className="author-book-hint">{t.chapterContentHint}</p>
+                  <div className="author-book-actions">
+                    <button type="submit" disabled={chapterBusy}>{chapterBusy ? t.savingChanges : t.saveChapter}</button>
+                    <button className="secondary" type="button" disabled={chapterBusy} onClick={() => setChapterForm(null)}>{t.cancel}</button>
+                  </div>
+                </form>}
+              </section>
             </>
           )}
         </section>

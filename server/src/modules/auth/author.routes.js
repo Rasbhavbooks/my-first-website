@@ -4,6 +4,12 @@ import { requireAuthor, requireReader } from "./auth.middleware.js";
 import { getMyAuthorProfile, updateMyAuthorProfile } from "./authors.controller.js";
 import { createAuthorBookDraft, listMyAuthorBooks, submitAuthorBook, updateAuthorBookDraft } from "../books/author-books.controller.js";
 import { getMyAuthorBookAsset, uploadAuthorBookAsset } from "../books/author-book-assets.controller.js";
+import {
+  createAuthorBookChapter,
+  deleteAuthorBookChapter,
+  listMyAuthorBookChapters,
+  updateAuthorBookChapter,
+} from "../books/author-book-chapters.controller.js";
 
 const router = Router();
 const fileUploadLimiter = rateLimit({
@@ -39,6 +45,10 @@ router.use(requireReader, requireAuthor);
 router.get("/profile", getMyAuthorProfile);
 router.patch("/profile", profileWriteLimiter, updateMyAuthorProfile);
 router.get("/books", listMyAuthorBooks);
+router.get("/books/:bookId/chapters", listMyAuthorBookChapters);
+router.post("/books/:bookId/chapters", bookWriteLimiter, createAuthorBookChapter);
+router.patch("/books/:bookId/chapters/:chapterId", bookWriteLimiter, updateAuthorBookChapter);
+router.delete("/books/:bookId/chapters/:chapterId", bookWriteLimiter, deleteAuthorBookChapter);
 router.get("/books/:bookId/assets/:assetType", getMyAuthorBookAsset);
 router.put("/books/:bookId/assets/:assetType", fileUploadLimiter, parseBookFileWithLimit, uploadAuthorBookAsset);
 router.post("/books", bookWriteLimiter, createAuthorBookDraft);
