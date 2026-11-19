@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { changeReaderPassword, updateReaderProfile } from "../../services/authService.js";
+import FollowedAuthorsPanel from "../../components/account/FollowedAuthorsPanel.jsx";
 
 const accountStyles = `
 .account-page{max-width:900px;min-height:70vh;margin:auto;padding:65px 24px 90px}
@@ -154,6 +155,7 @@ export default function AccountPage() {
           </form>
         </section>
       </div>
+      <FollowedAuthorsPanel />
       <button className="account-submit" style={{ width: "min(100%, 260px)", marginTop: 18 }} type="button" disabled={busy} onClick={handleLogout}>{t.signOut}</button>
       <Link className="account-back" to="/">{t.backHome}</Link>
     </main>
