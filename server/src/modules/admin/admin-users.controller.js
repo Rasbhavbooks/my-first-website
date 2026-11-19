@@ -38,7 +38,7 @@ export async function listAdminUsers(request, response) {
   const [total, users] = await Promise.all([
     User.countDocuments(filter),
     User.find(filter)
-      .select("displayName email role accountStatus emailVerifiedAt createdAt")
+      .select("displayName email role accountStatus createdAt")
       .sort({ createdAt: -1, _id: -1 })
       .skip((page - 1) * PAGE_SIZE)
       .limit(PAGE_SIZE)
