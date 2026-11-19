@@ -28,6 +28,15 @@ function publicAuthorDto(profile) {
   };
 }
 
+async function listAuthorCatalogueBooks(profile) {
+  const books = await Book.find({ author: profile.catalogueAuthorName })
+    .select("catalogueId title author language category")
+    .sort({ createdAt: -1 })
+    .limit(50)
+    .lean();
+  return books.map(({ _id, catalogueId, ...book }) => ({ ...book, id: catalogueId }));
+}
+
 async function getPublicAuthorStats(profile) {
   const authorKey = profile.catalogueAuthorName.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
   const [followerIds, catalogueBookCount] = await Promise.all([
@@ -76,12 +85,16 @@ export async function getPublicAuthorProfile(request, response) {
     .sort({ createdAt: -1 })
     .limit(50)
     .lean();
+  const bookDtos = books.map(({ _id, catalogueId, ...book }) => ({ ...book, id: catalogueId }));
+  const featuredById = new Map(bookDtos.map((book) => [book.id, book]));
+  const featuredBooks = (profile.featuredBookIds || []).map((id) => featuredById.get(id)).filter(Boolean);
   const stats = await getPublicAuthorStats(profile);
   response.setHeader("Cache-Control", "public, max-age=60");
   return response.json({
     data: {
       author: { ...publicAuthorDto(profile), ...stats },
-      books: books.map(({ _id, catalogueId, ...book }) => ({ ...book, id: catalogueId })),
+      books: bookDtos,
+      featuredBooks,
     },
   });
 }
@@ -91,8 +104,14 @@ export async function getMyAuthorProfile(request, response) {
   if (!profile) {
     return response.status(404).json({ error: { code: "AUTHOR_PROFILE_NOT_FOUND", message: "Your author profile was not found." } });
   }
+  const [stats, catalogueBooks] = await Promise.all([getAuthorStats(profile), listAuthorCatalogueBooks(profile)]);
   response.setHeader("Cache-Control", "no-store");
-  return response.json({ data: { author: { ...publicAuthorDto(profile), id: profile.id, ...await getAuthorStats(profile) } } });
+  return response.json({
+    data: {
+      author: { ...publicAuthorDto(profile), id: profile.id, featuredBookIds: profile.featuredBookIds || [], ...stats },
+      catalogueBooks,
+    },
+  });
 }
 
 export async function updateMyAuthorProfile(request, response) {
@@ -106,6 +125,28 @@ export async function updateMyAuthorProfile(request, response) {
   const websiteUrl = typeof request.body?.websiteUrl === "string" ? request.body.websiteUrl.trim() : "";
   const profilePhotoUrl = typeof request.body?.profilePhotoUrl === "string" ? request.body.profilePhotoUrl.trim() : "";
   const coverImageUrl = typeof request.body?.coverImageUrl === "string" ? request.body.coverImageUrl.trim() : "";
+  const rawFeaturedBookIds = request.body?.featuredBookIds;
+  let featuredBookIds = profile.featuredBookIds || [];
+  if (rawFeaturedBookIds !== undefined) {
+    if (
+      !Array.isArray(rawFeaturedBookIds)
+      || rawFeaturedBookIds.length > 3
+      || rawFeaturedBookIds.some((id) => typeof id !== "string" || !id.trim() || id.trim().length > 120)
+    ) {
+      return response.status(400).json({ error: { code: "INVALID_FEATURED_BOOKS", message: "Choose up to three books from your catalogue." } });
+    }
+    featuredBookIds = rawFeaturedBookIds.map((id) => id.trim());
+    if (new Set(featuredBookIds).size !== featuredBookIds.length) {
+      return response.status(400).json({ error: { code: "INVALID_FEATURED_BOOKS", message: "Choose each featured book only once." } });
+    }
+    const validIds = await Book.distinct("catalogueId", {
+      author: profile.catalogueAuthorName,
+      catalogueId: { $in: featuredBookIds },
+    });
+    if (validIds.length !== featuredBookIds.length) {
+      return response.status(400).json({ error: { code: "INVALID_FEATURED_BOOKS", message: "Featured books must belong to your public catalogue." } });
+    }
+  }
   if (
     authorName.length < 2 || authorName.length > 100
     || biography.length < 40 || biography.length > 2000
@@ -121,6 +162,7 @@ export async function updateMyAuthorProfile(request, response) {
   profile.websiteUrl = websiteUrl;
   profile.profilePhotoUrl = profilePhotoUrl;
   profile.coverImageUrl = coverImageUrl;
+  profile.featuredBookIds = featuredBookIds;
   await profile.save();
   response.setHeader("Cache-Control", "no-store");
   return response.json({ data: { author: { ...publicAuthorDto(profile), id: profile.id, ...await getAuthorStats(profile) } } });
