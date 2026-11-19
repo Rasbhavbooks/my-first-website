@@ -18,15 +18,17 @@ This file records implementation status; the complete requirements remain in the
 - Signed-in readers can submit a writer application with biography, writing languages, genres, and an optional HTTPS sample link. Applications are rate-limited; pending applications cannot be duplicated, and rejected applications can be resubmitted.
 - Admins can view and approve/reject author applications. Approval uses a database transaction to create a public author profile and promote the reader to the author role. Author profile writes require the author role and are rate-limited.
 - Approved authors can update their public biography and HTTPS website link. Public author pages show approved profiles and catalogue books under the author's original catalogue credit.
-- Authors can create and edit book metadata drafts, save partial drafts, and submit completed details for administrator review. Admins can approve or request changes with a note. Author-owned book routes enforce author role and ownership; admin review routes require an admin role.
-- Book submission currently handles metadata only. Cover/manuscript upload, publication to the public catalogue, purchases, and reader access are not implemented by this step.
+- Authors can create and edit book drafts and submit completed metadata for administrator review. Admins can approve or request changes with a note. Author-owned routes enforce author role and ownership; admin review routes require admin access.
+- Author book drafts accept JPEG/PNG/WebP covers up to 5 MB and PDF manuscripts up to 25 MB. The API checks MIME type and file signatures, requires a successful ClamAV scan, then stores files in a private Cloudflare R2 bucket. MongoDB stores metadata and private object keys; API responses never expose keys or public object URLs.
+- Authors can retrieve only their own book files; admins can retrieve files for submitted or approved books. Upload endpoints are rate-limited, filenames are sanitized, and downloads are sent as attachments with no-store and nosniff headers.
+- File upload stays unavailable until R2 credentials and a reachable ClamAV daemon are configured. Admin approval currently records a review decision only; it does not publish to the public catalogue or enable sales/read access.
 - No admin account is automatically created; an operator must grant the admin role through a trusted database procedure before using admin pages.
 - GitHub Actions runs the repository's existing quality checks on pushes.
 
 ## Not implemented
 
-Secure admin provisioning, secure cover/manuscript uploads and publishing workflow, account deletion/export, verified-purchase review labels, helpful-review voting, production email deliverability monitoring, book-file storage and reading, purchases/payments, subscriptions, royalty ledger, CMS, affiliates, institutions, audiobooks, AI tools, and mobile apps.
+Secure admin provisioning, book publication to the public catalogue, account deletion/export, verified-purchase review labels, helpful-review voting, production email deliverability monitoring, book-file storage and reading, purchases/payments, subscriptions, royalty ledger, CMS, affiliates, institutions, audiobooks, AI tools, and mobile apps.
 
 ## Next phase
 
-Continue Phase 5: configure private file storage and secure cover/manuscript uploads, complete book approval-to-catalogue publishing, and add the related admin workflow. The storage provider is not selected or configured yet. Configure email secrets and the public frontend URL before enabling production registration or password reset. Follow the phases and Definition of Done in the master architecture.
+Continue Phase 5: configure the private Cloudflare R2 bucket and ClamAV daemon for the runtime, then complete the admin approval-to-catalogue publishing workflow. Upload code is in place but fails closed until both services are configured. Configure email secrets and the public frontend URL before enabling production registration or password reset. Follow the phases and Definition of Done in the master architecture.

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
-import { createAuthorBookDraft, getMyAuthorBooks, saveAuthorBookDraft, submitAuthorBook } from "../../services/authorBookService.js";
+import { createAuthorBookDraft, getMyAuthorBooks, saveAuthorBookDraft, submitAuthorBook, uploadAuthorBookAsset } from "../../services/authorBookService.js";
 
 const LANGUAGE_KEYS = { Gujarati: "gu", Hindi: "hi", English: "en" };
 const LOCALE_NAMES = { en: "English", gu: "ગુજરાતી", hi: "हिन्दी" };
@@ -57,6 +57,7 @@ export default function AuthorBooksPage() {
   const [form, setForm] = useState(blankBook);
   const [pageLoading, setPageLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [uploadingAsset, setUploadingAsset] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
@@ -116,6 +117,31 @@ export default function AuthorBooksPage() {
     }
   }
 
+  async function uploadFile(assetType, file) {
+    if (!file || !selectedId) return;
+    setUploadingAsset(assetType); setError(""); setNotice("");
+    try {
+      const result = await uploadAuthorBookAsset(selectedId, assetType, file);
+      setForm((current) => ({ ...current, assets: result.book.assets }));
+      setBooks((current) => current.map((item) => item.id === selectedId ? result.book : item));
+      setNotice(t.assetUploaded);
+    } catch (uploadError) {
+      const messages = {
+        FILE_SCANNER_NOT_CONFIGURED: t.assetScannerUnavailable,
+        FILE_SCANNER_UNAVAILABLE: t.assetScannerUnavailable,
+        FILE_SCANNER_TIMEOUT: t.assetScannerUnavailable,
+        FILE_SCAN_FAILED: t.assetScannerUnavailable,
+        STORAGE_NOT_CONFIGURED: t.assetStorageUnavailable,
+        MALWARE_DETECTED: t.assetMalwareDetected,
+        INVALID_FILE_SIZE: t.assetInvalidSize,
+        INVALID_FILE_TYPE: t.assetInvalidType,
+      };
+      setError(messages[uploadError.code] || t.authorBookError);
+    } finally {
+      setUploadingAsset("");
+    }
+  }
+
   async function sendForReview() {
     if (!selectedId) return;
     setBusy(true); setError(""); setNotice("");
@@ -126,7 +152,7 @@ export default function AuthorBooksPage() {
       await reload();
       setNotice(t.bookSubmitted);
     } catch (requestError) {
-      setError(requestError.code === "AUTHOR_BOOK_INCOMPLETE" || requestError.code === "INVALID_AUTHOR_BOOK" ? t.bookSubmissionIncomplete : t.authorBookError);
+      setError(requestError.code === "AUTHOR_BOOK_ASSETS_REQUIRED" ? t.bookFilesRequired : requestError.code === "AUTHOR_BOOK_INCOMPLETE" || requestError.code === "INVALID_AUTHOR_BOOK" ? t.bookSubmissionIncomplete : t.authorBookError);
     } finally {
       setBusy(false);
     }
@@ -144,6 +170,7 @@ export default function AuthorBooksPage() {
       <h1>{t.authorBooksTitle}</h1>
       <p className="author-books-intro">{t.authorBooksIntro}</p>
       <p className="author-book-warning" role="note">{t.manuscriptUploadPending}</p>
+      {uploadingAsset && <p className="author-book-notice" role="status">{t.uploadingFile}</p>}
       {notice && <p className="author-book-notice" role="status">{notice}</p>}
       {error && <p className="author-book-error" role="alert">{error}</p>}
       <div className="author-books-layout">
@@ -185,6 +212,14 @@ export default function AuthorBooksPage() {
                   <textarea value={form.description?.[contentKey] || ""} disabled={!editable} maxLength={4000} onChange={(event) => setForm((current) => ({ ...current, description: { ...current.description, [contentKey]: event.target.value } }))} />
                 </label>
                 <p className="author-book-hint">{t.bookSummaryHelp}</p>
+                <label className="author-book-field">{t.coverFile}
+                  <input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" disabled={!editable || Boolean(uploadingAsset)} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; uploadFile("cover", file); }} />
+                  <span className="author-book-hint">{form.assets?.cover ? `${form.assets.cover.fileName} · ${t.assetScanClean}` : t.assetSizeLimits}</span>
+                </label>
+                <label className="author-book-field">{t.manuscriptFile}
+                  <input type="file" accept=".pdf,application/pdf" disabled={!editable || Boolean(uploadingAsset)} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; uploadFile("manuscript", file); }} />
+                  <span className="author-book-hint">{form.assets?.manuscript ? `${form.assets.manuscript.fileName} · ${t.assetScanClean}` : t.assetSizeLimits}</span>
+                </label>
                 <label className="author-book-field">{t.bookPriceInr}
                   <input type="number" min="0" max="100000" step="0.01" value={form.price} disabled={!editable} onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))} />
                 </label>

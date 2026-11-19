@@ -5,6 +5,11 @@ function errorResponse(response, status, code, message) {
   return response.status(status).json({ error: { code, message } });
 }
 
+function assetDto(asset) {
+  if (!asset) return null;
+  return { fileName: asset.fileName, contentType: asset.contentType, size: asset.size, scanStatus: asset.scanStatus, uploadedAt: asset.uploadedAt };
+}
+
 function adminBookDto(book) {
   return {
     id: book.id,
@@ -16,6 +21,7 @@ function adminBookDto(book) {
     price: book.price,
     status: book.status,
     adminNote: book.adminNote,
+    assets: { cover: assetDto(book.assets?.cover), manuscript: assetDto(book.assets?.manuscript) },
     submittedAt: book.submittedAt,
     createdAt: book.createdAt,
     author: book.authorId ? {
@@ -31,6 +37,7 @@ export async function listSubmittedAuthorBooks(_request, response) {
     AuthorBook.find({ status: "submitted" })
       .sort({ submittedAt: 1 })
       .limit(50)
+      .select("+assets.cover.key +assets.manuscript.key")
       .populate("authorId", "displayName email"),
     AuthorBook.countDocuments({ status: "submitted" }),
   ]);

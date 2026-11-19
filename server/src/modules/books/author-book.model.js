@@ -10,6 +10,19 @@ const localizedTextSchema = new mongoose.Schema(
   { _id: false },
 );
 
+
+const assetSchema = new mongoose.Schema(
+  {
+    key: { type: String, required: true, select: false },
+    contentType: { type: String, required: true, enum: ["application/pdf", "image/jpeg", "image/png", "image/webp"] },
+    fileName: { type: String, required: true, maxlength: 160 },
+    size: { type: Number, required: true, min: 1, max: 25 * 1024 * 1024 },
+    scanStatus: { type: String, required: true, enum: ["clean"] },
+    uploadedAt: { type: Date, required: true, default: Date.now },
+  },
+  { _id: false },
+);
+
 const authorBookSchema = new mongoose.Schema(
   {
     authorId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
@@ -30,6 +43,10 @@ const authorBookSchema = new mongoose.Schema(
       required: true,
       default: "draft",
       index: true,
+    },
+    assets: {
+      cover: { type: assetSchema, default: null },
+      manuscript: { type: assetSchema, default: null },
     },
     adminNote: { type: String, trim: true, maxlength: 800, default: "" },
     submittedAt: { type: Date, default: null },
