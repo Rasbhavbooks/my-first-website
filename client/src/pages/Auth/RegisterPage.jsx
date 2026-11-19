@@ -130,7 +130,7 @@ export default function RegisterPage() {
               {busy ? t.verifyingEmail : t.verifyEmail}
             </button>
           ) : verificationPending ? (
-            <button className="register-submit" type="button" disabled={busy} onClick={() => setResendMode(true)}>
+            <button className="register-submit" type="button" disabled={busy} onClick={() => { setVerificationPending(false); setResendMode(true); }}>
               {t.resendVerification}
             </button>
           ) : resendMode ? (
