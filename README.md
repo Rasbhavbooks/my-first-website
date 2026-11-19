@@ -26,7 +26,14 @@ Node.js is required in the Codespace environment, not on your personal computer.
 npm install
 ```
 
-Set these Codespaces secrets, then restart the Codespace:\n\n- `MONGODB_URI` — MongoDB Atlas connection string.\n- `RESEND_API_KEY` — private API key from Resend.\n- `EMAIL_FROM` — sender address verified with Resend, for example `Rasbhav Books <noreply@your-domain.example>`.\n- `APP_BASE_URL` — public HTTPS URL for the frontend on port 5173, without a path.\n\nSet `CLIENT_ORIGIN` to that same frontend origin so the API accepts browser requests. Keep all keys private; never commit them. Without email settings, development returns a manual one-time token. Production will not create accounts or reset passwords until email is configured. Before the first API start, load the sample books once:
+Set these Codespaces secrets, then restart the Codespace:
+
+- `MONGODB_URI` — MongoDB Atlas connection string.
+- `RESEND_API_KEY` — private API key from Resend.
+- `EMAIL_FROM` — sender address verified with Resend, for example `Rasbhav Books <noreply@your-domain.example>`.
+- `APP_BASE_URL` — public HTTPS URL for the frontend on port 5173, without a path.
+
+Set `CLIENT_ORIGIN` to that same frontend origin so the API accepts browser requests. Keep all keys private; never commit them. Without email settings, development returns a manual one-time token. Production will not create accounts or reset passwords until email is configured. Before the first API start, load the sample books once:
 
 ```sh
 npm run seed:books --workspace @rasbhav/server
