@@ -1,6 +1,21 @@
 const port = Number(process.env.PORT || 4000);
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("PORT must be between 1 and 65535.");
 
+const clamavPort = Number(process.env.CLAMAV_PORT || 3310);
+if (!Number.isInteger(clamavPort) || clamavPort < 1 || clamavPort > 65535) {
+  throw new Error("CLAMAV_PORT must be between 1 and 65535.");
+}
+const r2AccountId = process.env.R2_ACCOUNT_ID || "";
+const r2AccessKeyId = process.env.R2_ACCESS_KEY_ID || "";
+const r2SecretAccessKey = process.env.R2_SECRET_ACCESS_KEY || "";
+const r2BucketName = process.env.R2_BUCKET_NAME || "";
+if (r2AccountId && !/^[A-Za-z0-9-]+$/.test(r2AccountId)) {
+  throw new Error("R2_ACCOUNT_ID contains unsupported characters.");
+}
+if (r2BucketName && !/^[a-z0-9-]+$/.test(r2BucketName)) {
+  throw new Error("R2_BUCKET_NAME contains unsupported characters.");
+}
+
 const clientOrigin = process.env.CLIENT_ORIGIN || "http://localhost:5173";
 const configuredAppBaseUrl = process.env.APP_BASE_URL || "";
 const appBaseUrl = configuredAppBaseUrl || clientOrigin;
@@ -24,12 +39,12 @@ export const env = {
   resendApiKey,
   emailFrom,
   emailConfigured: Boolean(resendApiKey && emailFrom && configuredAppBaseUrl),
-  r2AccountId: process.env.R2_ACCOUNT_ID || "",
-  r2AccessKeyId: process.env.R2_ACCESS_KEY_ID || "",
-  r2SecretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
-  r2BucketName: process.env.R2_BUCKET_NAME || "",
-  r2Configured: Boolean(process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY && process.env.R2_BUCKET_NAME),
+  r2AccountId,
+  r2AccessKeyId,
+  r2SecretAccessKey,
+  r2BucketName,
+  r2Configured: Boolean(r2AccountId && r2AccessKeyId && r2SecretAccessKey && r2BucketName),
   clamavHost: process.env.CLAMAV_HOST || "",
-  clamavPort: Number(process.env.CLAMAV_PORT || 3310),
+  clamavPort,
   clamavConfigured: Boolean(process.env.CLAMAV_HOST),
 };
