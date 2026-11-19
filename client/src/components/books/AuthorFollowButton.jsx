@@ -27,7 +27,7 @@ export default function AuthorFollowButton({ authorName, authorSlug }) {
       })
       .catch(() => { if (active) setError(t.followError); });
     return () => { active = false; };
-  }, [authorName, user?.id, authLoading, t.followError]);
+  }, [authorName, authorSlug, user?.id, authLoading, t.followError]);
 
   async function toggleFollow() {
     setBusy(true);
