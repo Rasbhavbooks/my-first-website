@@ -53,7 +53,7 @@ export default function AccountPage() {
   }, [user?.id, user?.displayName, user?.bio, user?.hobbies?.join(", "), user?.avatarUrl]);
 
   if (loading) return <main className="account-page"><p>{t.loadingAccount}</p></main>;
-  if (!user && !passwordChanged) return <Navigate to="/login" replace />;
+  if (!user && !passwordChanged) return <Navigate to="/reader/login" replace />;
 
   async function handleProfile(event) {
     event.preventDefault();
