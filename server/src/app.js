@@ -10,6 +10,10 @@ import authRoutes from "./modules/auth/auth.routes.js";
 import wishlistRoutes from "./modules/wishlist/wishlist.routes.js";
 import followsRoutes from "./modules/auth/follows.routes.js";
 import reviewModerationRoutes from "./modules/books/review-moderation.routes.js";
+import authorApplicationsRoutes from "./modules/auth/author-applications.routes.js";
+import authorRoutes from "./modules/auth/author.routes.js";
+import publicAuthorsRoutes from "./modules/auth/public-authors.routes.js";
+import authorAdminRoutes from "./modules/auth/author-admin.routes.js";
 
 const app = express();
 app.disable("x-powered-by");
@@ -23,6 +27,10 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/wishlist", wishlistRoutes);
 app.use("/api/v1/reader/follows", followsRoutes);
 app.use("/api/v1/admin/reviews", reviewModerationRoutes);
+app.use("/api/v1/author-applications", authorApplicationsRoutes);
+app.use("/api/v1/author", authorRoutes);
+app.use("/api/v1/authors", publicAuthorsRoutes);
+app.use("/api/v1/admin/author-applications", authorAdminRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
