@@ -43,3 +43,13 @@ export async function requireReader(request, response, next) {
   request.readerSession = session;
   return next();
 }
+
+
+export function requireAdmin(request, response, next) {
+  if (request.reader?.role !== "admin") {
+    return response.status(403).json({
+      error: { code: "ADMIN_ACCESS_REQUIRED", message: "Administrator access is required." },
+    });
+  }
+  return next();
+}
