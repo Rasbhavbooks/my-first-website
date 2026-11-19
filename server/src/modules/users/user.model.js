@@ -10,6 +10,37 @@ const userSchema = new mongoose.Schema(
       minlength: 2,
       maxlength: 80,
     },
+    bio: {
+      type: String,
+      trim: true,
+      maxlength: 280,
+      default: "",
+    },
+    hobbies: {
+      type: [{ type: String, trim: true, maxlength: 40 }],
+      default: [],
+      validate: {
+        validator: (items) => items.length <= 10,
+        message: "A reader can save up to 10 hobbies.",
+      },
+    },
+    avatarUrl: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+      default: "",
+      validate: {
+        validator(value) {
+          if (!value) return true;
+          try {
+            return new URL(value).protocol === "https:";
+          } catch {
+            return false;
+          }
+        },
+        message: "Profile photo URL must use HTTPS.",
+      },
+    },
     email: {
       type: String,
       required: true,
