@@ -17,6 +17,7 @@ const authorProfileSchema = new mongoose.Schema(
     websiteUrl: { type: String, trim: true, maxlength: 500, default: "" },
     profilePhotoUrl: { type: String, trim: true, maxlength: 500, default: "" },
     coverImageUrl: { type: String, trim: true, maxlength: 500, default: "" },
+    featuredBookIds: { type: [{ type: String, trim: true, maxlength: 120 }], default: [], validate: [(values) => values.length <= 3 && new Set(values).size === values.length, "Choose up to three distinct featured catalogue books."] },
     status: { type: String, enum: ["active", "suspended"], default: "active", index: true },
   },
   { timestamps: true, versionKey: false },

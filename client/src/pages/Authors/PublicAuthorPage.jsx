@@ -16,7 +16,8 @@ const styles = `
 .public-author-meta{color:#897e70;font-size:10px;letter-spacing:.7px;text-transform:uppercase}
 .public-author-links{display:flex;gap:18px;margin:20px 0}
 .public-author-links a{color:#796747;text-decoration:underline;font-size:11px}
-.public-author-books{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:34px}
+.public-author-books{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:24px;margin-bottom:36px}
+.public-author-books-featured .public-author-book{border-color:#b08a45;background:#fbf8f1}
 .public-author-book{padding:20px;border:1px solid #e4ddd1;background:#fffdfa}
 .public-author-book a{color:#30252c;text-decoration:none}
 .public-author-book h2{font:500 21px var(--serif)}
@@ -41,7 +42,9 @@ export default function PublicAuthorPage() {
   if (missing) return <main className="public-author"><style>{styles}</style><div className="public-author-error"><h1>{t.authorNotFound}</h1><Link to="/">{t.backHome}</Link></div></main>;
   if (!data) return <main className="public-author"><p>{t.loading}</p></main>;
 
-  const { author, books } = data;
+  const { author, books, featuredBooks = [] } = data;
+  const featuredIds = new Set(featuredBooks.map((book) => book.id));
+  const otherBooks = books.filter((book) => !featuredIds.has(book.id));
   return (
     <main className="public-author">
       <style>{styles}</style>
@@ -61,14 +64,27 @@ export default function PublicAuthorPage() {
         {author.websiteUrl && <a href={author.websiteUrl} target="_blank" rel="noreferrer">{t.authorWebsite}</a>}
         {author.writingSampleUrl && <a href={author.writingSampleUrl} target="_blank" rel="noreferrer">{t.writingSampleUrl}</a>}
       </div>
-      <h2>{t.authorBooks}</h2>
-      {books.length ? <div className="public-author-books">{books.map((book) => (
-        <article className="public-author-book" key={book.id}>
-          <Link to={`/books/${encodeURIComponent(book.id)}`}><h2>{getBookTitle(book, language)}</h2></Link>
-          <p>{t.by} {book.author}</p>
-          <p>{t.categories[book.category] || book.category} · {book.language}</p>
-        </article>
-      ))}</div> : <p>{t.noResults}</p>}
+      {featuredBooks.length > 0 && <>
+        <h2>{t.authorFeaturedBooks}</h2>
+        <div className="public-author-books public-author-books-featured">{featuredBooks.map((book) => (
+          <article className="public-author-book" key={book.id}>
+            <Link to={`/books/${encodeURIComponent(book.id)}`}><h2>{getBookTitle(book, language)}</h2></Link>
+            <p>{t.by} {book.author}</p>
+            <p>{t.categories[book.category] || book.category} · {book.language}</p>
+          </article>
+        ))}</div>
+      </>}
+      {otherBooks.length > 0 && <>
+        <h2>{t.authorBooks}</h2>
+        <div className="public-author-books">{otherBooks.map((book) => (
+          <article className="public-author-book" key={book.id}>
+            <Link to={`/books/${encodeURIComponent(book.id)}`}><h2>{getBookTitle(book, language)}</h2></Link>
+            <p>{t.by} {book.author}</p>
+            <p>{t.categories[book.category] || book.category} · {book.language}</p>
+          </article>
+        ))}</div>
+      </>}
+      {!books.length && <p>{t.noResults}</p>}
     </main>
   );
 }
