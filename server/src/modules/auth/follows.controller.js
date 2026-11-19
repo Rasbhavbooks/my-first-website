@@ -36,7 +36,7 @@ export async function listFollowedAuthors(request, response) {
 }
 
 async function saveProfileFollow(request, response, profile) {
-  const authorKey = "profile:" + profile.slug;
+  const authorKey = "profile-id:" + String(profile._id);
   const existing = await AuthorFollow.findOne({ userId: request.reader._id, authorKey });
   if (existing) return response.json({ data: { author: { authorKey, authorName: existing.authorName, authorSlug: profile.slug } } });
 
@@ -83,7 +83,7 @@ export async function unfollowAuthorProfile(request, response) {
     return response.status(400).json({ error: { code: "INVALID_AUTHOR", message: "A valid author profile is required." } });
   }
   const profile = await AuthorProfile.findOne({ slug }).select("_id authorName catalogueAuthorName");
-  const keys = ["profile:" + slug];
+  const keys = profile ? ["profile-id:" + String(profile._id)] : ["profile:" + slug];
   if (profile) keys.push(normalizeAuthorName(profile.authorName), normalizeAuthorName(profile.catalogueAuthorName));
   await AuthorFollow.deleteMany({
     userId: request.reader._id,
