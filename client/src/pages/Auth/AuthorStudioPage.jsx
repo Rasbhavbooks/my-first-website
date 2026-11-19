@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router";
+import { getBookTitle } from "../../data/books.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { getMyAuthorProfile, updateMyAuthorProfile } from "../../services/authorService.js";
@@ -18,6 +19,11 @@ const styles = `
 .author-studio-field{display:grid;gap:7px;color:#514a44;font-size:11px;font-weight:600}
 .author-studio-field input,.author-studio-field textarea{width:100%;padding:12px;border:1px solid #d8d0c4;background:white;font:12px/1.6 var(--sans)}
 .author-studio-field textarea{min-height:150px;resize:vertical}
+.author-featured-books{display:grid;gap:10px;padding:18px;border:1px solid #d8d0c4}
+.author-featured-books legend{padding:0 6px;color:#514a44;font-size:11px;font-weight:600}
+.author-featured-books p{margin:0;color:#77716a;font-size:10px;line-height:1.6}
+.author-featured-book{display:flex;align-items:center;gap:10px;padding:9px;background:#f6f3ee;color:#514a44;font-size:11px}
+.author-featured-book input{accent-color:#796747}
 .author-studio-submit{min-height:45px;border:0;background:#30252c;color:white;cursor:pointer}
 .author-studio-message{padding:12px;background:#edf3e9;color:#39513d;font-size:11px}
 .author-studio-error{padding:12px;background:#f8ece8;color:#863d32;font-size:11px}
@@ -26,9 +32,10 @@ const styles = `
 
 export default function AuthorStudioPage() {
   const { user, loading } = useAuth();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [profile, setProfile] = useState(null);
-  const [form, setForm] = useState({ authorName: "", biography: "", websiteUrl: "", profilePhotoUrl: "", coverImageUrl: "" });
+  const [catalogueBooks, setCatalogueBooks] = useState([]);
+  const [form, setForm] = useState({ authorName: "", biography: "", websiteUrl: "", profilePhotoUrl: "", coverImageUrl: "", featuredBookIds: [] });
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -36,9 +43,10 @@ export default function AuthorStudioPage() {
   useEffect(() => {
     if (user?.role !== "author") return;
     getMyAuthorProfile()
-      .then(({ author }) => {
+      .then(({ author, catalogueBooks: options = [] }) => {
         setProfile(author);
-        setForm({ authorName: author.authorName, biography: author.biography, websiteUrl: author.websiteUrl || "", profilePhotoUrl: author.profilePhotoUrl || "", coverImageUrl: author.coverImageUrl || "" });
+        setCatalogueBooks(options);
+        setForm({ authorName: author.authorName, biography: author.biography, websiteUrl: author.websiteUrl || "", profilePhotoUrl: author.profilePhotoUrl || "", coverImageUrl: author.coverImageUrl || "", featuredBookIds: author.featuredBookIds || [] });
       })
       .catch(() => setError(t.authorProfileError));
   }, [user?.id, user?.role]);
@@ -57,6 +65,16 @@ export default function AuthorStudioPage() {
     } catch {
       setError(t.authorProfileError);
     } finally { setBusy(false); }
+  }
+
+  function toggleFeaturedBook(bookId) {
+    setForm((current) => {
+      const selected = current.featuredBookIds || [];
+      const featuredBookIds = selected.includes(bookId)
+        ? selected.filter((id) => id !== bookId)
+        : selected.length < 3 ? [...selected, bookId] : selected;
+      return { ...current, featuredBookIds };
+    });
   }
 
   return (
@@ -85,6 +103,17 @@ export default function AuthorStudioPage() {
           <label className="author-studio-field">{t.authorWebsite}<input type="url" inputMode="url" placeholder="https://…" value={form.websiteUrl} maxLength={500} onChange={(event) => setForm({ ...form, websiteUrl: event.target.value })} /></label>
           <label className="author-studio-field">{t.authorProfilePhoto}<input type="url" inputMode="url" placeholder="https://…" value={form.profilePhotoUrl} maxLength={500} onChange={(event) => setForm({ ...form, profilePhotoUrl: event.target.value })} /></label>
           <label className="author-studio-field">{t.authorCoverImage}<input type="url" inputMode="url" placeholder="https://…" value={form.coverImageUrl} maxLength={500} onChange={(event) => setForm({ ...form, coverImageUrl: event.target.value })} /></label>
+          <fieldset className="author-featured-books" disabled={busy}>
+            <legend>{t.authorFeaturedBooks}</legend>
+            <p>{t.authorFeaturedBooksHint}</p>
+            {catalogueBooks.length ? catalogueBooks.map((book) => {
+              const selected = (form.featuredBookIds || []).includes(book.id);
+              return <label className="author-featured-book" key={book.id}>
+                <input type="checkbox" checked={selected} disabled={!selected && form.featuredBookIds.length >= 3} onChange={() => toggleFeaturedBook(book.id)} />
+                <span>{getBookTitle(book, language)} · {book.language}</span>
+              </label>;
+            }) : <p>{t.authorNoCatalogueBooks}</p>}
+          </fieldset>
           <button className="author-studio-submit" disabled={busy || !profile}>{busy ? t.savingChanges : t.saveChanges}</button>
         </form>
       </section>
