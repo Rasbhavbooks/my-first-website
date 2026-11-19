@@ -73,7 +73,7 @@ export async function updateAuthorBookChapter(request, response) {
   if (!book) return errorResponse(response, 404, "AUTHOR_BOOK_NOT_EDITABLE", "This book is not available for chapter editing.");
   if (!mongoose.isValidObjectId(request.params.chapterId)) return errorResponse(response, 404, "BOOK_CHAPTER_NOT_FOUND", "Chapter not found.");
   const values = validChapter(request.body);
-  if (!values) return errorResponse(response, 400, "INVALID_BOOK_CHAPTER", "Add a title and chapter text. Chapters can contain up to 100,000 characters.");
+  if (!values || values.order !== undefined) return errorResponse(response, 400, "INVALID_BOOK_CHAPTER", "Add a title and chapter text. Chapters can contain up to 100,000 characters.");
   const chapter = await AuthorBookChapter.findOneAndUpdate(
     { _id: request.params.chapterId, bookId: book._id, authorId: request.reader._id },
     { $set: values },
