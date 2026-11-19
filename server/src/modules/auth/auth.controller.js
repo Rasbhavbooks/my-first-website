@@ -100,6 +100,7 @@ export async function registerReader(request, response) {
       }
     }
 
+    response.setHeader("Cache-Control", "no-store");
     return response.status(201).json({
       data: {
         message: "Reader account created. Verify the email to activate it.",
@@ -119,6 +120,7 @@ export async function registerReader(request, response) {
 }
 
 export async function requestReaderVerification(request, response) {
+  response.setHeader("Cache-Control", "no-store");
   const email = typeof request.body?.email === "string" ? request.body.email.trim().toLowerCase() : "";
   const generic = { data: { message: "If the account needs verification, a new link is available." } };
   if (process.env.NODE_ENV === "production" && !env.emailConfigured) {
@@ -152,6 +154,7 @@ export async function requestReaderVerification(request, response) {
 }
 
 export async function verifyReaderEmail(request, response) {
+  response.setHeader("Cache-Control", "no-store");
   const token = typeof request.body?.token === "string" ? request.body.token : "";
   if (token.length < 32 || token.length > 100) {
     return response.status(400).json({
