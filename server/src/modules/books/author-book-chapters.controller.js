@@ -11,7 +11,7 @@ function errorResponse(response, status, code, message) {
 
 function chapterDto(chapter) {
   return {
-    id: chapter.id,
+    id: chapter._id?.toString() || chapter.id,
     title: chapter.title,
     content: chapter.content,
     order: chapter.order,
