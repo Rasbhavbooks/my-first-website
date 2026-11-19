@@ -42,3 +42,8 @@ export async function uploadAuthorBookAsset(id, assetType, file) {
   }
   return result.data;
 }
+
+export const getMyAuthorBookChapters = (bookId) => bookRequest(`/api/v1/author/books/${encodeURIComponent(bookId)}/chapters`);
+export const createAuthorBookChapter = (bookId, payload) => bookRequest(`/api/v1/author/books/${encodeURIComponent(bookId)}/chapters`, payload, "POST");
+export const updateAuthorBookChapter = (bookId, chapterId, payload) => bookRequest(`/api/v1/author/books/${encodeURIComponent(bookId)}/chapters/${encodeURIComponent(chapterId)}`, payload, "PATCH");
+export const deleteAuthorBookChapter = (bookId, chapterId) => bookRequest(`/api/v1/author/books/${encodeURIComponent(bookId)}/chapters/${encodeURIComponent(chapterId)}`, {}, "DELETE");
