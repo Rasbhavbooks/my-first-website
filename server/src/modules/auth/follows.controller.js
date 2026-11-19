@@ -37,11 +37,20 @@ export async function listFollowedAuthors(request, response) {
 
 async function saveProfileFollow(request, response, profile) {
   const authorKey = "profile-id:" + String(profile._id);
-  const existing = await AuthorFollow.findOne({ userId: request.reader._id, authorKey });
-  if (existing) return response.json({ data: { author: { authorKey, authorName: existing.authorName, authorSlug: profile.slug } } });
-
   const legacyKeys = [...new Set([profile.authorName, profile.catalogueAuthorName].map(normalizeAuthorName))];
-  const legacy = await AuthorFollow.findOne({ userId: request.reader._id, authorKey: { $in: legacyKeys } });
+  const [existing, legacyFollows] = await Promise.all([
+    AuthorFollow.findOne({ userId: request.reader._id, authorKey }),
+    AuthorFollow.find({ userId: request.reader._id, authorKey: { $in: legacyKeys } }).sort({ _id: 1 }),
+  ]);
+
+  if (existing) {
+    if (legacyFollows.length) {
+      await AuthorFollow.deleteMany({ _id: { $in: legacyFollows.map((follow) => follow._id) } });
+    }
+    return response.json({ data: { author: { authorKey, authorName: existing.authorName, authorSlug: profile.slug } } });
+  }
+
+  const legacy = legacyFollows[0];
   try {
     const follow = legacy
       ? await AuthorFollow.findOneAndUpdate(
@@ -54,12 +63,16 @@ async function saveProfileFollow(request, response, profile) {
         { $setOnInsert: { userId: request.reader._id, authorKey, authorName: profile.authorName, authorProfileId: profile._id } },
         { upsert: true, new: true, setDefaultsOnInsert: true },
       );
+    const duplicates = legacyFollows.filter((item) => !legacy || String(item._id) !== String(legacy._id));
+    if (duplicates.length) await AuthorFollow.deleteMany({ _id: { $in: duplicates.map((item) => item._id) } });
     return response.status(201).json({ data: { author: { authorKey: follow.authorKey, authorName: follow.authorName, authorSlug: profile.slug } } });
   } catch (error) {
     if (error?.code !== 11000) throw error;
     const follow = await AuthorFollow.findOne({ userId: request.reader._id, authorKey });
     if (!follow) throw error;
-    if (legacy && String(legacy._id) !== String(follow._id)) await AuthorFollow.deleteOne({ _id: legacy._id, userId: request.reader._id });
+    if (legacyFollows.length) {
+      await AuthorFollow.deleteMany({ _id: { $in: legacyFollows.map((item) => item._id) } });
+    }
     return response.json({ data: { author: { authorKey, authorName: follow.authorName, authorSlug: profile.slug } } });
   }
 }
