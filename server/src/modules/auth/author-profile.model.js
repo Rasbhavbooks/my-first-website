@@ -5,6 +5,7 @@ const authorProfileSchema = new mongoose.Schema(
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, unique: true },
     slug: { type: String, required: true, unique: true, lowercase: true, trim: true, maxlength: 140 },
     authorName: { type: String, required: true, trim: true, minlength: 2, maxlength: 100 },
+    catalogueAuthorName: { type: String, required: true, trim: true, maxlength: 120 },
     biography: { type: String, required: true, trim: true, minlength: 40, maxlength: 2000 },
     writingLanguages: {
       type: [{ type: String, enum: ["Gujarati", "Hindi", "English"] }],
