@@ -2,7 +2,8 @@ const port = Number(process.env.PORT || 4000);
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("PORT must be between 1 and 65535.");
 
 const clientOrigin = process.env.CLIENT_ORIGIN || "http://localhost:5173";
-const appBaseUrl = process.env.APP_BASE_URL || clientOrigin;
+const configuredAppBaseUrl = process.env.APP_BASE_URL || "";
+const appBaseUrl = configuredAppBaseUrl || clientOrigin;
 try {
   const parsedAppUrl = new URL(appBaseUrl);
   if (!["http:", "https:"].includes(parsedAppUrl.protocol) || parsedAppUrl.username || parsedAppUrl.password) {
@@ -22,5 +23,5 @@ export const env = {
   mongoUri: process.env.MONGODB_URI || "",
   resendApiKey,
   emailFrom,
-  emailConfigured: Boolean(resendApiKey && emailFrom),
+  emailConfigured: Boolean(resendApiKey && emailFrom && configuredAppBaseUrl),
 };
