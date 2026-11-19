@@ -38,7 +38,7 @@ export default function AuthorStudioPage() {
   }, [user?.id, user?.role]);
 
   if (loading) return <main className="author-studio"><p>{t.loadingAccount}</p></main>;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/author/login" replace />;
   if (user.role !== "author") return <Navigate to="/author/apply" replace />;
 
   async function saveProfile(event) {
