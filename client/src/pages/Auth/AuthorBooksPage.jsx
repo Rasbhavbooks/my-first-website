@@ -125,8 +125,18 @@ export default function AuthorBooksPage() {
       setForm((current) => ({ ...current, assets: result.book.assets }));
       setBooks((current) => current.map((item) => item.id === selectedId ? result.book : item));
       setNotice(t.assetUploaded);
-    } catch {
-      setError(t.authorBookError);
+    } catch (uploadError) {
+      const messages = {
+        FILE_SCANNER_NOT_CONFIGURED: t.assetScannerUnavailable,
+        FILE_SCANNER_UNAVAILABLE: t.assetScannerUnavailable,
+        FILE_SCANNER_TIMEOUT: t.assetScannerUnavailable,
+        FILE_SCAN_FAILED: t.assetScannerUnavailable,
+        STORAGE_NOT_CONFIGURED: t.assetStorageUnavailable,
+        MALWARE_DETECTED: t.assetMalwareDetected,
+        INVALID_FILE_SIZE: t.assetInvalidSize,
+        INVALID_FILE_TYPE: t.assetInvalidType,
+      };
+      setError(messages[uploadError.code] || t.authorBookError);
     } finally {
       setUploadingAsset("");
     }
