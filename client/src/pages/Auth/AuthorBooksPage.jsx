@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
-import { createAuthorBookDraft, getMyAuthorBooks, saveAuthorBookDraft, submitAuthorBook } from "../../services/authorBookService.js";
+import { createAuthorBookDraft, getMyAuthorBooks, saveAuthorBookDraft, submitAuthorBook, uploadAuthorBookAsset } from "../../services/authorBookService.js";
 
 const LANGUAGE_KEYS = { Gujarati: "gu", Hindi: "hi", English: "en" };
 const LOCALE_NAMES = { en: "English", gu: "ગુજરાતી", hi: "हिन्दी" };
@@ -57,6 +57,7 @@ export default function AuthorBooksPage() {
   const [form, setForm] = useState(blankBook);
   const [pageLoading, setPageLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [uploadingAsset, setUploadingAsset] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
@@ -116,6 +117,21 @@ export default function AuthorBooksPage() {
     }
   }
 
+  async function uploadFile(assetType, file) {
+    if (!file || !selectedId) return;
+    setUploadingAsset(assetType); setError(""); setNotice("");
+    try {
+      const result = await uploadAuthorBookAsset(selectedId, assetType, file);
+      setForm((current) => ({ ...current, assets: result.book.assets }));
+      setBooks((current) => current.map((item) => item.id === selectedId ? result.book : item));
+      setNotice(t.assetUploaded);
+    } catch {
+      setError(t.authorBookError);
+    } finally {
+      setUploadingAsset("");
+    }
+  }
+
   async function sendForReview() {
     if (!selectedId) return;
     setBusy(true); setError(""); setNotice("");
@@ -126,7 +142,7 @@ export default function AuthorBooksPage() {
       await reload();
       setNotice(t.bookSubmitted);
     } catch (requestError) {
-      setError(requestError.code === "AUTHOR_BOOK_INCOMPLETE" || requestError.code === "INVALID_AUTHOR_BOOK" ? t.bookSubmissionIncomplete : t.authorBookError);
+      setError(requestError.code === "AUTHOR_BOOK_ASSETS_REQUIRED" ? t.bookFilesRequired : requestError.code === "AUTHOR_BOOK_INCOMPLETE" || requestError.code === "INVALID_AUTHOR_BOOK" ? t.bookSubmissionIncomplete : t.authorBookError);
     } finally {
       setBusy(false);
     }
@@ -185,7 +201,7 @@ export default function AuthorBooksPage() {
                   <textarea value={form.description?.[contentKey] || ""} disabled={!editable} maxLength={4000} onChange={(event) => setForm((current) => ({ ...current, description: { ...current.description, [contentKey]: event.target.value } }))} />
                 </label>
                 <p className="author-book-hint">{t.bookSummaryHelp}</p>
-                <label className="author-book-field">{t.bookPriceInr}
+                <label className="author-book-field">{t.coverFile}\n                  <input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" disabled={!editable || Boolean(uploadingAsset)} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; uploadFile("cover", file); }} />\n                  <span className="author-book-hint">{form.assets?.cover ? `${form.assets.cover.fileName} · ${t.assetScanClean}` : t.assetSizeLimits}</span>\n                </label>\n                <label className="author-book-field">{t.manuscriptFile}\n                  <input type="file" accept=".pdf,application/pdf" disabled={!editable || Boolean(uploadingAsset)} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; uploadFile("manuscript", file); }} />\n                  <span className="author-book-hint">{form.assets?.manuscript ? `${form.assets.manuscript.fileName} · ${t.assetScanClean}` : t.assetSizeLimits}</span>\n                </label>\n                <label className="author-book-field">{t.bookPriceInr}
                   <input type="number" min="0" max="100000" step="0.01" value={form.price} disabled={!editable} onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))} />
                 </label>
                 {editable && <div className="author-book-actions">
