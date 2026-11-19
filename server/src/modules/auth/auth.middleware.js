@@ -53,3 +53,13 @@ export function requireAdmin(request, response, next) {
   }
   return next();
 }
+
+
+export function requireAuthor(request, response, next) {
+  if (request.reader?.role !== "author") {
+    return response.status(403).json({
+      error: { code: "AUTHOR_ACCESS_REQUIRED", message: "An approved author account is required." },
+    });
+  }
+  return next();
+}
