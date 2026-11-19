@@ -160,7 +160,8 @@ export default function AuthorBooksPage() {
       <h1>{t.authorBooksTitle}</h1>
       <p className="author-books-intro">{t.authorBooksIntro}</p>
       <p className="author-book-warning" role="note">{t.manuscriptUploadPending}</p>
-      {notice && <p className="author-book-notice" role="status">{notice}</p>}
+      {uploadingAsset && <p className="author-book-notice" role="status">{t.uploadingFile}</p>}
+      {notice && <p className="author-book-notice" role="status">{notice}</p>
       {error && <p className="author-book-error" role="alert">{error}</p>}
       <div className="author-books-layout">
         <section className="author-books-list" aria-labelledby="author-book-list-title">
@@ -201,7 +202,15 @@ export default function AuthorBooksPage() {
                   <textarea value={form.description?.[contentKey] || ""} disabled={!editable} maxLength={4000} onChange={(event) => setForm((current) => ({ ...current, description: { ...current.description, [contentKey]: event.target.value } }))} />
                 </label>
                 <p className="author-book-hint">{t.bookSummaryHelp}</p>
-                <label className="author-book-field">{t.coverFile}\n                  <input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" disabled={!editable || Boolean(uploadingAsset)} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; uploadFile("cover", file); }} />\n                  <span className="author-book-hint">{form.assets?.cover ? `${form.assets.cover.fileName} · ${t.assetScanClean}` : t.assetSizeLimits}</span>\n                </label>\n                <label className="author-book-field">{t.manuscriptFile}\n                  <input type="file" accept=".pdf,application/pdf" disabled={!editable || Boolean(uploadingAsset)} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; uploadFile("manuscript", file); }} />\n                  <span className="author-book-hint">{form.assets?.manuscript ? `${form.assets.manuscript.fileName} · ${t.assetScanClean}` : t.assetSizeLimits}</span>\n                </label>\n                <label className="author-book-field">{t.bookPriceInr}
+                <label className="author-book-field">{t.coverFile}
+                  <input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" disabled={!editable || Boolean(uploadingAsset)} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; uploadFile("cover", file); }} />
+                  <span className="author-book-hint">{form.assets?.cover ? `${form.assets.cover.fileName} · ${t.assetScanClean}` : t.assetSizeLimits}</span>
+                </label>
+                <label className="author-book-field">{t.manuscriptFile}
+                  <input type="file" accept=".pdf,application/pdf" disabled={!editable || Boolean(uploadingAsset)} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; uploadFile("manuscript", file); }} />
+                  <span className="author-book-hint">{form.assets?.manuscript ? `${form.assets.manuscript.fileName} · ${t.assetScanClean}` : t.assetSizeLimits}</span>
+                </label>
+                <label className="author-book-field">{t.bookPriceInr}
                   <input type="number" min="0" max="100000" step="0.01" value={form.price} disabled={!editable} onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))} />
                 </label>
                 {editable && <div className="author-book-actions">
