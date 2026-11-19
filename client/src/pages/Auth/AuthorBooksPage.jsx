@@ -80,6 +80,8 @@ export default function AuthorBooksPage() {
 
   useEffect(() => {
     if (!selectedId) { setChapters([]); setChapterForm(null); return undefined; }
+    setChapters([]);
+    setChapterForm(null);
     let active = true;
     getMyAuthorBookChapters(selectedId)
       .then((result) => { if (active) setChapters(result.chapters || []); })
