@@ -18,13 +18,15 @@ This file records implementation status; the complete requirements remain in the
 - Signed-in readers can submit a writer application with biography, writing languages, genres, and an optional HTTPS sample link. Applications are rate-limited; pending applications cannot be duplicated, and rejected applications can be resubmitted.
 - Admins can view and approve/reject author applications. Approval uses a database transaction to create a public author profile and promote the reader to the author role. Author profile writes require the author role and are rate-limited.
 - Approved authors can update their public biography and HTTPS website link. Public author pages show approved profiles and catalogue books under the author's original catalogue credit.
+- Authors can create and edit book metadata drafts, save partial drafts, and submit completed details for administrator review. Admins can approve or request changes with a note. Author-owned book routes enforce author role and ownership; admin review routes require an admin role.
+- Book submission currently handles metadata only. Cover/manuscript upload, publication to the public catalogue, purchases, and reader access are not implemented by this step.
 - No admin account is automatically created; an operator must grant the admin role through a trusted database procedure before using admin pages.
 - GitHub Actions runs the repository's existing quality checks on pushes.
 
 ## Not implemented
 
-Admin user/role management, author book drafts/uploads and publishing workflow, account deletion/export, verified-purchase review labels, helpful-review voting, production email deliverability monitoring, book-file storage and reading, purchases/payments, subscriptions, royalty ledger, CMS, affiliates, institutions, audiobooks, AI tools, and mobile apps.
+Secure admin provisioning, secure cover/manuscript uploads and publishing workflow, account deletion/export, verified-purchase review labels, helpful-review voting, production email deliverability monitoring, book-file storage and reading, purchases/payments, subscriptions, royalty ledger, CMS, affiliates, institutions, audiobooks, AI tools, and mobile apps.
 
 ## Next phase
 
-Add secure admin provisioning and the first author book-draft workflow. Configure email secrets and the public frontend URL before enabling production registration or password reset. Follow the phases and Definition of Done in the master architecture.
+Continue Phase 5: configure private file storage and secure cover/manuscript uploads, complete book approval-to-catalogue publishing, and add the related admin workflow. The storage provider is not selected or configured yet. Configure email secrets and the public frontend URL before enabling production registration or password reset. Follow the phases and Definition of Done in the master architecture.

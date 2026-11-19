@@ -60,6 +60,7 @@ export default function AuthorStudioPage() {
       <h1>{t.authorStudio}</h1>
       {notice && <p className="author-studio-message" role="status">{notice}</p>}
       {error && <p className="author-studio-error" role="alert">{error}</p>}
+      <p><Link className="author-public-link" to="/author/books">{t.manageBooks}</Link></p>
       {profile && <p><Link className="author-public-link" to={`/authors/${profile.slug}`}>{t.openAuthorPage}</Link></p>}
       <section className="author-studio-panel">
         <form className="author-studio-form" onSubmit={saveProfile}>
