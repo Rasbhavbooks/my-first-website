@@ -182,6 +182,7 @@ export default function RegisterPage() {
             </>
           )}
 
+          <Link className="register-back" to="/reader/login">{t.backToSignIn}</Link>
           <Link className="register-back" to="/">{t.backHome}</Link>
         </section>
       </div>
