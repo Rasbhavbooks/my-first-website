@@ -3,6 +3,7 @@ import PublicLayout from "../layouts/PublicLayout.jsx";
 import HomePage from "../pages/Home/HomePage.jsx";
 import BookDetailsPage from "../pages/BookDetails/BookDetailsPage.jsx";
 import WishlistPage from "../pages/Wishlist/WishlistPage.jsx";
+import RegisterPage from "../pages/Auth/RegisterPage.jsx";
 import NotFoundPage from "../pages/NotFound/NotFoundPage.jsx";
 
 export default function AppRoutes() {
@@ -12,6 +13,7 @@ export default function AppRoutes() {
         <Route index element={<HomePage />} />
         <Route path="books/:bookId" element={<BookDetailsPage />} />
         <Route path="wishlist" element={<WishlistPage />} />
+        <Route path="register" element={<RegisterPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
