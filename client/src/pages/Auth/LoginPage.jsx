@@ -98,6 +98,7 @@ export default function LoginPage() {
                 </button>
               </div>
             </label>
+            <Link className="login-foot" style={{ marginTop: 0, textAlign: "right" }} to="/password-reset">{t.forgotPassword}</Link>
             <button className="login-submit" type="submit" disabled={busy}>
               {busy ? t.signingIn : t.signIn}
             </button>
