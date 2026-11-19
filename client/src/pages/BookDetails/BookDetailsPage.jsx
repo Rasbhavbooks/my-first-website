@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { Link, useParams } from "react-router";
 import { getBookTitle } from "../../data/books.js";
 import BookReviews from "../../components/books/BookReviews.jsx";
+import AuthorFollowButton from "../../components/books/AuthorFollowButton.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { getBookById } from "../../services/bookService.js";
 
@@ -39,6 +40,7 @@ export default function BookDetailsPage() {
           <div className="eyebrow"><i />{t.bookDetails}</div>
           <h1>{title}</h1>
           <p className="detail-author">{t.by} <strong>{book.author}</strong></p>
+          <AuthorFollowButton authorName={book.author} />
           <div className="detail-price">₹{book.price}</div>
           <p className="detail-description">{t.descriptionText[language]}</p>
           <dl className="detail-facts">
