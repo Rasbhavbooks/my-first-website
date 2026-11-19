@@ -12,6 +12,7 @@ import PasswordResetPage from "../pages/Auth/PasswordResetPage.jsx";
 import ReviewModerationPage from "../pages/Admin/ReviewModerationPage.jsx";
 import AuthorApplicationsPage from "../pages/Admin/AuthorApplicationsPage.jsx";
 import AdminDashboardPage from "../pages/Admin/AdminDashboardPage.jsx";
+import AdminUsersPage from "../pages/Admin/AdminUsersPage.jsx";
 import AuthorBooksAdminPage from "../pages/Admin/AuthorBooksPage.jsx";
 import AuthorApplicationPage from "../pages/Auth/AuthorApplicationPage.jsx";
 import AuthorStudioPage from "../pages/Auth/AuthorStudioPage.jsx";
@@ -34,6 +35,7 @@ export default function AppRoutes() {
         <Route path="admin/login" element={<LoginPage expectedRole="admin" />} />
         <Route path="password-reset" element={<PasswordResetPage />} />
         <Route path="admin" element={<AdminDashboardPage />} />
+        <Route path="admin/users" element={<AdminUsersPage />} />
         <Route path="admin/review-moderation" element={<ReviewModerationPage />} />
         <Route path="admin/author-books" element={<AuthorBooksAdminPage />} />
         <Route path="admin/author-applications" element={<AuthorApplicationsPage />} />
