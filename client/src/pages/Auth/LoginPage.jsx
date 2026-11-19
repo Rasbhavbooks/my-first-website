@@ -22,7 +22,7 @@ const loginStyles = `
 @media(max-width:620px){.login-page{min-height:68vh;padding:35px 17px}.login-card{padding:32px 24px}}
 `;
 
-export default function LoginPage() {
+export default function LoginPage({ expectedRole = "reader" }) {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { user, loading, signIn, signOut } = useAuth();
@@ -40,9 +40,14 @@ export default function LoginPage() {
     setError("");
     setBusy(true);
     try {
-      await signIn(form);
+      const signedInUser = await signIn(form);
       setForm((current) => ({ ...current, password: "" }));
-      navigate("/", { replace: true });
+      if (signedInUser.role !== expectedRole) {
+        await signOut();
+        setError(t.roleLoginMismatch);
+        return;
+      }
+      navigate(expectedRole === "author" ? "/author/studio" : expectedRole === "admin" ? "/admin/author-applications" : "/", { replace: true });
     } catch (requestError) {
       if (requestError.code === "EMAIL_NOT_VERIFIED") setError(t.verifyFirst);
       else setError(requestError.code === "INVALID_CREDENTIALS" ? t.loginError : t.registrationError);
@@ -68,9 +73,9 @@ export default function LoginPage() {
     <main className="login-page">
       <style>{loginStyles}</style>
       <section className="login-card" aria-labelledby="login-title">
-        <div className="login-eyebrow"><i />{t.readerSpace}</div>
-        <h1 id="login-title">{user ? t.welcomeBack : t.loginTitle}</h1>
-        <p className="login-intro">{t.loginIntro}</p>
+        <div className="login-eyebrow"><i />{expectedRole === "author" ? t.authorPortal : expectedRole === "admin" ? t.adminPortal : t.readerPortal}</div>
+        <h1 id="login-title">{user ? t.welcomeBack : expectedRole === "author" ? t.authorLoginTitle : expectedRole === "admin" ? t.adminLoginTitle : t.loginTitle}</h1>
+        <p className="login-intro">{expectedRole === "author" ? t.authorLoginIntro : expectedRole === "admin" ? t.adminLoginIntro : t.loginIntro}</p>
         {error && <p className="login-message error" role="alert">{error}</p>}
         {loading ? (
           <p className="login-intro" role="status">{t.loadingAccount}</p>
@@ -78,7 +83,9 @@ export default function LoginPage() {
           <div className="login-welcome">
             <p>{user.displayName}</p>
             <p>{user.email}</p>
-            <Link to="/account">{t.accountPage}</Link>
+            {user.role === expectedRole
+              ? <Link to={expectedRole === "author" ? "/author/studio" : expectedRole === "admin" ? "/admin/author-applications" : "/account"}>{expectedRole === "author" ? t.authorStudio : expectedRole === "admin" ? t.authorApplicationsTitle : t.accountPage}</Link>
+              : <><p className="login-message error">{t.roleLoginMismatch}</p><Link to="/login">{t.chooseLoginPortal}</Link></>}
             <button className="login-submit" type="button" disabled={busy} onClick={handleLogout}>
               {busy ? t.signingOut : t.signOut}
             </button>
