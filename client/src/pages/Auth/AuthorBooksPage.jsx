@@ -126,7 +126,7 @@ export default function AuthorBooksPage() {
       await reload();
       setNotice(t.bookSubmitted);
     } catch (requestError) {
-      setError(requestError.code === "AUTHOR_BOOK_INCOMPLETE" ? t.bookSubmissionIncomplete : t.authorBookError);
+      setError(requestError.code === "AUTHOR_BOOK_INCOMPLETE" || requestError.code === "INVALID_AUTHOR_BOOK" ? t.bookSubmissionIncomplete : t.authorBookError);
     } finally {
       setBusy(false);
     }
