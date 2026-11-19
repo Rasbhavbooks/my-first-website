@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router";
 import { useLanguage } from "../../hooks/useLanguage.js";
-import { getFollowedAuthors, unfollowAuthor } from "../../services/authorFollowService.js";
+import { getFollowedAuthors, unfollowAuthor, unfollowAuthorProfile } from "../../services/authorFollowService.js";
 
 const styles = `
 .followed-authors{margin-top:22px;padding:24px;border:1px solid var(--line);background:#fffdfa}
@@ -31,12 +32,13 @@ export default function FollowedAuthorsPanel() {
     load();
   }, []);
 
-  async function handleUnfollow(authorName) {
-    setBusyAuthor(authorName);
+  async function handleUnfollow(author) {
+    setBusyAuthor(author.authorKey);
     setError("");
     try {
-      await unfollowAuthor(authorName);
-      setAuthors((current) => current.filter((author) => author.authorKey !== authorName.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US")));
+      if (author.authorSlug) await unfollowAuthorProfile(author.authorSlug);
+      else await unfollowAuthor(author.authorName);
+      setAuthors((current) => current.filter((item) => item.authorKey !== author.authorKey));
     } catch {
       setError(t.followError);
     } finally {
@@ -51,9 +53,9 @@ export default function FollowedAuthorsPanel() {
       {error && <p className="followed-authors-error" role="alert">{error}</p>}
       {authors.length ? authors.map((author) => (
         <div className="followed-author-row" key={author.authorKey}>
-          <span>{author.authorName}</span>
-          <button type="button" disabled={busyAuthor === author.authorName} onClick={() => handleUnfollow(author.authorName)}>
-            {busyAuthor === author.authorName ? t.savingChanges : t.unfollowAuthor}
+          <span>{author.authorSlug ? <Link to={`/authors/${encodeURIComponent(author.authorSlug)}`}>{author.authorName}</Link> : author.authorName}</span>
+          <button type="button" disabled={busyAuthor === author.authorKey} onClick={() => handleUnfollow(author)}>
+            {busyAuthor === author.authorKey ? t.savingChanges : t.unfollowAuthor}
           </button>
         </div>
       )) : !error && <p className="followed-authors-empty">{t.noFollowedAuthors}</p>}
