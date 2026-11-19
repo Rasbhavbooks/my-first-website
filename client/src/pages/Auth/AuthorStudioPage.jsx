@@ -109,7 +109,7 @@ export default function AuthorStudioPage() {
             {catalogueBooks.length ? catalogueBooks.map((book) => {
               const selected = (form.featuredBookIds || []).includes(book.id);
               return <label className="author-featured-book" key={book.id}>
-                <input type="checkbox" checked={selected} disabled={!selected && form.featuredBookIds.length >= 3} onChange={() => toggleFeaturedBook(book.id)} />
+                <input type="checkbox" checked={selected} disabled={!selected && (form.featuredBookIds || []).length >= 3} onChange={() => toggleFeaturedBook(book.id)} />
                 <span>{getBookTitle(book, language)} · {book.language}</span>
               </label>;
             }) : <p>{t.authorNoCatalogueBooks}</p>}
