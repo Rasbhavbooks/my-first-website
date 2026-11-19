@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import User from "../users/user.model.js";
 import VerificationToken from "./verification-token.model.js";
 import ReaderSession from "./reader-session.model.js";
+import PasswordResetToken from "./password-reset-token.model.js";
 
 const VERIFICATION_TTL_MS = 30 * 60 * 1000;
 
@@ -306,4 +307,89 @@ export async function changeReaderPassword(request, response) {
   response.clearCookie(SESSION_COOKIE, sessionCookieOptions());
   response.setHeader("Cache-Control", "no-store");
   return response.json({ data: { message: "Password changed. Sign in again on this device." } });
+}
+
+
+const PASSWORD_RESET_TTL_MS = 30 * 60 * 1000;
+
+export async function requestPasswordReset(request, response) {
+  const email = typeof request.body?.email === "string" ? request.body.email.trim().toLowerCase() : "";
+  const validEmail = email.length <= 254 && /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);
+  const generic = { data: { message: "If an active account matches that email, password reset instructions are available." } };
+
+  // Email delivery is not configured yet. In production, do not reveal account existence
+  // or issue a reset token that cannot be delivered safely.
+  if (process.env.NODE_ENV === "production") {
+    response.setHeader("Cache-Control", "no-store");
+    return response.status(503).json({ error: { code: "RESET_EMAIL_UNAVAILABLE", message: "Password reset is temporarily unavailable." } });
+  }
+  if (!validEmail) {
+    response.setHeader("Cache-Control", "no-store");
+    return response.json(generic);
+  }
+
+  const user = await User.findOne({ email, accountStatus: "active" });
+  if (!user) {
+    response.setHeader("Cache-Control", "no-store");
+    return response.json(generic);
+  }
+
+  await PasswordResetToken.deleteMany({ userId: user._id });
+  const token = randomBytes(32).toString("base64url");
+  await PasswordResetToken.create({
+    userId: user._id,
+    tokenHash: hashToken(token),
+    expiresAt: new Date(Date.now() + PASSWORD_RESET_TTL_MS),
+  });
+  response.setHeader("Cache-Control", "no-store");
+  return response.json({
+    data: {
+      ...generic.data,
+      // Development-only token; production must send a one-time link by email.
+      resetToken: token,
+      expiresInSeconds: PASSWORD_RESET_TTL_MS / 1000,
+    },
+  });
+}
+
+export async function resetReaderPassword(request, response) {
+  const token = typeof request.body?.token === "string" ? request.body.token : "";
+  const newPassword = typeof request.body?.newPassword === "string" ? request.body.newPassword : "";
+  const validPassword = newPassword.length >= 12
+    && newPassword.length <= 128
+    && /[a-z]/.test(newPassword)
+    && /[A-Z]/.test(newPassword)
+    && /\\d/.test(newPassword);
+  if (token.length < 32 || token.length > 100 || !validPassword) {
+    return response.status(400).json({
+      error: { code: "INVALID_RESET_REQUEST", message: "The reset link or new password is invalid." },
+    });
+  }
+
+  const reset = await PasswordResetToken.findOne({
+    tokenHash: hashToken(token),
+    expiresAt: { $gt: new Date() },
+  }).select("+tokenHash");
+  if (!reset) {
+    return response.status(400).json({
+      error: { code: "INVALID_RESET_TOKEN", message: "The reset link is invalid or expired." },
+    });
+  }
+  const user = await User.findOne({ _id: reset.userId, accountStatus: "active" }).select("+passwordHash");
+  if (!user) {
+    await PasswordResetToken.deleteMany({ userId: reset.userId });
+    return response.status(400).json({
+      error: { code: "INVALID_RESET_TOKEN", message: "The reset link is invalid or expired." },
+    });
+  }
+
+  await user.setPassword(newPassword);
+  await user.save();
+  await Promise.all([
+    PasswordResetToken.deleteMany({ userId: user._id }),
+    ReaderSession.deleteMany({ userId: user._id }),
+  ]);
+  response.clearCookie(SESSION_COOKIE, sessionCookieOptions());
+  response.setHeader("Cache-Control", "no-store");
+  return response.json({ data: { message: "Password changed. Sign in again." } });
 }
