@@ -34,7 +34,7 @@ function validFields(body, requireDescription = false) {
     return null;
   }
   const key = LANGUAGE_KEYS[language];
-  if (title[key].length < 2 || (requireDescription && description[key].length < 40)) return null;
+  if ((title[key].length > 0 && title[key].length < 2) || (requireDescription && (title[key].length < 2 || description[key].length < 40))) return null;
   return { title, description, language, category, price };
 }
 
