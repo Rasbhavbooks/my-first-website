@@ -45,7 +45,7 @@ export default function AuthorApplicationsPage() {
   }, [user?.id, user?.role, status]);
 
   if (loading) return <main className="author-admin"><p>{t.loadingAccount}</p></main>;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/admin/login" replace />;
   if (user.role !== "admin") return <main className="author-admin"><h1>{t.adminOnly}</h1><Link to="/">{t.backHome}</Link></main>;
 
   async function review(application, decision) {
