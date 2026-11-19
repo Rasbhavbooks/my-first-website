@@ -99,5 +99,5 @@ export async function updateMyAuthorProfile(request, response) {
   profile.coverImageUrl = coverImageUrl;
   await profile.save();
   response.setHeader("Cache-Control", "no-store");
-  return response.json({ data: { author: { ...publicAuthorDto(profile), id: profile.id } } });
+  return response.json({ data: { author: { ...publicAuthorDto(profile), id: profile.id, ...await getAuthorStats(profile) } } });
 }
