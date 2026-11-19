@@ -16,7 +16,7 @@ These documents are the source of truth for future work. Follow the phases in or
 
 ## Current phase
 
-Reader engagement foundation: React + Vite, book discovery, Gujarati/Hindi/English UI, Express API, and MongoDB Atlas storage. Readers can register, verify email, sign in, manage their profile/wishlist, write reviews, and follow authors. Admins can moderate review reports and hide/restore reviews. Transactional verification and password-reset emails use Resend when configured. Production registration and password reset stay disabled until email settings and public app URL are configured.
+Reader and author foundation: readers can manage profiles, wishlists, reviews, and followed authors. Readers can apply to become authors; admins review applications, and approval unlocks an author profile/studio. Public author pages show profile details and matching catalogue books. Review moderation and transactional Resend email are also available when configured. Admin accounts still require trusted manual provisioning. Production registration and password reset stay disabled until email settings and public app URL are configured.
 
 ## Run in GitHub Codespaces
 
@@ -51,7 +51,7 @@ Then open a second terminal and start the frontend:
 npm run dev
 ```
 
-The frontend uses port 5173. The API uses port 4000 and exposes `/api/v1/health`, `/api/v1/books`, `/api/v1/books/:bookId`, registration, verification/resend, login/session/logout, reader profile/password and password-reset routes, account wishlist, book review/report routes, author-follow routes, and admin-only review moderation routes. Without email configuration in development, registration and password reset return short-lived tokens for manual use. With Resend configured, the API emails links instead. Signed-in readers need an active verified account. The API reads books from MongoDB. Without a database connection, health remains available but the book endpoints report that the database is unavailable.
+The frontend uses port 5173. The API uses port 4000 and exposes `/api/v1/health`, `/api/v1/books`, `/api/v1/books/:bookId`, registration, verification/resend, login/session/logout, reader profile/password and password-reset routes, account wishlist, book review/report routes, author-follow routes, reader author-application routes, author profile routes, public author profiles, and admin-only review and author-application routes. Without email configuration in development, registration and password reset return short-lived tokens for manual use. With Resend configured, the API emails links instead. Signed-in readers need an active verified account. The API reads books from MongoDB. Without a database connection, health remains available but the book endpoints report that the database is unavailable.
 
 ## Local setup
 
