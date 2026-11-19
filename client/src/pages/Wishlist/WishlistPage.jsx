@@ -14,7 +14,8 @@ export default function WishlistPage() {
     <main className="wishlist-page">
       <div className="eyebrow"><i />{t.readerSpace}</div>
       <h1>{t.wishlist}</h1>
-      <p className="wishlist-intro">{t.wishlistIntro}</p>\n      {syncError && <p className="auth-message error" role="status">{t.wishlistSyncWarning}</p>}
+      <p className="wishlist-intro">{t.wishlistIntro}</p>
+      {syncError && <p className="auth-message error" role="status">{t.wishlistSyncWarning}</p>}
       {savedBooks.length ? (
         <div className="book-grid">
           {savedBooks.map((book) => <BookCard key={book.id} book={book} language={language} t={t} />)}
