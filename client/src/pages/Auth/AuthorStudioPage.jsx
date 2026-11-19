@@ -12,7 +12,8 @@ const styles = `
 .author-studio-stat{display:grid;gap:5px;padding:18px;border:1px solid #e4ddd1;background:#fffdfa}
 .author-studio-stat strong{font:500 27px var(--serif);color:#30252c}
 .author-studio-stat span{color:#77716a;font-size:10px}
-@media(max-width:800px){.author-studio-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}\n@media(max-width:520px){.author-studio-stats{grid-template-columns:1fr}}
+@media(max-width:800px){.author-studio-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.author-studio-stats{grid-template-columns:1fr}}
 .author-studio-form{display:grid;gap:16px}
 .author-studio-field{display:grid;gap:7px;color:#514a44;font-size:11px;font-weight:600}
 .author-studio-field input,.author-studio-field textarea{width:100%;padding:12px;border:1px solid #d8d0c4;background:white;font:12px/1.6 var(--sans)}
