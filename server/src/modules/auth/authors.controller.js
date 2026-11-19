@@ -28,6 +28,15 @@ function publicAuthorDto(profile) {
   };
 }
 
+async function getPublicAuthorStats(profile) {
+  const authorKey = profile.catalogueAuthorName.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
+  const [followerIds, catalogueBookCount] = await Promise.all([
+    AuthorFollow.distinct("userId", { $or: [{ authorProfileId: profile._id }, { authorKey }] }),
+    Book.countDocuments({ author: profile.catalogueAuthorName }),
+  ]);
+  return { followerCount: followerIds.length, catalogueBookCount };
+}
+
 async function getAuthorStats(profile) {
   const authorKey = profile.catalogueAuthorName.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
   const [followerIds, catalogueBookCount, draftCount, submittedCount, approvedCount, changesRequestedCount] = await Promise.all([
@@ -64,7 +73,7 @@ export async function getPublicAuthorProfile(request, response) {
     .sort({ createdAt: -1 })
     .limit(50)
     .lean();
-  const stats = await getAuthorStats(profile);
+  const stats = await getPublicAuthorStats(profile);
   response.setHeader("Cache-Control", "public, max-age=60");
   return response.json({
     data: {
