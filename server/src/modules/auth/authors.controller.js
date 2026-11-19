@@ -24,7 +24,7 @@ export async function getPublicAuthorProfile(request, response) {
     return response.status(404).json({ error: { code: "AUTHOR_NOT_FOUND", message: "Author profile not found." } });
   }
 
-  const books = await Book.find({ author: profile.authorName })
+  const books = await Book.find({ author: profile.catalogueAuthorName })
     .select("catalogueId title author language category price tone badge")
     .sort({ createdAt: -1 })
     .limit(50)
