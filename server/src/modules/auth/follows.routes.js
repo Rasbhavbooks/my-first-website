@@ -1,7 +1,7 @@
 import { rateLimit } from "express-rate-limit";
 import { Router } from "express";
 import { requireReader } from "./auth.middleware.js";
-import { followAuthor, listFollowedAuthors, unfollowAuthor } from "./follows.controller.js";
+import { followAuthor, followAuthorProfile, listFollowedAuthors, unfollowAuthor, unfollowAuthorProfile } from "./follows.controller.js";
 
 const router = Router();
 const followLimiter = rateLimit({
@@ -13,6 +13,8 @@ const followLimiter = rateLimit({
 
 router.use(requireReader);
 router.get("/", listFollowedAuthors);
+router.post("/profiles/:slug", followLimiter, followAuthorProfile);
+router.delete("/profiles/:slug", followLimiter, unfollowAuthorProfile);
 router.post("/", followLimiter, followAuthor);
 router.delete("/:authorName", followLimiter, unfollowAuthor);
 
