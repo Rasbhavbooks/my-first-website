@@ -55,7 +55,7 @@ export default function AccountPage() {
     }
   }
 
-  async function handlePassword(event) {
+  async function handleLogout() {\n    setError("");\n    setBusy(true);\n    try { await signOut(); } catch { setError(t.profileError); } finally { setBusy(false); }\n  }\n\n  async function handlePassword(event) {
     event.preventDefault();
     setNotice("");
     setError("");
@@ -121,7 +121,7 @@ export default function AccountPage() {
           </form>
         </section>
       </div>
-      <Link className="account-back" to="/">{t.backHome}</Link>
+      <button className="account-submit" style={{ width: "min(100%, 260px)", marginTop: 18 }} type="button" disabled={busy} onClick={handleLogout}>{t.signOut}</button>\n      <Link className="account-back" to="/">{t.backHome}</Link>
     </main>
   );
 }
