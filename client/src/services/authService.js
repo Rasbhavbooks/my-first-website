@@ -1,14 +1,16 @@
-async function postAuthRequest(path, payload) {
+async function postAuthRequest(path, payload, method = "POST") {
   const response = await fetch(path, {
-    method: "POST",
+    method,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    credentials: "include",
+    ...(method === "GET" ? {} : { body: JSON.stringify(payload) }),
   });
   const result = await response.json().catch(() => ({}));
 
   if (!response.ok) {
     const error = new Error(result.error?.message || "The request could not be completed.");
     error.code = result.error?.code || "REQUEST_FAILED";
+    error.status = response.status;
     throw error;
   }
   return result.data;
@@ -20,4 +22,21 @@ export function registerReader(payload) {
 
 export function verifyReaderEmail(token) {
   return postAuthRequest("/api/v1/auth/verify-email", { token });
+}
+
+export function loginReader(payload) {
+  return postAuthRequest("/api/v1/auth/login", payload);
+}
+
+export async function getReaderSession() {
+  try {
+    return await postAuthRequest("/api/v1/auth/session", undefined, "GET");
+  } catch (error) {
+    if (error.status === 401) return null;
+    throw error;
+  }
+}
+
+export function logoutReader() {
+  return postAuthRequest("/api/v1/auth/logout", {});
 }
