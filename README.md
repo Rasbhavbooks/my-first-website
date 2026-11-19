@@ -16,7 +16,7 @@ These documents are the source of truth for future work. Follow the phases in or
 
 ## Current phase
 
-Initial frontend + backend foundation: React + Vite, responsive book discovery, Gujarati/Hindi/English UI, Express API, and MongoDB Atlas development storage for the demonstration catalogue. A development-only registration form and email-verification API are present; email delivery, login sessions, purchases, and production authentication are not configured.
+Reader account foundation: React + Vite, responsive book discovery, Gujarati/Hindi/English UI, Express API, and MongoDB Atlas development storage. Development-only registration and verification are joined by rate-limited login, seven-day database-backed HttpOnly sessions, logout, basic profile/password settings, and account-synced wishlist. Email delivery, password reset, commerce, and production registration are not configured.
 
 ## Run in GitHub Codespaces
 
@@ -44,7 +44,7 @@ Then open a second terminal and start the frontend:
 npm run dev
 ```
 
-The frontend uses port 5173. The API uses port 4000 and exposes `/api/v1/health`, `/api/v1/books`, `/api/v1/books/:bookId`, `/api/v1/auth/register`, and `/api/v1/auth/verify-email`. Registration is development-only until email delivery is configured; in development, it returns a short-lived verification token in the response. The API reads books from MongoDB. Without a database connection, health remains available but the book endpoints report that the database is unavailable.
+The frontend uses port 5173. The API uses port 4000 and exposes `/api/v1/health`, `/api/v1/books`, `/api/v1/books/:bookId`, registration/verification, login/session/logout, reader profile and password routes, and an authenticated account wishlist. Registration is development-only until email delivery is configured; in development, it returns a short-lived verification token in the response. Signed-in readers need an active verified account. The API reads books from MongoDB. Without a database connection, health remains available but the book endpoints report that the database is unavailable.
 
 ## Local setup
 
