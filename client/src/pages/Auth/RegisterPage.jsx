@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { useLanguage } from "../../hooks/useLanguage.js";
-import { registerReader, verifyReaderEmail } from "../../services/authService.js";
+import { registerReader, resendReaderVerification, verifyReaderEmail } from "../../services/authService.js";
 
 const pageStyles = `
 .register-shell{min-height:calc(100vh - 82px);padding:64px 20px 80px;background:radial-gradient(ellipse at 10% 10%,#eee7da 0,transparent 38%),#f8f6f1;display:grid;place-items:center}
@@ -33,6 +33,7 @@ export default function RegisterPage() {
   const { t } = useLanguage();
   const [form, setForm] = useState({ displayName: "", email: "", password: "", confirmPassword: "" });
   const [verificationToken, setVerificationToken] = useState("");
+  const [verificationPending, setVerificationPending] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -61,6 +62,7 @@ export default function RegisterPage() {
       });
       setNotice(t.registrationSuccess);
       setVerificationToken(result.verificationToken || "");
+      setVerificationPending(true);
       setForm((current) => ({ ...current, password: "", confirmPassword: "" }));
     } catch (requestError) {
       setError(requestError.code === "ACCOUNT_EXISTS" ? t.accountExists : t.registrationError);
@@ -75,9 +77,25 @@ export default function RegisterPage() {
     try {
       await verifyReaderEmail(verificationToken);
       setVerificationToken("");
+      setVerificationPending(false);
       setNotice(t.emailVerified);
     } catch {
       setError(t.registrationError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleResendVerification() {
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const result = await resendReaderVerification(form.email);
+      setVerificationToken(result.verificationToken || "");
+      setNotice(result.verificationToken ? t.developmentVerificationToken : t.verificationEmailSent);
+    } catch {
+      setError(t.verificationEmailError);
     } finally {
       setBusy(false);
     }
@@ -107,6 +125,10 @@ export default function RegisterPage() {
           {verificationToken ? (
             <button className="register-submit" type="button" disabled={busy} onClick={handleVerify}>
               {busy ? t.verifyingEmail : t.verifyEmail}
+            </button>
+          ) : verificationPending ? (
+            <button className="register-submit" type="button" disabled={busy} onClick={handleResendVerification}>
+              {busy ? t.savingChanges : t.resendVerification}
             </button>
           ) : (
             <form className="register-form" onSubmit={handleSubmit}>
