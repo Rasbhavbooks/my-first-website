@@ -4,6 +4,8 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { followAuthor, getFollowedAuthors, unfollowAuthor } from "../../services/authorFollowService.js";
 
+const styles = `.author-follow-control{display:flex;align-items:center;gap:10px;margin:12px 0}.author-follow-button{min-height:36px;padding:0 14px;border:1px solid #30252c;background:transparent;color:#30252c;font-size:10px;cursor:pointer}.author-follow-button:hover,.author-follow-button[aria-pressed="true"]{background:#30252c;color:#fff}.author-follow-button:disabled{opacity:.6;cursor:wait}.author-follow-login{font-size:10px;color:#77716a}.author-follow-login a{color:#796747;text-decoration:underline}.author-follow-error{color:#863d32;font-size:9px}`;
+
 function keyForAuthor(name) {
   return name.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
 }
@@ -50,6 +52,7 @@ export default function AuthorFollowButton({ authorName }) {
 
   return (
     <div className="author-follow-control">
+      <style>{styles}</style>
       <button className="author-follow-button" type="button" disabled={busy} aria-pressed={following} onClick={toggleFollow}>
         {busy ? t.savingChanges : following ? t.unfollowAuthor : t.followAuthor}
       </button>
