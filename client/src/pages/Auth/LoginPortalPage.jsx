@@ -35,11 +35,6 @@ export default function LoginPortalPage() {
             <h2>{t.authorPortal}</h2>
             <p>{t.authorLoginIntro}</p>
           </Link>
-          <Link className="login-portal-card" to="/admin/login">
-            <ShieldCheck size={23} />
-            <h2>{t.adminPortal}</h2>
-            <p>{t.adminLoginIntro}</p>
-          </Link>
         </div>
         <p className="login-portals-footer">{t.newReader} <Link to="/register">{t.createAccount}</Link></p>
       </section>
