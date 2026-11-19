@@ -29,12 +29,21 @@ const bookReviewSchema = new mongoose.Schema(
       minlength: 10,
       maxlength: 2000,
     },
+    moderationStatus: {
+      type: String,
+      enum: ["visible", "hidden"],
+      default: "visible",
+      index: true,
+    },
+    moderationNote: { type: String, trim: true, maxlength: 500, default: "" },
+    moderatedAt: { type: Date, default: null },
+    moderatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
   },
   { timestamps: true, versionKey: false },
 );
 
 bookReviewSchema.index({ catalogueId: 1, userId: 1 }, { unique: true });
-bookReviewSchema.index({ catalogueId: 1, createdAt: -1 });
+bookReviewSchema.index({ catalogueId: 1, moderationStatus: 1, createdAt: -1 });
 
 const BookReview = mongoose.models.BookReview || mongoose.model("BookReview", bookReviewSchema);
 export default BookReview;
