@@ -16,7 +16,7 @@ These documents are the source of truth for future work. Follow the phases in or
 
 ## Current phase
 
-Phase 5 — author book workflow: reader and author foundation is implemented, including profiles, wishlists, reviews, author applications, and public author pages. Authors can prepare book drafts and submit metadata, covers, and manuscripts for admin review. Uploads use private Cloudflare R2 storage and ClamAV scanning, and stay disabled until both services are configured. Admin approval does not yet publish books to the public catalogue. Admin accounts still require trusted manual provisioning. Production registration and password reset stay disabled until email settings and the public app URL are configured.
+Phase 5 — author book workflow: reader and author foundation is implemented, including profiles, wishlists, reviews, author applications, and public author pages. Authors can update their storefront profile image and cover, view follower and book-workflow totals, prepare book drafts, and submit metadata, covers, and manuscripts for admin review. Uploads use private Cloudflare R2 storage and ClamAV scanning, and stay disabled until both services are configured. Admin approval does not yet publish books to the public catalogue. Admin accounts still require trusted manual provisioning. Production registration and password reset stay disabled until email settings and the public app URL are configured.
 
 ## Run in GitHub Codespaces
 
