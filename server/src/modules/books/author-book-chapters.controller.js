@@ -63,7 +63,7 @@ export async function createAuthorBookChapter(request, response) {
     bookId: book._id,
     authorId: request.reader._id,
     ...values,
-    order: (latest?.order || 0) + 1,
+    order: currentCount + 1,
   });
   response.setHeader("Cache-Control", "private, no-store");
   return response.status(201).json({ data: { chapter: chapterDto(chapter) } });
