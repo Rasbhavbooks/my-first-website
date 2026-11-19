@@ -16,7 +16,9 @@ function errorResponse(response, status, code, message) {
 
 function safeFileName(value, type, contentType) {
   const fallback = type === "cover" ? "cover" : "manuscript";
-  const base = (typeof value === "string" ? value.replaceAll("\\", "/").split("/").pop() : "")
+  let decodedName = value;
+  try { decodedName = decodeURIComponent(value); } catch { /* Use the sanitized original header. */ }
+  const base = (typeof decodedName === "string" ? decodedName.replaceAll("\\", "/").split("/").pop() : "")
     ?.replace(/[\u0000-\u001f\u007f]/g, "")
     .replace(/[^\p{L}\p{N} ._()-]/gu, "_")
     .trim()
@@ -97,7 +99,7 @@ export async function uploadAuthorBookAsset(request, response) {
 
   await scanBuffer(buffer);
   const fileName = safeFileName(request.get("x-file-name"), assetType, contentType);
-  const key = `quarantine/${request.reader.id}/${book.id}/${assetType}-${randomUUID()}`;
+  const key = `private/books/${request.reader.id}/${book.id}/${assetType}-${randomUUID()}`;
   await storePrivateObject({ key, body: buffer, contentType });
 
   const existingKey = book.assets?.[assetType]?.key;
