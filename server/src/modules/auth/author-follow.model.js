@@ -13,6 +13,7 @@ const authorFollowSchema = new mongoose.Schema(
       trim: true,
       maxlength: 120,
     },
+    authorProfileId: { type: mongoose.Schema.Types.ObjectId, ref: "AuthorProfile", default: null, index: true },
     authorName: {
       type: String,
       required: true,

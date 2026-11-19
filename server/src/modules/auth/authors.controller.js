@@ -1,5 +1,6 @@
 import AuthorProfile from "./author-profile.model.js";
 import Book from "../books/book.model.js";
+import AuthorFollow from "./author-follow.model.js";
 
 function validOptionalHttpsUrl(value) {
   if (!value) return true;
@@ -15,6 +16,7 @@ function publicAuthorDto(profile) {
     genres: profile.genres,
     writingSampleUrl: profile.writingSampleUrl,
     websiteUrl: profile.websiteUrl,
+    followName: profile.catalogueAuthorName,
   };
 }
 
@@ -29,8 +31,19 @@ export async function getPublicAuthorProfile(request, response) {
     .sort({ createdAt: -1 })
     .limit(50)
     .lean();
+  const followerIds = await AuthorFollow.distinct("userId", {
+    $or: [
+      { authorProfileId: profile._id },
+      { authorKey: profile.catalogueAuthorName.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US") },
+    ],
+  });
   response.setHeader("Cache-Control", "public, max-age=60");
-  return response.json({ data: { author: publicAuthorDto(profile), books: books.map(({ _id, catalogueId, ...book }) => ({ ...book, id: catalogueId })) } });
+  return response.json({
+    data: {
+      author: { ...publicAuthorDto(profile), followerCount: followerIds.length },
+      books: books.map(({ _id, catalogueId, ...book }) => ({ ...book, id: catalogueId })),
+    },
+  });
 }
 
 export async function getMyAuthorProfile(request, response) {

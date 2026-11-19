@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { getBookTitle } from "../../data/books.js";
+import AuthorFollowButton from "../../components/books/AuthorFollowButton.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { getPublicAuthorProfile } from "../../services/authorService.js";
 
@@ -43,6 +44,8 @@ export default function PublicAuthorPage() {
       <div className="eyebrow"><i />{t.forAuthors}</div>
       <h1>{author.authorName}</h1>
       <p className="public-author-meta">{author.writingLanguages.join(" · ")}{author.genres.length ? ` · ${author.genres.join(" · ")}` : ""}</p>
+      <p className="public-author-meta">{author.followerCount || 0} {t.authorFollowers}</p>
+      <AuthorFollowButton authorSlug={author.slug} authorName={author.followName || author.authorName} />
       <p className="public-author-bio">{author.biography}</p>
       <div className="public-author-links">
         {author.websiteUrl && <a href={author.websiteUrl} target="_blank" rel="noreferrer">{t.authorWebsite}</a>}
