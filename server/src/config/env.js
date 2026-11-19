@@ -24,4 +24,12 @@ export const env = {
   resendApiKey,
   emailFrom,
   emailConfigured: Boolean(resendApiKey && emailFrom && configuredAppBaseUrl),
+  r2AccountId: process.env.R2_ACCOUNT_ID || "",
+  r2AccessKeyId: process.env.R2_ACCESS_KEY_ID || "",
+  r2SecretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
+  r2BucketName: process.env.R2_BUCKET_NAME || "",
+  r2Configured: Boolean(process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY && process.env.R2_BUCKET_NAME),
+  clamavHost: process.env.CLAMAV_HOST || "",
+  clamavPort: Number(process.env.CLAMAV_PORT || 3310),
+  clamavConfigured: Boolean(process.env.CLAMAV_HOST),
 };
