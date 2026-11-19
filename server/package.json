@@ -10,7 +10,8 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "test": "node --test",
-    "seed:books": "node src/scripts/seedBooks.js"
+    "seed:books": "node src/scripts/seedBooks.js",
+    "admin:bootstrap": "node src/scripts/bootstrapAdmin.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
