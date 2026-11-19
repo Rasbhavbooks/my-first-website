@@ -171,7 +171,7 @@ export default function AuthorBooksPage() {
       <p className="author-books-intro">{t.authorBooksIntro}</p>
       <p className="author-book-warning" role="note">{t.manuscriptUploadPending}</p>
       {uploadingAsset && <p className="author-book-notice" role="status">{t.uploadingFile}</p>}
-      {notice && <p className="author-book-notice" role="status">{notice}</p>
+      {notice && <p className="author-book-notice" role="status">{notice}</p>}
       {error && <p className="author-book-error" role="alert">{error}</p>}
       <div className="author-books-layout">
         <section className="author-books-list" aria-labelledby="author-book-list-title">
