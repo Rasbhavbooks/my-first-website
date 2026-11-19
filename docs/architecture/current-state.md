@@ -20,10 +20,12 @@ This file records implementation status; the complete requirements remain in the
 - Reader login checks Argon2id password hashes, blocks unverified accounts, and rate-limits attempts. Successful sign-in creates a seven-day database-backed session with a random HttpOnly, SameSite cookie; logout revokes the session. The frontend supports sign-in, session restore, and sign-out in English, Gujarati, and Hindi.
 - Signed-in readers can update their display name, a short bio, up to 10 hobbies, and an HTTPS profile photo URL. Profile data is available in English, Gujarati, and Hindi. Photo uploads and managed image storage are not configured. Readers can also change their password; password changes revoke all existing reader sessions. Account endpoints require a valid server-side session.
 - Guest wishlists remain browser-local. Signed-in readers can sync saved catalogue books to an account-owned MongoDB wishlist with validated book references and per-account limits.
+- Readers can post one 1–5 star review per catalogue book, edit or delete their own review, and report other reviews. Public review summaries and reader display names/profile photos are shown; email and credentials are not exposed. Reports are stored for later moderation; an admin moderation queue is not implemented.
+- Signed-in readers can follow catalogue authors from book details, and view or unfollow them from their account page. Follow data is account-owned and stored in MongoDB.
 - Outbound email, password reset, and production registration are still pending.
 
 ## Not implemented
-Password reset, account deletion/export, full reader account management, author/admin permissions, book uploads, paid book access, reviews, account-synced reader library, CMS, subscriptions, payments, royalty ledger, affiliates, institutions, audiobooks, AI tools, production storage, and mobile apps.
+Password reset, account deletion/export, full account deletion/export, author/admin permissions, book uploads, paid book access, review moderation queue, account-synced reader library, CMS, subscriptions, payments, royalty ledger, affiliates, institutions, audiobooks, AI tools, production storage, and mobile apps.
 
 ## Next phase
-Add registration, verification, session, profile, password-change, and wishlist synchronization checks; configure email delivery; then extend server-side authorization to author/admin workflows before exposing registration outside development. Admin and paid access remain future work. Do not mark a planned feature complete until it meets the Definition of Done in the master architecture.
+Add review and author-follow checks; configure email delivery and password reset; then build author/admin authorization and a review moderation queue before exposing registration outside development. Admin and paid access remain future work. Do not mark a planned feature complete until it meets the Definition of Done in the master architecture.
