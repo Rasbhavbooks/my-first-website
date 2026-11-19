@@ -18,7 +18,7 @@ import authorBookAdminRoutes from "./modules/books/author-book-admin.routes.js";
 
 const app = express();
 app.disable("x-powered-by");
-app.use(helmet());
+app.use(helmet({ contentSecurityPolicy: { directives: { imgSrc: ["\u0027self\u0027", "data:", "https:"] } } }));
 app.use(cors({ origin: env.clientOrigin, credentials: true }));
 app.use(express.json({ limit: "1mb" }));
 app.get("/", (_request, response) => response.json({ name: "Rasbhav Books API", version: "v1" }));

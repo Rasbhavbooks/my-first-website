@@ -15,6 +15,8 @@ const authorProfileSchema = new mongoose.Schema(
     genres: { type: [{ type: String, trim: true, maxlength: 40 }], default: [], validate: [(values) => values.length <= 10, "Choose no more than 10 genres."] },
     writingSampleUrl: { type: String, trim: true, maxlength: 500, default: "" },
     websiteUrl: { type: String, trim: true, maxlength: 500, default: "" },
+    profilePhotoUrl: { type: String, trim: true, maxlength: 500, default: "" },
+    coverImageUrl: { type: String, trim: true, maxlength: 500, default: "" },
     status: { type: String, enum: ["active", "suspended"], default: "active", index: true },
   },
   { timestamps: true, versionKey: false },

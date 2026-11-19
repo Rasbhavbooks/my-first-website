@@ -7,6 +7,10 @@ import { getPublicAuthorProfile } from "../../services/authorService.js";
 
 const styles = `
 .public-author{max-width:1000px;min-height:70vh;margin:auto;padding:62px 22px 90px}
+.public-author-branding{position:relative;height:250px;margin-bottom:54px;background:#e9e3d9;overflow:hidden}
+.public-author-cover{width:100%;height:100%;object-fit:cover}
+.public-author-avatar{position:absolute;left:28px;bottom:-35px;width:112px;height:112px;border:5px solid #f6f3ee;border-radius:50%;object-fit:cover;background:#fffdfa}
+@media(max-width:600px){.public-author-branding{height:170px;margin-bottom:48px}.public-author-avatar{left:18px;width:92px;height:92px}}
 .public-author h1{font:500 clamp(38px,6vw,60px)/1.05 var(--serif);color:#30252c}
 .public-author-bio{max-width:720px;color:#68615a;font-size:13px;line-height:2;white-space:pre-wrap}
 .public-author-meta{color:#897e70;font-size:10px;letter-spacing:.7px;text-transform:uppercase}
@@ -41,6 +45,12 @@ export default function PublicAuthorPage() {
   return (
     <main className="public-author">
       <style>{styles}</style>
+      {(author.coverImageUrl || author.profilePhotoUrl) && (
+        <div className="public-author-branding">
+          {author.coverImageUrl && <img className="public-author-cover" src={author.coverImageUrl} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" />}
+          {author.profilePhotoUrl && <img className="public-author-avatar" src={author.profilePhotoUrl} alt={author.authorName} loading="lazy" decoding="async" referrerPolicy="no-referrer" />}
+        </div>
+      )}
       <div className="eyebrow"><i />{t.forAuthors}</div>
       <h1>{author.authorName}</h1>
       <p className="public-author-meta">{author.writingLanguages.join(" · ")}{author.genres.length ? ` · ${author.genres.join(" · ")}` : ""}</p>

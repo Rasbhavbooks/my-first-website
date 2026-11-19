@@ -4,7 +4,12 @@ import AuthorFollow from "./author-follow.model.js";
 
 function validOptionalHttpsUrl(value) {
   if (!value) return true;
-  try { return new URL(value).protocol === "https:"; } catch { return false; }
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && Boolean(url.hostname) && !url.username && !url.password;
+  } catch {
+    return false;
+  }
 }
 
 function publicAuthorDto(profile) {
@@ -16,6 +21,8 @@ function publicAuthorDto(profile) {
     genres: profile.genres,
     writingSampleUrl: profile.writingSampleUrl,
     websiteUrl: profile.websiteUrl,
+    profilePhotoUrl: profile.profilePhotoUrl,
+    coverImageUrl: profile.coverImageUrl,
     followName: profile.catalogueAuthorName,
   };
 }
@@ -64,17 +71,23 @@ export async function updateMyAuthorProfile(request, response) {
   const authorName = typeof request.body?.authorName === "string" ? request.body.authorName.trim() : "";
   const biography = typeof request.body?.biography === "string" ? request.body.biography.trim() : "";
   const websiteUrl = typeof request.body?.websiteUrl === "string" ? request.body.websiteUrl.trim() : "";
+  const profilePhotoUrl = typeof request.body?.profilePhotoUrl === "string" ? request.body.profilePhotoUrl.trim() : "";
+  const coverImageUrl = typeof request.body?.coverImageUrl === "string" ? request.body.coverImageUrl.trim() : "";
   if (
     authorName.length < 2 || authorName.length > 100
     || biography.length < 40 || biography.length > 2000
     || websiteUrl.length > 500 || !validOptionalHttpsUrl(websiteUrl)
+    || profilePhotoUrl.length > 500 || !validOptionalHttpsUrl(profilePhotoUrl)
+    || coverImageUrl.length > 500 || !validOptionalHttpsUrl(coverImageUrl)
   ) {
-    return response.status(400).json({ error: { code: "INVALID_AUTHOR_PROFILE", message: "Check your public name, biography, and HTTPS website link." } });
+    return response.status(400).json({ error: { code: "INVALID_AUTHOR_PROFILE", message: "Check your public name, biography, and HTTPS website or image links." } });
   }
 
   profile.authorName = authorName;
   profile.biography = biography;
   profile.websiteUrl = websiteUrl;
+  profile.profilePhotoUrl = profilePhotoUrl;
+  profile.coverImageUrl = coverImageUrl;
   await profile.save();
   response.setHeader("Cache-Control", "no-store");
   return response.json({ data: { author: { ...publicAuthorDto(profile), id: profile.id } } });
