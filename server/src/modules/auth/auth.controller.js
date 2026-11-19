@@ -124,7 +124,7 @@ export async function requestReaderVerification(request, response) {
   if (process.env.NODE_ENV === "production" && !env.emailConfigured) {
     return response.status(503).json({ error: { code: "EMAIL_DELIVERY_NOT_CONFIGURED", message: "Email delivery is temporarily unavailable." } });
   }
-  if (!email || email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+  if (!email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return response.json(generic);
   }
 
