@@ -8,7 +8,7 @@ const styles = `
 .author-studio{max-width:880px;min-height:70vh;margin:auto;padding:58px 22px 90px}
 .author-studio h1{font:500 clamp(34px,5vw,48px)/1.1 var(--serif);color:#30252c}
 .author-studio-panel{margin-top:24px;padding:28px;border:1px solid #e4ddd1;background:#fffdfa}
-.author-studio-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:20px}
+.author-studio-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:20px}
 .author-studio-stat{display:grid;gap:5px;padding:18px;border:1px solid #e4ddd1;background:#fffdfa}
 .author-studio-stat strong{font:500 27px var(--serif);color:#30252c}
 .author-studio-stat span{color:#77716a;font-size:10px}
@@ -70,6 +70,10 @@ export default function AuthorStudioPage() {
       {profile && <section className="author-studio-stats" aria-label={t.authorStats}>
         <div className="author-studio-stat"><strong>{profile.followerCount ?? 0}</strong><span>{t.authorFollowers}</span></div>
         <div className="author-studio-stat"><strong>{profile.catalogueBookCount ?? 0}</strong><span>{t.authorCatalogueBooks}</span></div>
+        <div className="author-studio-stat"><strong>{profile.draftCount ?? 0}</strong><span>{t.authorDraftBooks}</span></div>
+        <div className="author-studio-stat"><strong>{profile.submittedCount ?? 0}</strong><span>{t.authorSubmittedBooks}</span></div>
+        <div className="author-studio-stat"><strong>{profile.approvedCount ?? 0}</strong><span>{t.authorApprovedBooks}</span></div>
+        <div className="author-studio-stat"><strong>{profile.changesRequestedCount ?? 0}</strong><span>{t.authorChangesRequestedBooks}</span></div>
       </section>}
       <section className="author-studio-panel">
         <form className="author-studio-form" onSubmit={saveProfile}>
