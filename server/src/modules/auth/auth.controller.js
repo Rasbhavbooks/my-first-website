@@ -23,6 +23,9 @@ function safeUser(user) {
     id: user.id,
     displayName: user.displayName,
     email: user.email,
+    avatarUrl: user.avatarUrl || "",
+    bio: user.bio || "",
+    hobbies: Array.isArray(user.hobbies) ? user.hobbies : [],
     role: user.role,
     accountStatus: user.accountStatus,
   };
@@ -228,14 +231,48 @@ export function getReaderProfile(request, response) {
 }
 
 export async function updateReaderProfile(request, response) {
-  const displayName = typeof request.body?.displayName === "string" ? request.body.displayName.trim() : "";
-  if (displayName.length < 2 || displayName.length > 80) {
+  const body = request.body && typeof request.body === "object" && !Array.isArray(request.body)
+    ? request.body
+    : {};
+  const displayName = body.displayName === undefined
+    ? request.reader.displayName
+    : typeof body.displayName === "string" ? body.displayName.trim() : "";
+  const bio = body.bio === undefined
+    ? request.reader.bio || ""
+    : typeof body.bio === "string" ? body.bio.trim() : null;
+  const rawHobbies = body.hobbies === undefined ? request.reader.hobbies || [] : body.hobbies;
+  const avatarUrl = body.avatarUrl === undefined
+    ? request.reader.avatarUrl || ""
+    : typeof body.avatarUrl === "string" ? body.avatarUrl.trim() : null;
+
+  const validHobbies = Array.isArray(rawHobbies)
+    && rawHobbies.length <= 10
+    && rawHobbies.every((item) => typeof item === "string" && item.trim().length >= 1 && item.trim().length <= 40);
+  let validAvatarUrl = avatarUrl === "";
+  if (typeof avatarUrl === "string" && avatarUrl.length <= 500 && avatarUrl) {
+    try {
+      validAvatarUrl = new URL(avatarUrl).protocol === "https:";
+    } catch {
+      validAvatarUrl = false;
+    }
+  }
+
+  if (
+    displayName.length < 2 || displayName.length > 80
+    || typeof bio !== "string" || bio.length > 280
+    || !validHobbies
+    || typeof avatarUrl !== "string" || !validAvatarUrl
+  ) {
     return response.status(400).json({
-      error: { code: "INVALID_PROFILE", message: "Name must be between 2 and 80 characters." },
+      error: { code: "INVALID_PROFILE", message: "Check your name, bio, hobbies, and HTTPS profile photo link." },
     });
   }
 
+  const uniqueHobbies = [...new Map(rawHobbies.map((item) => [item.trim().toLowerCase(), item.trim()])).values()];
   request.reader.displayName = displayName;
+  request.reader.bio = bio;
+  request.reader.hobbies = uniqueHobbies;
+  request.reader.avatarUrl = avatarUrl;
   await request.reader.save();
   response.setHeader("Cache-Control", "no-store");
   return response.json({ data: { user: safeUser(request.reader) } });
