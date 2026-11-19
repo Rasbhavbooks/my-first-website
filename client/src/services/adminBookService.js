@@ -17,3 +17,5 @@ async function adminBookRequest(path, payload, method = "GET") {
 
 export const getSubmittedAuthorBooks = () => adminBookRequest("/api/v1/admin/author-books");
 export const decideAuthorBook = (id, payload) => adminBookRequest(`/api/v1/admin/author-books/${encodeURIComponent(id)}`, payload, "PATCH");
+
+export const getSubmittedAuthorBookChapters = (bookId) => adminBookRequest(`/api/v1/admin/author-books/${encodeURIComponent(bookId)}/chapters`);
