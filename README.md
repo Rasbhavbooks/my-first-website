@@ -16,7 +16,7 @@ These documents are the source of truth for future work. Follow the phases in or
 
 ## Current phase
 
-Reader and author foundation: readers can manage profiles, wishlists, reviews, and followed authors. Readers can apply to become authors; admins review applications, and approval unlocks an author profile/studio. Public author pages show profile details and matching catalogue books. Review moderation and transactional Resend email are also available when configured. Admin accounts still require trusted manual provisioning. Production registration and password reset stay disabled until email settings and public app URL are configured.
+Phase 5 — author book workflow: reader and author foundation is implemented, including profiles, wishlists, reviews, author applications, and public author pages. Authors can prepare book drafts and submit metadata, covers, and manuscripts for admin review. Uploads use private Cloudflare R2 storage and ClamAV scanning, and stay disabled until both services are configured. Admin approval does not yet publish books to the public catalogue. Admin accounts still require trusted manual provisioning. Production registration and password reset stay disabled until email settings and the public app URL are configured.
 
 ## Run in GitHub Codespaces
 
@@ -32,6 +32,10 @@ Set these Codespaces secrets, then restart the Codespace:
 - `RESEND_API_KEY` — private API key from Resend.
 - `EMAIL_FROM` — sender address verified with Resend, for example `Rasbhav Books <noreply@your-domain.example>`.
 - `APP_BASE_URL` — public HTTPS URL for the frontend on port 5173, without a path.
+- `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `R2_BUCKET_NAME` — credentials and private bucket name from Cloudflare R2.
+- `CLAMAV_HOST` and `CLAMAV_PORT` — private network address and port of the ClamAV daemon reachable by the API. Do not expose the daemon publicly.
+
+The upload API fails closed until both R2 and ClamAV are reachable. Create the R2 bucket as private and create a scoped R2 API token for that bucket. Never put R2 credentials in frontend variables or commit them. `server/.env.example` lists all server settings.
 
 Set `CLIENT_ORIGIN` to that same frontend origin so the API accepts browser requests. Keep all keys private; never commit them. Without email settings, development returns a manual one-time token. Production will not create accounts or reset passwords until email is configured. Before the first API start, load the sample books once:
 
@@ -51,7 +55,7 @@ Then open a second terminal and start the frontend:
 npm run dev
 ```
 
-The frontend uses port 5173. The API uses port 4000 and exposes `/api/v1/health`, `/api/v1/books`, `/api/v1/books/:bookId`, registration, verification/resend, login/session/logout, reader profile/password and password-reset routes, account wishlist, book review/report routes, author-follow routes, reader author-application routes, author profile routes, public author profiles, and admin-only review and author-application routes. Without email configuration in development, registration and password reset return short-lived tokens for manual use. With Resend configured, the API emails links instead. Signed-in readers need an active verified account. The API reads books from MongoDB. Without a database connection, health remains available but the book endpoints report that the database is unavailable.
+The frontend uses port 5173. The API uses port 4000 and exposes `/api/v1/health`, `/api/v1/books`, `/api/v1/books/:bookId`, registration, verification/resend, login/session/logout, reader profile/password and password-reset routes, account wishlist, book review/report routes, author-follow routes, reader author-application routes, author profile routes, public author profiles, author-owned book draft/file routes, and admin-only review, author-application, and book-review routes. Without email configuration in development, registration and password reset return short-lived tokens for manual use. With Resend configured, the API emails links instead. Signed-in readers need an active verified account. The API reads books from MongoDB. Without a database connection, health remains available but the book endpoints report that the database is unavailable.
 
 ## Local setup
 
