@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router";
 import { ArrowRight, ArrowUpRight, BookOpen, Check, Search, Sparkles, Users } from "lucide-react";
 import BookCard from "../../components/books/BookCard.jsx";
 import { categories } from "../../data/books.js";
@@ -18,7 +19,7 @@ export default function HomePage() {
     <main>
       <section className="hero">
         <div className="hero-copy"><div className="eyebrow"><i />{t.eyebrow}</div><h1>{t.headline}</h1><p>{t.intro}</p>
-          <div className="hero-actions"><a className="button button-dark" href="#discover">{t.explore}<ArrowRight size={17} /></a><a className="button button-light" href="#authors">{t.authorCta}<ArrowUpRight size={16} /></a></div>
+          <div className="hero-actions"><a className="button button-dark" href="#discover">{t.explore}<ArrowRight size={17} /></a><Link className="button button-light" to="/author/apply">{t.authorCta}<ArrowUpRight size={16} /></Link></div>
           <div className="hero-note"><span>✳</span>{t.note}</div>
         </div>
         <div className="hero-art" aria-label="A stack of books"><div className="sun-disc" /><div className="hero-caption">THE READING ROOM<br />01 — 03</div><div className="art-leaf">✳</div><div className="display-book book-one"><span>STORIES<br />TO KEEP</span></div><div className="display-book book-two"><span>WORDS<br />THAT STAY</span></div><div className="display-book book-three"><span>RASBHAV<br />BOOKS</span></div></div>
@@ -39,7 +40,7 @@ export default function HomePage() {
       </section>
 
       <section className="author-section" id="authors"><div className="author-visual"><span className="author-orbit" /><div className="author-quote">“<br /><span>Words find<br />their people.</span></div><div className="author-seal">✦<small>AUTHOR<br />STUDIO</small></div></div>
-        <div className="author-copy"><div className="eyebrow"><i />{t.forAuthors}</div><h2>{t.meet}</h2><p>{t.meetIntro}</p><div className="author-point"><Check size={17} /><div><strong>{t.forReaders}</strong><p>{t.readerText}</p></div></div><div className="author-point"><Check size={17} /><div><strong>{t.forAuthors}</strong><p>{t.authorText}</p></div></div><a className="button button-dark" href="#about">{t.learnMore}<ArrowRight size={16} /></a></div>
+        <div className="author-copy"><div className="eyebrow"><i />{t.forAuthors}</div><h2>{t.meet}</h2><p>{t.meetIntro}</p><div className="author-point"><Check size={17} /><div><strong>{t.forReaders}</strong><p>{t.readerText}</p></div></div><div className="author-point"><Check size={17} /><div><strong>{t.forAuthors}</strong><p>{t.authorText}</p></div></div><Link className="button button-dark" to="/author/apply">{t.learnMore}<ArrowRight size={16} /></Link></div>
       </section>
 
       <section className="newsletter" id="about"><div><div className="eyebrow"><i />{t.community}</div><h2>{subscribed ? t.subscribed : t.newsletter}</h2><p>{t.newsletterText}</p></div>
