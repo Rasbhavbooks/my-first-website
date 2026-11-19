@@ -42,14 +42,14 @@ export async function listBookReviews(request, response) {
   const page = Math.max(1, Math.min(1000, Number.parseInt(request.query.page, 10) || 1));
   const limit = 20;
   const [records, total, summary] = await Promise.all([
-    BookReview.find({ catalogueId })
+    BookReview.find({ catalogueId, moderationStatus: "visible" })
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .populate("userId", "displayName avatarUrl"),
-    BookReview.countDocuments({ catalogueId }),
+    BookReview.countDocuments({ catalogueId, moderationStatus: "visible" }),
     BookReview.aggregate([
-      { $match: { catalogueId } },
+      { $match: { catalogueId, moderationStatus: "visible" } },
       { $group: { _id: null, averageRating: { $avg: "$rating" }, ratingCount: { $sum: 1 } } },
     ]),
   ]);
