@@ -21,11 +21,14 @@ export const saveAuthorBookDraft = (id, payload) => bookRequest(`/api/v1/author/
 export const submitAuthorBook = (id) => bookRequest(`/api/v1/author/books/${encodeURIComponent(id)}/submit`, {}, "POST");
 
 export async function uploadAuthorBookAsset(id, assetType, file) {
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  const inferredType = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", pdf: "application/pdf" }[extension];
+  const contentType = file.type || inferredType || "application/octet-stream";
   const response = await fetch(`/api/v1/author/books/${encodeURIComponent(id)}/assets/${encodeURIComponent(assetType)}`, {
     method: "PUT",
     credentials: "include",
     headers: {
-      "Content-Type": file.type,
+      "Content-Type": contentType,
       "X-File-Name": encodeURIComponent(file.name),
     },
     body: file,
