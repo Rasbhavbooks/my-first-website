@@ -114,7 +114,7 @@ export async function uploadAuthorBookAsset(request, response) {
       await deletePrivateObject(key);
       return errorResponse(response, 409, "AUTHOR_BOOK_NOT_EDITABLE", "This book was submitted while the file was uploading.");
     }
-    if (existingKey) await deletePrivateObject(existingKey);
+    if (existingKey && existingKey !== key) await deletePrivateObject(existingKey).catch(() => {});
     response.setHeader("Cache-Control", "no-store");
     return response.json({ data: { book: authorBookDto(updated) } });
   } catch (error) {
