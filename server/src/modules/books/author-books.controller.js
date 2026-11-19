@@ -30,7 +30,7 @@ function validFields(body, requireDescription = false) {
   const description = localizedValues(body?.description, 4000);
   const price = Number(body?.price);
   if (!LANGUAGES.has(language) || !CATEGORY_SET.has(category) || !title || !description
-    || !Number.isFinite(price) || price < 0 || price > 100000 || Math.round(price * 100) !== price * 100) {
+    || !Number.isFinite(price) || price < 0 || price > 100000 || Math.abs(price * 100 - Math.round(price * 100)) > 1e-7) {
     return null;
   }
   const key = LANGUAGE_KEYS[language];
