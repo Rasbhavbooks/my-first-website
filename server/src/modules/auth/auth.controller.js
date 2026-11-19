@@ -314,7 +314,7 @@ const PASSWORD_RESET_TTL_MS = 30 * 60 * 1000;
 
 export async function requestPasswordReset(request, response) {
   const email = typeof request.body?.email === "string" ? request.body.email.trim().toLowerCase() : "";
-  const validEmail = email.length <= 254 && /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);
+  const validEmail = email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const generic = { data: { message: "If an active account matches that email, password reset instructions are available." } };
 
   // Email delivery is not configured yet. In production, do not reveal account existence
@@ -359,7 +359,7 @@ export async function resetReaderPassword(request, response) {
     && newPassword.length <= 128
     && /[a-z]/.test(newPassword)
     && /[A-Z]/.test(newPassword)
-    && /\\d/.test(newPassword);
+    && /\d/.test(newPassword);
   if (token.length < 32 || token.length > 100 || !validPassword) {
     return response.status(400).json({
       error: { code: "INVALID_RESET_REQUEST", message: "The reset link or new password is invalid." },
