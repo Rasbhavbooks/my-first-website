@@ -18,6 +18,7 @@ export default function Header() {
         <a href="#authors" onClick={() => setOpen(false)}>{t.authors}</a>
         <a href="#about" onClick={() => setOpen(false)}>{t.about}</a>
         <Link to="/wishlist" onClick={() => setOpen(false)}>{t.wishlist}{savedBookIds.length > 0 && <span className="wishlist-count">{savedBookIds.length}</span>}</Link>
+        <Link to="/login" onClick={() => setOpen(false)}>{t.signIn}</Link>
         <Link to="/register" onClick={() => setOpen(false)}>{t.createAccount}</Link>
       </nav>
       <div className="header-actions">
