@@ -17,7 +17,7 @@ export async function getAdminDashboardStats(_request, response) {
   ] = await Promise.all([
     User.countDocuments({ accountStatus: "active" }),
     User.countDocuments({ role: "reader", accountStatus: "active" }),
-    User.countDocuments({ role: "author", accountStatus: "active" }),
+    AuthorProfile.countDocuments({ status: "active" }),
     Book.countDocuments({}),
     AuthorApplication.countDocuments({ status: "pending" }),
     AuthorBook.countDocuments({ status: "submitted" }),
