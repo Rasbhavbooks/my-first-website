@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import ReaderSession from "./reader-session.model.js";
+import AuthorProfile from "./author-profile.model.js";
 
 const SESSION_COOKIE = "rasbhav_reader_session";
 
@@ -55,10 +56,16 @@ export function requireAdmin(request, response, next) {
 }
 
 
-export function requireAuthor(request, response, next) {
+export async function requireAuthor(request, response, next) {
   if (request.reader?.role !== "author") {
     return response.status(403).json({
       error: { code: "AUTHOR_ACCESS_REQUIRED", message: "An approved author account is required." },
+    });
+  }
+  const profile = await AuthorProfile.exists({ userId: request.reader._id, status: "active" });
+  if (!profile) {
+    return response.status(403).json({
+      error: { code: "AUTHOR_PROFILE_SUSPENDED", message: "This author profile is not active." },
     });
   }
   return next();
