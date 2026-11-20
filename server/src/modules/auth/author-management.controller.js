@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import AuthorProfile from "../auth/author-profile.model.js";
+import AuthorProfile from "./author-profile.model.js";
 import AuthorFollow from "../auth/author-follow.model.js";
 import AuthorBook from "../books/author-book.model.js";
 import Book from "../books/book.model.js";
@@ -7,7 +7,8 @@ import Book from "../books/book.model.js";
 const PAGE_SIZE = 25;
 
 function escapeRegex(value) {
-  return value.replace(/[.*+?^\\x24{}()|[\\]\\\\]/g, "\\\\$&");
+  const specialCharacters = new Set([".", "*", "+", "?", "^", "$", "{", "}", "(", ")", "|", "[", "]", "\\"]);
+  return [...value].map((character) => specialCharacters.has(character) ? "\\" + character : character).join("");
 }
 
 function errorResponse(response, status, code, message) {
