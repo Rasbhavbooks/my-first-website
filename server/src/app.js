@@ -17,6 +17,7 @@ import authorAdminRoutes from "./modules/auth/author-admin.routes.js";
 import authorBookAdminRoutes from "./modules/books/author-book-admin.routes.js";
 import adminDashboardRoutes from "./modules/admin/admin.routes.js";
 import adminUsersRoutes from "./modules/admin/admin-users.routes.js";
+import authorManagementRoutes from "./modules/auth/author-management.routes.js";
 
 const app = express();
 app.disable("x-powered-by");
@@ -37,6 +38,7 @@ app.use("/api/v1/admin/author-applications", authorAdminRoutes);
 app.use("/api/v1/admin/author-books", authorBookAdminRoutes);
 app.use("/api/v1/admin/dashboard", adminDashboardRoutes);
 app.use("/api/v1/admin/users", adminUsersRoutes);
+app.use("/api/v1/admin/authors", authorManagementRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
