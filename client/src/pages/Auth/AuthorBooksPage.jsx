@@ -224,7 +224,6 @@ export default function AuthorBooksPage() {
 
   const editable = ["draft", "rejected"].includes(form.status);
   const contentKey = LANGUAGE_KEYS[form.language] || "en";
-  const categories = Object.entries(t.categories || {}).filter(([key]) => key !== "All");
 
   return (
     <main className="author-books">
