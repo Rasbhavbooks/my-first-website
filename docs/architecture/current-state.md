@@ -19,7 +19,7 @@ This file records implementation status; the complete requirements remain in the
 - Admins can search and filter user accounts by name, email, role, and status. The user list exposes only basic account fields; admins can suspend or restore verified reader/author accounts, and suspension revokes all of that user's active sessions. Admin accounts, the current admin, and unverified accounts cannot be changed from this page.
 - Admins can search author storefronts and view follower, public-catalogue, draft, and submitted-book totals. They can suspend/restore author profiles; suspension hides the public storefront and blocks author-only API routes while preserving the account. A suspended user account must be restored before its author profile can be restored.
 - Admins can search existing public catalogue entries and edit localized titles and descriptions, language, category, price, badge, and card theme. The original catalogue author credit and book ID remain fixed. This does not publish author drafts or enable purchases.
-- Admins can edit the localized homepage hero, manage localized header links and footer copy/browse links, and turn an optional announcement banner on or off. Site links are restricted to same-site paths or page anchors.
+- Admins can edit the localized homepage hero, reorder and show or hide fixed homepage sections (book discovery stays visible), manage localized header links and footer copy/browse links, and turn an optional announcement banner on or off. Site links are restricted to same-site paths or page anchors.
 - Admins can add and localize categories in Gujarati, Hindi, and English, change display order, and disable unused categories. Categories with catalogue books or author drafts cannot be disabled. Reader filters, author drafts, and catalogue editing use the active database categories.
 - Admins can create, edit, and publish/unpublish static CMS pages with Gujarati, Hindi, and English titles and plain-text content plus localized SEO titles/descriptions. Draft pages remain private; public pages are linked in the footer. Publishing requires complete titles and body text in all three languages.
 - Signed-in readers can submit a writer application with biography, writing languages, genres, and an optional HTTPS sample link. Applications are rate-limited; pending applications cannot be duplicated, and rejected applications can be resubmitted.
@@ -35,7 +35,7 @@ This file records implementation status; the complete requirements remain in the
 
 ## Not implemented
 
-Homepage section layout and footer layout/community columns, blog, widgets, media library, broader platform settings, book publication to the public catalogue, account deletion/export, verified-purchase review labels, helpful-review voting, production email deliverability monitoring, paid reader access and reading, purchases/payments, subscriptions, royalty ledger, broader CMS features, affiliates, institutions, audiobooks, AI tools, and mobile apps.
+Custom homepage section creation and footer layout/community columns, blog, widgets, media library, broader platform settings, book publication to the public catalogue, account deletion/export, verified-purchase review labels, helpful-review voting, production email deliverability monitoring, paid reader access and reading, purchases/payments, subscriptions, royalty ledger, broader CMS features, affiliates, institutions, audiobooks, AI tools, and mobile apps.
 
 ## Next phase
 
