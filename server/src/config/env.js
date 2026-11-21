@@ -9,6 +9,10 @@ const r2AccountId = process.env.R2_ACCOUNT_ID || "";
 const r2AccessKeyId = process.env.R2_ACCESS_KEY_ID || "";
 const r2SecretAccessKey = process.env.R2_SECRET_ACCESS_KEY || "";
 const r2BucketName = process.env.R2_BUCKET_NAME || "";
+const adminMfaEncryptionKey = process.env.ADMIN_MFA_ENCRYPTION_KEY || "";
+if (adminMfaEncryptionKey && !/^[A-Fa-f0-9]{64}$/.test(adminMfaEncryptionKey)) {
+  throw new Error("ADMIN_MFA_ENCRYPTION_KEY must be exactly 64 hexadecimal characters.");
+}
 if (r2AccountId && !/^[A-Za-z0-9-]+$/.test(r2AccountId)) {
   throw new Error("R2_ACCOUNT_ID contains unsupported characters.");
 }
@@ -47,4 +51,6 @@ export const env = {
   clamavHost: process.env.CLAMAV_HOST || "",
   clamavPort,
   clamavConfigured: Boolean(process.env.CLAMAV_HOST),
+  adminMfaEncryptionKey,
+  adminMfaConfigured: Boolean(adminMfaEncryptionKey),
 };
