@@ -47,6 +47,14 @@ const footerSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const homepageSectionSchema = new mongoose.Schema(
+  {
+    id: { type: String, enum: ["hero", "trust", "discovery", "languages", "authors", "community"], required: true },
+    enabled: { type: Boolean, required: true, default: true },
+  },
+  { _id: false },
+);
+
 const siteSettingsSchema = new mongoose.Schema(
   {
     key: { type: String, required: true, unique: true, immutable: true, default: "global" },
@@ -54,6 +62,7 @@ const siteSettingsSchema = new mongoose.Schema(
     navigation: { type: [navigationItemSchema], default: [], validate: (items) => items.length <= 8 },
     footer: { type: footerSchema, required: true },
     homepage: {
+      sections: { type: [homepageSectionSchema], default: [], validate: (sections) => sections.length === 6 },
       hero: { type: heroSchema, required: true },
     },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
