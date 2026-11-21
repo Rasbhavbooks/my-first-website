@@ -167,6 +167,8 @@ export default function AdminSiteSettingsPage() {
           </div>
         </div>)}
         <button className="admin-site-add" type="button" disabled={settings.navigation.length >= 8} onClick={addNavigationItem}>{t.addNavigationItem}</button>
+      </section>
+      <section className="admin-site-panel">
         <h2>{t.siteHomepageHero}</h2>
         {[
           ["eyebrow", t.siteHeroEyebrow, 150, false],
