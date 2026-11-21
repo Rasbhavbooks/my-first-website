@@ -42,31 +42,53 @@ export async function listAdminAuthors(request, response) {
       .lean(),
   ]);
 
-  const authors = await Promise.all(profiles.map(async (profile) => {
-    const authorKey = profile.catalogueAuthorName.trim().replace(/\\s+/g, " ").toLocaleLowerCase("en-US");
-    const [followerIds, catalogueBookCount, draftCount, submittedCount] = await Promise.all([
-      AuthorFollow.distinct("userId", { $or: [{ authorProfileId: profile._id }, { authorKey }] }),
-      Book.countDocuments({ author: profile.catalogueAuthorName }),
-      AuthorBook.countDocuments({ authorId: profile.userId?._id, status: "draft" }),
-      AuthorBook.countDocuments({ authorId: profile.userId?._id, status: "submitted" }),
-    ]);
-    return {
-      id: String(profile._id),
-      slug: profile.slug,
-      authorName: profile.authorName,
-      biography: profile.biography,
-      writingLanguages: profile.writingLanguages,
-      genres: profile.genres,
-      status: profile.status,
-      createdAt: profile.createdAt,
-      applicant: profile.userId ? {
-        id: String(profile.userId._id),
-        displayName: profile.userId.displayName,
-        email: profile.userId.email,
-        accountStatus: profile.userId.accountStatus,
-      } : null,
-      stats: { followerCount: followerIds.length, catalogueBookCount, draftCount, submittedCount },
-    };
+  const authorKeys = profiles.map((profile) => profile.catalogueAuthorName.trim().split(/\\s+/).join(" ").toLocaleLowerCase("en-US"));
+  const profileIds = profiles.map((profile) => profile._id);
+  const applicantIds = profiles.map((profile) => profile.userId?._id).filter(Boolean);
+  const catalogueNames = [...new Set(profiles.map((profile) => profile.catalogueAuthorName))];
+  const [followerGroups, catalogueGroups, workflowGroups] = await Promise.all([
+    AuthorFollow.aggregate([
+      { $match: { $or: [{ authorProfileId: { $in: profileIds } }, { authorKey: { $in: authorKeys } }] } },
+      { $addFields: { matchedProfileId: { $switch: { branches: profiles.map((profile, index) => ({
+        case: { $or: [{ $eq: ["$authorProfileId", profile._id] }, { $eq: ["$authorKey", authorKeys[index]] }] },
+        then: String(profile._id),
+      })), default: null } } } },
+      { $match: { matchedProfileId: { $ne: null } } },
+      { $group: { _id: "$matchedProfileId", userIds: { $addToSet: "$userId" } } },
+    ]),
+    Book.aggregate([
+      { $match: { author: { $in: catalogueNames } } },
+      { $group: { _id: "$author", count: { $sum: 1 } } },
+    ]),
+    AuthorBook.aggregate([
+      { $match: { authorId: { $in: applicantIds }, status: { $in: ["draft", "submitted"] } } },
+      { $group: { _id: { authorId: "$authorId", status: "$status" }, count: { $sum: 1 } } },
+    ]),
+  ]);
+  const followersByProfile = new Map(followerGroups.map((group) => [group._id, group.userIds.length]));
+  const booksByName = new Map(catalogueGroups.map((group) => [group._id, group.count]));
+  const workflowByAuthor = new Map(workflowGroups.map((group) => [`${String(group._id.authorId)}:${group._id.status}`, group.count]));
+  const authors = profiles.map((profile) => ({
+    id: String(profile._id),
+    slug: profile.slug,
+    authorName: profile.authorName,
+    biography: profile.biography,
+    writingLanguages: profile.writingLanguages,
+    genres: profile.genres,
+    status: profile.status,
+    createdAt: profile.createdAt,
+    applicant: profile.userId ? {
+      id: String(profile.userId._id),
+      displayName: profile.userId.displayName,
+      email: profile.userId.email,
+      accountStatus: profile.userId.accountStatus,
+    } : null,
+    stats: {
+      followerCount: followersByProfile.get(String(profile._id)) || 0,
+      catalogueBookCount: booksByName.get(profile.catalogueAuthorName) || 0,
+      draftCount: workflowByAuthor.get(`${String(profile.userId?._id)}:draft`) || 0,
+      submittedCount: workflowByAuthor.get(`${String(profile.userId?._id)}:submitted`) || 0,
+    },
   }));
 
   response.setHeader("Cache-Control", "no-store");
