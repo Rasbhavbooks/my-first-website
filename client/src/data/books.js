@@ -1,1 +1,1 @@
-export { categories, books, getBookTitle } from "../../../shared/catalogue.js";
+export { categories, categoryDefinitions, books, getBookTitle } from "../../../shared/catalogue.js";
