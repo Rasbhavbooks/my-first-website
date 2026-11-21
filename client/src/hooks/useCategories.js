@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLanguage } from "./useLanguage.js";
 import { getCategories } from "../services/categoryService.js";
 
@@ -22,7 +22,7 @@ export function CategoryProvider({ children }) {
   }, [categories, language, t.categories]);
 
   const value = useMemo(() => ({ categories, refreshCategories, getCategoryLabel }), [categories, refreshCategories, getCategoryLabel]);
-  return <CategoryContext.Provider value={value}>{children}</CategoryContext.Provider>;
+  return createElement(CategoryContext.Provider, { value }, children);
 }
 
 export function useCategories() {
