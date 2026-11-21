@@ -1,4 +1,12 @@
-export const categories = ["All", "Novel", "Poetry", "Motivation", "Culture", "Children"];
+export const categoryDefinitions = [
+  { key: "Novel", labels: { en: "Novel", gu: "નવલકથા", hi: "उपन्यास" }, sortOrder: 10 },
+  { key: "Poetry", labels: { en: "Poetry", gu: "કવિતા", hi: "कविता" }, sortOrder: 20 },
+  { key: "Motivation", labels: { en: "Motivation", gu: "પ્રેરણા", hi: "प्रेरणा" }, sortOrder: 30 },
+  { key: "Culture", labels: { en: "Culture", gu: "સંસ્કૃતિ", hi: "संस्कृति" }, sortOrder: 40 },
+  { key: "Children", labels: { en: "Children", gu: "બાળસાહિત્ય", hi: "बाल साहित्य" }, sortOrder: 50 },
+];
+
+export const categories = ["All", ...categoryDefinitions.map(({ key }) => key)];
 
 export const books = [
   { id: "b1", title: { en: "The Quiet Between", gu: "શબ્દોની વચ્ચે", hi: "शब्दों के बीच" }, author: "Mira Desai", language: "English", category: "Novel", price: 249, tone: "rose", badge: "EDITOR'S PICK", description: { en: "A tender story about finding home in unexpected places.", gu: "અજાણી જગ્યાઓમાં પોતાનું ઘર શોધવાની હૂંફાળી વાર્તા.", hi: "अनजानी जगहों में अपना घर खोजने की एक कोमल कहानी।" } },
