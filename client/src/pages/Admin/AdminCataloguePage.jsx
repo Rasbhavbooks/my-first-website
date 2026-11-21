@@ -111,7 +111,7 @@ export default function AdminCataloguePage() {
       <form className="admin-catalogue-toolbar" onSubmit={search}>
         <label>{t.adminCatalogueSearch}<input value={query} maxLength={100} onChange={(event) => setQuery(event.target.value)} /></label>
         <label>{t.bookCategory}<select value={category} onChange={(event) => setCategory(event.target.value)}>
-          <option value="">{t.adminUserAllStatuses}</option>
+          <option value="">{t.adminCatalogueAllCategories}</option>
           {categories.filter((item) => item !== "All").map((item) => <option key={item} value={item}>{t.categories[item] || item}</option>)}
         </select></label>
         <button type="submit">{t.search}</button>
