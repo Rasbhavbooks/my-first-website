@@ -41,6 +41,7 @@ export default function AdminDashboardPage() {
   const sections = [
     [t.adminUsersTitle, "/admin/users"],
     [t.adminAuthorsTitle, "/admin/authors"],
+    [t.adminCatalogueTitle, "/admin/catalogue"],
     [t.authorApplicationsTitle, "/admin/author-applications"],
     [t.adminBookReviewTitle, "/admin/author-books"],
     [t.adminReviewsTitle, "/admin/review-moderation"],
