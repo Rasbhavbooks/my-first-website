@@ -53,7 +53,7 @@ function normalizeHomeSections(value) {
   if (sections.some((item) => item === null)
     || new Set(ids).size !== HOME_SECTION_IDS.length
     || HOME_SECTION_IDS.some((id) => !ids.includes(id))
-    || !sections.some((item) => item.enabled)) return null;
+    || !sections.some((item) => item.id === "discovery" && item.enabled)) return null;
   return sections;
 }
 function normalizeSettings(body) {
