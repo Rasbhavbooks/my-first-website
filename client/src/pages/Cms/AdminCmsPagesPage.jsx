@@ -33,7 +33,7 @@ const styles = `
 
 export default function AdminCmsPagesPage() {
   const { user, loading } = useAuth();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [pages, setPages] = useState([]);
   const [draft, setDraft] = useState(blankPage);
   const [selectedSlug, setSelectedSlug] = useState("");
@@ -112,7 +112,7 @@ export default function AdminCmsPagesPage() {
           <button type="button" onClick={startNew}>{t.cmsPageNew}</button>
           {!pages.length && <p>{t.cmsPagesEmpty}</p>}
           {pages.map((page) => <button className="admin-cms-item" type="button" aria-current={selectedSlug === page.slug} key={page.slug} onClick={() => selectPage(page)}>
-            <strong>{page.title[t.language] || page.title.en || page.slug}</strong>
+            <strong>{page.title[language] || page.title.en || page.slug}</strong>
             <small>/{page.slug} · {page.status === "published" ? t.cmsPagePublished : t.cmsPageDraft}</small>
           </button>)}
         </aside>
