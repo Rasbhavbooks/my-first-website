@@ -1,11 +1,10 @@
 import mongoose from "mongoose";
-import { categories } from "../../../../shared/catalogue.js";
 import AuthorProfile from "../auth/author-profile.model.js";
 import AuthorBook from "./author-book.model.js";
+import Category from "./category.model.js";
 
 const LANGUAGES = new Set(["Gujarati", "Hindi", "English"]);
 const LANGUAGE_KEYS = { Gujarati: "gu", Hindi: "hi", English: "en" };
-const CATEGORY_SET = new Set(categories.filter((category) => category !== "All"));
 
 function errorResponse(response, status, code, message) {
   return response.status(status).json({ error: { code, message } });
@@ -23,13 +22,14 @@ function localizedValues(value, maximum) {
   return result;
 }
 
-function validFields(body, requireDescription = false) {
+async function validFields(body, requireDescription = false) {
   const language = body?.language;
   const category = body?.category;
   const title = localizedValues(body?.title, 160);
   const description = localizedValues(body?.description, 4000);
   const price = Number(body?.price);
-  if (!LANGUAGES.has(language) || !CATEGORY_SET.has(category) || !title || !description
+  const activeCategory = typeof category === "string" ? await Category.exists({ key: category, active: true }) : null;
+  if (!LANGUAGES.has(language) || !activeCategory || !title || !description
     || !Number.isFinite(price) || price < 0 || price > 100000 || Math.abs(price * 100 - Math.round(price * 100)) > 1e-7) {
     return null;
   }
@@ -87,7 +87,7 @@ export async function updateAuthorBookDraft(request, response) {
   if (!mongoose.isValidObjectId(request.params.bookId)) {
     return errorResponse(response, 404, "AUTHOR_BOOK_NOT_FOUND", "Book draft not found.");
   }
-  const fields = validFields(request.body);
+  const fields = await validFields(request.body);
   if (!fields) return errorResponse(response, 400, "INVALID_AUTHOR_BOOK", "Check the title, description, language, category, and price.");
   const book = await AuthorBook.findOneAndUpdate(
     { _id: request.params.bookId, authorId: request.reader._id, status: { $in: ["draft", "rejected"] } },
@@ -109,7 +109,7 @@ export async function submitAuthorBook(request, response) {
     status: { $in: ["draft", "rejected"] },
   }).select("+assets.cover.key +assets.manuscript.key");
   if (!current) return errorResponse(response, 404, "AUTHOR_BOOK_NOT_EDITABLE", "This draft was not found or can no longer be submitted.");
-  const fields = validFields(current, true);
+  const fields = await validFields(current, true);
   if (!current.assets?.cover?.key || !current.assets?.manuscript?.key) return errorResponse(response, 400, "AUTHOR_BOOK_ASSETS_REQUIRED", "Upload a cover and a manuscript and wait for the security scan before submitting.");
   if (!fields return errorResponse(response, 400, "AUTHOR_BOOK_INCOMPLETE", "Add a title and a description of at least 40 characters in the book's language before submitting.");
   const book = await AuthorBook.findOneAndUpdate(
