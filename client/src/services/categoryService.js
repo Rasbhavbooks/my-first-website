@@ -7,7 +7,7 @@ const fallbackCategories = [
 
 export async function getCategories() {
   try {
-    const response = await fetch("/api/v1/categories");
+    const response = await fetch("/api/v1/categories", { cache: "no-store" });
     if (!response.ok) throw new Error("Category request failed.");
     const result = await response.json();
     if (!Array.isArray(result.data?.categories)) return fallbackCategories;
