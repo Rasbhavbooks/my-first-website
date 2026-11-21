@@ -23,6 +23,14 @@ export const defaultSiteContent = {
     ],
   },
   homepage: {
+    sections: [
+      { id: "hero", enabled: true },
+      { id: "trust", enabled: true },
+      { id: "discovery", enabled: true },
+      { id: "languages", enabled: true },
+      { id: "authors", enabled: true },
+      { id: "community", enabled: true },
+    ],
     hero: {
       eyebrow: {
         en: "Stories rooted in India, shared with the world",
