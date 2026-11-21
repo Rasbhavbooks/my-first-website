@@ -68,7 +68,6 @@ export async function updateAdminCatalogueBook(request, response) {
   const catalogueId = typeof request.params.bookId === "string" ? request.params.bookId.trim() : "";
   if (!catalogueId || catalogueId.length > 120) return errorResponse(response, 400, "INVALID_BOOK_ID", "Choose a valid catalogue book.");
   const body = request.body || {};
-  const author = typeof body.author === "string" ? body.author.trim() : "";
   const tone = typeof body.tone === "string" ? body.tone.trim() : "";
   const badge = typeof body.badge === "string" ? body.badge.trim() : "";
   const price = Number(body.price);
@@ -76,10 +75,9 @@ export async function updateAdminCatalogueBook(request, response) {
   if (
     !validLocalizedText(body.title, 200)
     || !validLocalizedText(body.description, 4000)
-    || !author || author.length > 120
     || !LANGUAGES.has(body.language)
     || !validCategory
-    || !Number.isFinite(price) || price < 0 || price > 100000
+    || body.price === "" || body.price === null || !Number.isFinite(price) || price < 0 || price > 100000
     || !tone || tone.length > 40
     || !badge || badge.length > 40
   ) {
@@ -88,7 +86,7 @@ export async function updateAdminCatalogueBook(request, response) {
 
   const book = await Book.findOneAndUpdate(
     { catalogueId },
-    { $set: { title: Object.fromEntries(FIELDS.map((field) => [field, body.title[field].trim()])), description: Object.fromEntries(FIELDS.map((field) => [field, body.description[field].trim()])), author, language: body.language, category: body.category, price, tone, badge } },
+    { $set: { title: Object.fromEntries(FIELDS.map((field) => [field, body.title[field].trim()])), description: Object.fromEntries(FIELDS.map((field) => [field, body.description[field].trim()])), language: body.language, category: body.category, price, tone, badge } },
     { new: true, runValidators: true },
   ).lean();
   if (!book) return errorResponse(response, 404, "BOOK_NOT_FOUND", "Catalogue book not found.");
