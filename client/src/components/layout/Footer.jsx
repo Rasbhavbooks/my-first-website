@@ -6,7 +6,7 @@ import { useCategories } from "../../hooks/useCategories.js";
 import { getPublishedCmsPages } from "../../services/cmsPageService.js";
 
 export default function Footer() {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const { getCategoryLabel } = useCategories();
   const [pages, setPages] = useState([]);
   useEffect(() => { getPublishedCmsPages().then(setPages); }, []);
@@ -15,7 +15,7 @@ export default function Footer() {
       <div className="footer-main">
         <div><a className="brand brand-light" href="#home"><span className="brand-mark"><BookOpen size={18} /></span><span className="brand-name">rasbhav<span>books</span></span></a><p>{t.made}</p></div>
         <div className="footer-links"><strong>{t.browse}</strong><a href="#discover">{t.discover}</a><a href="#categories">{getCategoryLabel("Novel")}</a><a href="#authors">{t.authors}</a></div>
-        <div className="footer-links"><strong>{t.community}</strong><a href="#about">{t.about}</a><a href="mailto:hello@rasbhavbooks.com"><Mail size={14} /> Email</a>{pages.map((page) => <Link key={page.slug} to={`/pages/${encodeURIComponent(page.slug)}`}>{page.title?.[t.language] || page.title?.en || page.slug}</Link>)}</div>
+        <div className="footer-links"><strong>{t.community}</strong><a href="#about">{t.about}</a><a href="mailto:hello@rasbhavbooks.com"><Mail size={14} /> Email</a>{pages.map((page) => <Link key={page.slug} to={`/pages/${encodeURIComponent(page.slug)}`}>{page.title?.[language] || page.title?.en || page.slug}</Link>)}</div>
       </div>
       <div className="footer-bottom"><span>{t.copyright}</span><span>Privacy · Terms</span></div>
     </footer>
