@@ -4,11 +4,14 @@ import { Link } from "react-router";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { useWishlist } from "../../context/WishlistContext.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useSiteContent } from "../../hooks/useSiteContent.js";
 
 export default function Header() {
   const { language, setLanguage, t } = useLanguage();
   const { savedBookIds } = useWishlist();
   const { user, loading } = useAuth();
+  const { settings } = useSiteContent();
+  const navigation = (settings.navigation || []).filter((item) => item.enabled);
   const [open, setOpen] = useState(false);
   return (
     <header className="site-header">
@@ -16,9 +19,7 @@ export default function Header() {
         <span className="brand-mark"><BookOpen size={19} /></span><span className="brand-name">rasbhav<span>books</span></span>
       </a>
       <nav className={open ? "main-nav is-open" : "main-nav"} aria-label="Main navigation">
-        <a href="/#discover" onClick={() => setOpen(false)}>{t.discover}</a>
-        <a href="/#authors" onClick={() => setOpen(false)}>{t.authors}</a>
-        <a href="/#about" onClick={() => setOpen(false)}>{t.about}</a>
+        {navigation.map((item, index) => <Link key={`${item.href}-${index}`} to={item.href} onClick={() => setOpen(false)}>{item.label?.[language] || item.label?.en}</Link>)}
         <Link to="/wishlist" onClick={() => setOpen(false)}>{t.wishlist}{savedBookIds.length > 0 && <span className="wishlist-count">{savedBookIds.length}</span>}</Link>
         {!loading && (user
           ? <Link to="/account" onClick={() => setOpen(false)}>{t.accountPage}</Link>

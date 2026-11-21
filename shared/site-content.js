@@ -5,6 +5,11 @@ export const defaultSiteContent = {
     linkLabel: { en: "", gu: "", hi: "" },
     href: "",
   },
+  navigation: [
+    { enabled: true, href: "/#discover", label: { en: "Discover", gu: "શોધો", hi: "खोजें" } },
+    { enabled: true, href: "/#authors", label: { en: "For authors", gu: "લેખકો માટે", hi: "लेखकों के लिए" } },
+    { enabled: true, href: "/#about", label: { en: "Our story", gu: "અમારી વાત", hi: "हमारी कहानी" } },
+  ],
   homepage: {
     hero: {
       eyebrow: {

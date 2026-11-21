@@ -30,10 +30,20 @@ const heroSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const navigationItemSchema = new mongoose.Schema(
+  {
+    enabled: { type: Boolean, required: true, default: true },
+    href: { type: String, required: true, trim: true, maxlength: 300 },
+    label: { type: localizedTextSchema, required: true },
+  },
+  { _id: false },
+);
+
 const siteSettingsSchema = new mongoose.Schema(
   {
     key: { type: String, required: true, unique: true, immutable: true, default: "global" },
     announcement: { type: announcementSchema, required: true },
+    navigation: { type: [navigationItemSchema], default: [], validate: (items) => items.length <= 8 },
     homepage: {
       hero: { type: heroSchema, required: true },
     },
