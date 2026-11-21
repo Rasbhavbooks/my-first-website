@@ -234,7 +234,7 @@ export default function AdminSiteSettingsPage() {
           <label className="admin-site-check"><input
             type="checkbox"
             checked={section.enabled}
-            disabled={section.enabled && settings.homepage.sections.filter((item) => item.enabled).length === 1}
+            disabled={section.id === "discovery"}
             onChange={(event) => toggleHomeSection(index, event.target.checked)}
           />{t[`homeSection_${section.id}`]}</label>
           <div className="admin-site-item-actions">
