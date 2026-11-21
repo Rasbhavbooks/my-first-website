@@ -10,6 +10,18 @@ export const defaultSiteContent = {
     { enabled: true, href: "/#authors", label: { en: "For authors", gu: "લેખકો માટે", hi: "लेखकों के लिए" } },
     { enabled: true, href: "/#about", label: { en: "Our story", gu: "અમારી વાત", hi: "हमारी कहानी" } },
   ],
+  footer: {
+    tagline: {
+      en: "Made for stories and the people who tell them.",
+      gu: "વાર્તાઓ અને વાર્તાકારો માટે બનાવેલું.",
+      hi: "कहानियों और उन्हें कहने वालों के लिए।",
+    },
+    browseLinks: [
+      { enabled: true, href: "/#discover", label: { en: "Discover", gu: "શોધો", hi: "खोजें" } },
+      { enabled: true, href: "/#categories", label: { en: "Novel", gu: "નવલકથા", hi: "उपन्यास" } },
+      { enabled: true, href: "/#authors", label: { en: "For authors", gu: "લેખકો માટે", hi: "लेखकों के लिए" } },
+    ],
+  },
   homepage: {
     hero: {
       eyebrow: {

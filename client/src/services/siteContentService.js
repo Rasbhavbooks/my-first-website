@@ -17,7 +17,7 @@ async function request(path, options = {}) {
 
 export async function getPublicSiteContent() {
   try {
-    const result = await request("/api/v1/site-content", { credentials: "omit" });
+    const result = await request("/api/v1/site-content", { credentials: "omit", cache: "no-store" });
     return result.settings || defaultSiteContent;
   } catch {
     return defaultSiteContent;

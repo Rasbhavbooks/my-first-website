@@ -94,6 +94,26 @@ export default function AdminSiteSettingsPage() {
     });
   }
 
+  function updateFooterLink(index, update) {
+    setSettings((current) => ({
+      ...current,
+      footer: {
+        ...current.footer,
+        browseLinks: current.footer.browseLinks.map((item, itemIndex) => itemIndex === index ? update(item) : item),
+      },
+    }));
+  }
+
+  function moveFooterLink(index, offset) {
+    setSettings((current) => {
+      const browseLinks = [...current.footer.browseLinks];
+      const destination = index + offset;
+      if (destination < 0 || destination >= browseLinks.length) return current;
+      [browseLinks[index], browseLinks[destination]] = [browseLinks[destination], browseLinks[index]];
+      return { ...current, footer: { ...current.footer, browseLinks } };
+    });
+  }
+
   function addNavigationItem() {
     setSettings((current) => ({
       ...current,
@@ -167,6 +187,25 @@ export default function AdminSiteSettingsPage() {
           </div>
         </div>)}
         <button className="admin-site-add" type="button" disabled={settings.navigation.length >= 8} onClick={addNavigationItem}>{t.addNavigationItem}</button>
+      </section>
+      <section className="admin-site-panel">
+        <h2>{t.footerSettings}</h2>
+        <h3>{t.footerTagline}</h3>
+        {localizedFields(settings.footer.tagline, (language, value) => setSettings((current) => ({ ...current, footer: { ...current.footer, tagline: { ...current.footer.tagline, [language]: value } } })), false, 300)}
+        <h3>{t.footerBrowseLinks}</h3>
+        <p className="admin-site-hint">{t.footerMenuHint}</p>
+        {settings.footer.browseLinks.map((item, index) => <div className="admin-site-menu-item" key={index}>
+          <h3>{t.footerBrowseLinks} · {index + 1}</h3>
+          <label className="admin-site-check"><input type="checkbox" checked={item.enabled} onChange={(event) => updateFooterLink(index, (current) => ({ ...current, enabled: event.target.checked }))} />{t.navigationEnabled}</label>
+          {localizedFields(item.label, (language, value) => updateFooterLink(index, (current) => ({ ...current, label: { ...current.label, [language]: value } })), false, 80)}
+          <label className="admin-site-field">{t.navigationDestination}<input maxLength={300} placeholder="/#discover or /pages/about" value={item.href} onChange={(event) => updateFooterLink(index, (current) => ({ ...current, href: event.target.value }))} /></label>
+          <div className="admin-site-item-actions">
+            <button type="button" disabled={index === 0} onClick={() => moveFooterLink(index, -1)}>{t.moveNavigationUp}</button>
+            <button type="button" disabled={index === settings.footer.browseLinks.length - 1} onClick={() => moveFooterLink(index, 1)}>{t.moveNavigationDown}</button>
+            {settings.footer.browseLinks.length > 1 && <button type="button" onClick={() => setSettings((current) => ({ ...current, footer: { ...current.footer, browseLinks: current.footer.browseLinks.filter((_link, linkIndex) => linkIndex !== index) } }))}>{t.removeNavigationItem}</button>}
+          </div>
+        </div>)}
+        <button className="admin-site-add" type="button" disabled={settings.footer.browseLinks.length >= 8} onClick={() => setSettings((current) => ({ ...current, footer: { ...current.footer, browseLinks: [...current.footer.browseLinks, { enabled: true, href: "/", label: { en: "New link", gu: "નવી લિંક", hi: "नई कड़ी" } }] } }))}>{t.addNavigationItem}</button>
       </section>
       <section className="admin-site-panel">
         <h2>{t.siteHomepageHero}</h2>
