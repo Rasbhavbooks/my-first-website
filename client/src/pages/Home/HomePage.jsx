@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { ArrowRight, ArrowUpRight, BookOpen, Check, Search, Sparkles, Users } from "lucide-react";
 import BookCard from "../../components/books/BookCard.jsx";
-import { categories } from "../../data/books.js";
+import { useCategories } from "../../hooks/useCategories.js";
 import { useBooks } from "../../hooks/useBooks.js";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { useFilteredBooks } from "../../hooks/useBooks.js";
@@ -10,6 +10,7 @@ import { useFilteredBooks } from "../../hooks/useBooks.js";
 export default function HomePage() {
   const { language, setLanguage, t } = useLanguage();
   const books = useBooks();
+  const { categories, getCategoryLabel } = useCategories();
   const [category, setCategory] = useState("All");
   const [query, setQuery] = useState("");
   const [subscribed, setSubscribed] = useState(false);
@@ -30,7 +31,7 @@ export default function HomePage() {
       <section className="section" id="discover">
         <div className="section-head"><div className="eyebrow"><i />{t.curated}</div><h2>{t.picks}</h2><a href="#discover" className="text-link">{t.viewAll}<ArrowUpRight size={16} /></a></div>
         <div className="catalog-tools"><label className="search"><Search size={17} /><span className="sr-only">{t.search}</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t.search} /></label>
-          <div className="category-list" id="categories" aria-label={t.filter}>{categories.map((item) => <button key={item} className={category === item ? "category active" : "category"} onClick={() => setCategory(item)}>{item === "All" ? t.all : t.categories[item]}</button>)}</div>
+          <div className="category-list" id="categories" aria-label={t.filter}>{categories.map(({ key }) => <button key={key} className={category === key ? "category active" : "category"} onClick={() => setCategory(key)}>{getCategoryLabel(key)}</button>)}</div>
         </div>
         {visibleBooks.length ? <div className="book-grid">{visibleBooks.map((book) => <BookCard key={book.id} book={book} language={language} t={t} />)}</div> : <div className="empty-state">{t.noResults}</div>}
       </section>

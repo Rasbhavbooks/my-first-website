@@ -42,6 +42,7 @@ export default function AdminDashboardPage() {
     [t.adminUsersTitle, "/admin/users"],
     [t.adminAuthorsTitle, "/admin/authors"],
     [t.adminCatalogueTitle, "/admin/catalogue"],
+    [t.adminCategoriesTitle, "/admin/categories"],
     [t.authorApplicationsTitle, "/admin/author-applications"],
     [t.adminBookReviewTitle, "/admin/author-books"],
     [t.adminReviewsTitle, "/admin/review-moderation"],

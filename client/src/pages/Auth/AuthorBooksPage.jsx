@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
+import { useCategories } from "../../hooks/useCategories.js";
 import { createAuthorBookChapter, createAuthorBookDraft, deleteAuthorBookChapter, getMyAuthorBookChapters, getMyAuthorBooks, saveAuthorBookDraft, submitAuthorBook, updateAuthorBookChapter, uploadAuthorBookAsset } from "../../services/authorBookService.js";
 
 const LANGUAGE_KEYS = { Gujarati: "gu", Hindi: "hi", English: "en" };
@@ -52,6 +53,7 @@ function firstText(localized) {
 export default function AuthorBooksPage() {
   const { user, loading } = useAuth();
   const { t } = useLanguage();
+  const { categories, getCategoryLabel } = useCategories();
   const [books, setBooks] = useState([]);
   const [selectedId, setSelectedId] = useState("");
   const [form, setForm] = useState(blankBook);
@@ -222,7 +224,6 @@ export default function AuthorBooksPage() {
 
   const editable = ["draft", "rejected"].includes(form.status);
   const contentKey = LANGUAGE_KEYS[form.language] || "en";
-  const categories = Object.entries(t.categories || {}).filter(([key]) => key !== "All");
 
   return (
     <main className="author-books">
@@ -263,7 +264,7 @@ export default function AuthorBooksPage() {
                   </label>
                   <label className="author-book-field">{t.bookCategory}
                     <select value={form.category} disabled={!editable} onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}>
-                      {categories.map(([key, value]) => <option key={key} value={key}>{value}</option>)}
+                      {categories.filter(({ key }) => key !== "All").map(({ key }) => <option key={key} value={key}>{getCategoryLabel(key)}</option>)}
                     </select>
                   </label>
                 </div>

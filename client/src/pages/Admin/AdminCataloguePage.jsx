@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router";
-import { categories } from "../../data/books.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
+import { useCategories } from "../../hooks/useCategories.js";
 import { getAdminCatalogueBooks, updateAdminCatalogueBook } from "../../services/adminCatalogueService.js";
 
 const LANGUAGES = ["en", "gu", "hi"];
@@ -34,6 +34,7 @@ const styles = `
 export default function AdminCataloguePage() {
   const { user, loading } = useAuth();
   const { language, t } = useLanguage();
+  const { categories, getCategoryLabel } = useCategories();
   const [books, setBooks] = useState([]);
   const [drafts, setDrafts] = useState({});
   const [query, setQuery] = useState("");
@@ -112,7 +113,7 @@ export default function AdminCataloguePage() {
         <label>{t.adminCatalogueSearch}<input value={query} maxLength={100} onChange={(event) => setQuery(event.target.value)} /></label>
         <label>{t.bookCategory}<select value={category} onChange={(event) => setCategory(event.target.value)}>
           <option value="">{t.adminCatalogueAllCategories}</option>
-          {categories.filter((item) => item !== "All").map((item) => <option key={item} value={item}>{t.categories[item] || item}</option>)}
+          {categories.filter(({ key }) => key !== "All").map(({ key }) => <option key={key} value={key}>{getCategoryLabel(key)}</option>)}
         </select></label>
         <button type="submit">{t.search}</button>
       </form>
@@ -126,7 +127,7 @@ export default function AdminCataloguePage() {
             <div className="admin-catalogue-field full"><span>{t.bookTitle}</span><div className="admin-catalogue-locale">{LANGUAGES.map((key) => <label key={key}>{key.toUpperCase()}<input required maxLength={200} value={draft.title[key] || ""} onChange={(event) => updateDraft(book, "title", event.target.value, key)} /></label>)}</div></div>
             <p className="admin-catalogue-field"><span>{t.by}</span><strong>{draft.author}</strong></p>
             <label className="admin-catalogue-field">{t.bookLanguage}<select value={draft.language} onChange={(event) => updateDraft(book, "language", event.target.value)}>{["Gujarati", "Hindi", "English"].map((item) => <option key={item} value={item}>{t.bookLanguages[item]}</option>)}</select></label>
-            <label className="admin-catalogue-field">{t.bookCategory}<select value={draft.category} onChange={(event) => updateDraft(book, "category", event.target.value)}>{categories.filter((item) => item !== "All").map((item) => <option key={item} value={item}>{t.categories[item] || item}</option>)}</select></label>
+            <label className="admin-catalogue-field">{t.bookCategory}<select value={draft.category} onChange={(event) => updateDraft(book, "category", event.target.value)}>{categories.filter(({ key }) => key !== "All").map(({ key }) => <option key={key} value={key}>{getCategoryLabel(key)}</option>)}</select></label>
             <label className="admin-catalogue-field">{t.bookPriceInr}<input type="number" required min="0" max="100000" step="0.01" value={draft.price} onChange={(event) => updateDraft(book, "price", event.target.value)} /></label>
             <label className="admin-catalogue-field">{t.bookBadge}<input required maxLength={40} value={draft.badge} onChange={(event) => updateDraft(book, "badge", event.target.value)} /></label>
             <label className="admin-catalogue-field">{t.bookTone}<input required maxLength={40} value={draft.tone} onChange={(event) => updateDraft(book, "tone", event.target.value)} /></label>

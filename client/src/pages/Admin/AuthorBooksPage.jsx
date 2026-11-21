@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
+import { useCategories } from "../../hooks/useCategories.js";
 import { decideAuthorBook, getSubmittedAuthorBookChapters, getSubmittedAuthorBooks } from "../../services/adminBookService.js";
 
 const LANGUAGE_KEYS = { Gujarati: "gu", Hindi: "hi", English: "en" };
@@ -31,6 +32,7 @@ function localizedText(value, language) {
 export default function AuthorBooksAdminPage() {
   const { user, loading } = useAuth();
   const { t } = useLanguage();
+  const { getCategoryLabel } = useCategories();
   const [books, setBooks] = useState([]);
   const [notes, setNotes] = useState({});
   const [busyId, setBusyId] = useState("");
@@ -102,7 +104,7 @@ export default function AuthorBooksAdminPage() {
         <article className="admin-book-card" key={book.id}>
           <h2>{localizedText(book.title, book.language)}</h2>
           <p className="admin-book-meta">{book.authorName} · {book.author?.displayName} · {book.author?.email}</p>
-          <p className="admin-book-meta">{t.bookLanguage}: {t.bookLanguages[book.language]} · {t.bookCategory}: {t.categories[book.category] || book.category} · {t.bookPriceInr}: ₹{Number(book.price).toFixed(2)}</p>
+          <p className="admin-book-meta">{t.bookLanguage}: {t.bookLanguages[book.language]} · {t.bookCategory}: {getCategoryLabel(book.category)} · {t.bookPriceInr}: ₹{Number(book.price).toFixed(2)}</p>
           <p className="admin-book-description">{localizedText(book.description, book.language)}</p>
           <div className="admin-book-meta">
             {book.assets?.cover && <p><a href={`/api/v1/admin/author-books/${encodeURIComponent(book.id)}/assets/cover`} target="_blank" rel="noreferrer">{t.adminViewCover}: {book.assets.cover.fileName}</a></p>}

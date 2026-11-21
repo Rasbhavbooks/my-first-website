@@ -1,5 +1,5 @@
-import { categories } from "../../../../shared/catalogue.js";
 import Book from "./book.model.js";
+import Category from "./category.model.js";
 
 const PAGE_SIZE = 30;
 const LANGUAGES = new Set(["Gujarati", "Hindi", "English"]);
@@ -37,7 +37,8 @@ export async function listAdminCatalogueBooks(request, response) {
   const search = typeof request.query.search === "string" ? request.query.search.trim() : "";
   const category = typeof request.query.category === "string" ? request.query.category : "";
   const page = request.query.page === undefined ? 1 : Number(request.query.page);
-  if (search.length > 100 || (category && !categories.includes(category))) {
+  const activeCategory = category && category !== "All" ? await Category.exists({ key: category, active: true }) : true;
+  if (search.length > 100 || (category && !activeCategory)) {
     return errorResponse(response, 400, "INVALID_CATALOGUE_FILTER", "Check the book search and category.");
   }
   if (!Number.isInteger(page) || page < 1 || page > 10000) {
@@ -72,7 +73,7 @@ export async function updateAdminCatalogueBook(request, response) {
   const badge = typeof body.badge === "string" ? body.badge.trim() : "";
   const priceValue = body.price;
   const price = Number(priceValue);
-  const validCategory = categories.includes(body.category) && body.category !== "All";
+  const validCategory = typeof body.category === "string" && await Category.exists({ key: body.category, active: true });
   if (
     !validLocalizedText(body.title, 200)
     || !validLocalizedText(body.description, 4000)

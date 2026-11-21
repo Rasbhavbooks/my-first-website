@@ -19,6 +19,8 @@ import adminDashboardRoutes from "./modules/admin/admin.routes.js";
 import adminUsersRoutes from "./modules/admin/admin-users.routes.js";
 import authorManagementRoutes from "./modules/auth/author-management.routes.js";
 import catalogueAdminRoutes from "./modules/books/catalogue-admin.routes.js";
+import categoriesRoutes from "./modules/books/categories.routes.js";
+import adminCategoriesRoutes from "./modules/books/admin-categories.routes.js";
 
 const app = express();
 app.disable("x-powered-by");
@@ -28,6 +30,7 @@ app.use(express.json({ limit: "1mb" }));
 app.get("/", (_request, response) => response.json({ name: "Rasbhav Books API", version: "v1" }));
 app.use("/api/v1/health", healthRoutes);
 app.use("/api/v1/books", bookRoutes);
+app.use("/api/v1/categories", categoriesRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/wishlist", wishlistRoutes);
 app.use("/api/v1/reader/follows", followsRoutes);
@@ -41,6 +44,7 @@ app.use("/api/v1/admin/dashboard", adminDashboardRoutes);
 app.use("/api/v1/admin/users", adminUsersRoutes);
 app.use("/api/v1/admin/authors", authorManagementRoutes);
 app.use("/api/v1/admin/catalogue-books", catalogueAdminRoutes);
+app.use("/api/v1/admin/categories", adminCategoriesRoutes);
 app.use(notFound);
 app.use(errorHandler);
 

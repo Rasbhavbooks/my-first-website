@@ -1,8 +1,9 @@
 import "dotenv/config";
-import { books } from "../../../shared/catalogue.js";
+import { books, categoryDefinitions } from "../../../shared/catalogue.js";
 import { connectDatabase, disconnectDatabase } from "../config/database.js";
 import { env } from "../config/env.js";
 import Book from "../modules/books/book.model.js";
+import Category from "../modules/books/category.model.js";
 
 async function seedBooks() {
   if (!env.mongoUri) {
@@ -11,6 +12,10 @@ async function seedBooks() {
 
   await connectDatabase(env.mongoUri);
   try {
+    const categoryOperations = categoryDefinitions.map(({ key, labels, sortOrder }) => ({
+      updateOne: { filter: { key }, update: { $setOnInsert: { key, labels, sortOrder, active: true } }, upsert: true },
+    }));
+    await Category.bulkWrite(categoryOperations);
     const operations = books.map(({ id, ...book }) => ({
       updateOne: {
         filter: { catalogueId: id },
@@ -20,7 +25,7 @@ async function seedBooks() {
     }));
     const result = await Book.bulkWrite(operations);
     console.info(
-      `Sample catalogue saved to MongoDB. Added: ${result.upsertedCount}; updated: ${result.modifiedCount}.`,
+      `Default categories and sample catalogue saved to MongoDB. Added: ${result.upsertedCount}; updated: ${result.modifiedCount}.`,
     );
   } finally {
     await disconnectDatabase();

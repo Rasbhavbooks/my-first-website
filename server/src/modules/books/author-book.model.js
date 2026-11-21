@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { categories } from "../../../../shared/catalogue.js";
 
 const localizedTextSchema = new mongoose.Schema(
   {
@@ -30,12 +29,7 @@ const authorBookSchema = new mongoose.Schema(
     title: { type: localizedTextSchema, required: true },
     description: { type: localizedTextSchema, required: true },
     language: { type: String, enum: ["Gujarati", "Hindi", "English"], required: true, default: "English" },
-    category: {
-      type: String,
-      enum: categories.filter((category) => category !== "All"),
-      required: true,
-      default: "Novel",
-    },
+    category: { type: String, required: true, trim: true, maxlength: 50, default: "Novel" },
     price: { type: Number, min: 0, max: 100000, required: true, default: 0 },
     status: {
       type: String,
