@@ -22,6 +22,10 @@ const styles = `
 .admin-site-actions button:disabled{opacity:.5}
 .admin-site-error{padding:12px;background:#f8ece8;color:#863d32;font-size:11px}
 .admin-site-success{padding:12px;background:#eef5ed;color:#426c50;font-size:11px}
+.admin-site-menu-item{margin:16px 0;padding:16px;border:1px solid #e4ddd1;background:#fff}
+.admin-site-item-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.admin-site-item-actions button,.admin-site-add{min-height:36px;padding:0 12px;border:1px solid #d8d0c4;background:#f6f3ee;color:#30252c;cursor:pointer}
+.admin-site-add{margin-top:12px}
 @media(max-width:700px){.admin-site-grid{grid-template-columns:1fr}}
 `;
 
@@ -73,6 +77,41 @@ export default function AdminSiteSettingsPage() {
     });
   }
 
+  function updateNavigation(index, update) {
+    setSettings((current) => ({
+      ...current,
+      navigation: current.navigation.map((item, itemIndex) => itemIndex === index ? update(item) : item),
+    }));
+  }
+
+  function moveNavigation(index, offset) {
+    setSettings((current) => {
+      const navigation = [...current.navigation];
+      const destination = index + offset;
+      if (destination < 0 || destination >= navigation.length) return current;
+      [navigation[index], navigation[destination]] = [navigation[destination], navigation[index]];
+      return { ...current, navigation };
+    });
+  }
+
+  function addNavigationItem() {
+    setSettings((current) => ({
+      ...current,
+      navigation: [...current.navigation, {
+        enabled: true,
+        href: "/",
+        label: { en: "New link", gu: "નવી લિંક", hi: "नई कड़ी" },
+      }],
+    }));
+  }
+
+  function removeNavigationItem(index) {
+    setSettings((current) => ({
+      ...current,
+      navigation: current.navigation.filter((_item, itemIndex) => itemIndex !== index),
+    }));
+  }
+
   async function save() {
     setBusy(true); setError(""); setNotice("");
     try {
@@ -114,6 +153,20 @@ export default function AdminSiteSettingsPage() {
         <p className="admin-site-hint">{t.siteAnnouncementHrefHint}</p>
       </section>
       <section className="admin-site-panel">
+        <h2>{t.navigationMenu}</h2>
+        <p className="admin-site-hint">{t.navigationMenuHint}</p>
+        {settings.navigation.map((item, index) => <div className="admin-site-menu-item" key={index}>
+          <h3>{t.navigationMenu} · {index + 1}</h3>
+          <label className="admin-site-check"><input type="checkbox" checked={item.enabled} onChange={(event) => updateNavigation(index, (current) => ({ ...current, enabled: event.target.checked }))} />{t.navigationEnabled}</label>
+          {localizedFields(item.label, (language, value) => updateNavigation(index, (current) => ({ ...current, label: { ...current.label, [language]: value } })), false, 80)}
+          <label className="admin-site-field">{t.navigationDestination}<input maxLength={300} placeholder="/#discover or /pages/about" value={item.href} onChange={(event) => updateNavigation(index, (current) => ({ ...current, href: event.target.value }))} /></label>
+          <div className="admin-site-item-actions">
+            <button type="button" disabled={index === 0} onClick={() => moveNavigation(index, -1)}>{t.moveNavigationUp}</button>
+            <button type="button" disabled={index === settings.navigation.length - 1} onClick={() => moveNavigation(index, 1)}>{t.moveNavigationDown}</button>
+            {settings.navigation.length > 1 && <button type="button" onClick={() => removeNavigationItem(index)}>{t.removeNavigationItem}</button>}
+          </div>
+        </div>)}
+        <button className="admin-site-add" type="button" disabled={settings.navigation.length >= 8} onClick={addNavigationItem}>{t.addNavigationItem}</button>
         <h2>{t.siteHomepageHero}</h2>
         {[
           ["eyebrow", t.siteHeroEyebrow, 150, false],
