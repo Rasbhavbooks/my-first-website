@@ -132,6 +132,26 @@ export default function AdminSiteSettingsPage() {
     }));
   }
 
+  function moveHomeSection(index, offset) {
+    setSettings((current) => {
+      const sections = [...current.homepage.sections];
+      const destination = index + offset;
+      if (destination < 0 || destination >= sections.length) return current;
+      [sections[index], sections[destination]] = [sections[destination], sections[index]];
+      return { ...current, homepage: { ...current.homepage, sections } };
+    });
+  }
+
+  function toggleHomeSection(index, enabled) {
+    setSettings((current) => ({
+      ...current,
+      homepage: {
+        ...current.homepage,
+        sections: current.homepage.sections.map((section, sectionIndex) => sectionIndex === index ? { ...section, enabled } : section),
+      },
+    }));
+  }
+
   async function save() {
     setBusy(true); setError(""); setNotice("");
     try {
@@ -208,6 +228,20 @@ export default function AdminSiteSettingsPage() {
         <button className="admin-site-add" type="button" disabled={settings.footer.browseLinks.length >= 8} onClick={() => setSettings((current) => ({ ...current, footer: { ...current.footer, browseLinks: [...current.footer.browseLinks, { enabled: true, href: "/", label: { en: "New link", gu: "નવી લિંક", hi: "नई कड़ी" } }] } }))}>{t.addNavigationItem}</button>
       </section>
       <section className="admin-site-panel">
+        <h2>{t.homepageSections}</h2>
+        <p className="admin-site-hint">{t.homepageSectionsHint}</p>
+        {settings.homepage.sections.map((section, index) => <div className="admin-site-menu-item" key={section.id}>
+          <label className="admin-site-check"><input
+            type="checkbox"
+            checked={section.enabled}
+            disabled={section.enabled && settings.homepage.sections.filter((item) => item.enabled).length === 1}
+            onChange={(event) => toggleHomeSection(index, event.target.checked)}
+          />{t[`homeSection_${section.id}`]}</label>
+          <div className="admin-site-item-actions">
+            <button type="button" disabled={index === 0} onClick={() => moveHomeSection(index, -1)}>{t.moveNavigationUp}</button>
+            <button type="button" disabled={index === settings.homepage.sections.length - 1} onClick={() => moveHomeSection(index, 1)}>{t.moveNavigationDown}</button>
+          </div>
+        </div>)}
         <h2>{t.siteHomepageHero}</h2>
         {[
           ["eyebrow", t.siteHeroEyebrow, 150, false],
