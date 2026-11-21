@@ -29,6 +29,7 @@ export default function CmsPageView() {
     if (!page) return undefined;
     const oldTitle = document.title;
     const meta = document.querySelector('meta[name="description"]');
+    const oldDescription = meta?.content || "";
     const createdMeta = !meta;
     const description = meta || document.createElement("meta");
     if (createdMeta) { description.name = "description"; document.head.appendChild(description); }
@@ -38,6 +39,7 @@ export default function CmsPageView() {
     return () => {
       document.title = oldTitle;
       if (createdMeta) description.remove();
+      else description.content = oldDescription;
     };
   }, [page, language]);
 
