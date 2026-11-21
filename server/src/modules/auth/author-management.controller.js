@@ -42,7 +42,7 @@ export async function listAdminAuthors(request, response) {
       .lean(),
   ]);
 
-  const authorKeys = profiles.map((profile) => profile.catalogueAuthorName.trim().split(/\\s+/).join(" ").toLocaleLowerCase("en-US"));
+  const authorKeys = profiles.map((profile) => profile.catalogueAuthorName.trim().split(" ").filter(Boolean).join(" ").toLocaleLowerCase("en-US"));
   const profileIds = profiles.map((profile) => profile._id);
   const applicantIds = profiles.map((profile) => profile.userId?._id).filter(Boolean);
   const catalogueNames = [...new Set(profiles.map((profile) => profile.catalogueAuthorName))];
