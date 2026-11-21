@@ -32,7 +32,7 @@ function validHref(value) {
   }
 }
 
-function normalizeNavigation(value) {
+function normalizeLinks(value) {
   if (!Array.isArray(value) || value.length < 1 || value.length > 8) return null;
   const items = value.map((item) => {
     if (!item || typeof item.enabled !== "boolean" || !validHref(item.href) || !item.href) return null;
@@ -45,8 +45,11 @@ function normalizeNavigation(value) {
 function normalizeSettings(body) {
   const announcement = body?.announcement;
   const hero = body?.homepage?.hero;
-  const navigation = normalizeNavigation(body?.navigation);
-  if (!announcement || typeof announcement.enabled !== "boolean" || !validHref(announcement.href) || !navigation) return null;
+  const navigation = normalizeLinks(body?.navigation);
+  const tagline = localizedGroup(body?.footer?.tagline, 300);
+  const browseLinks = normalizeLinks(body?.footer?.browseLinks);
+  if (!announcement || typeof announcement.enabled !== "boolean" || !validHref(announcement.href)
+    || !navigation || !tagline || !browseLinks) return null;
   const cleanAnnouncement = {
     enabled: announcement.enabled,
     text: localizedGroup(announcement.text, 300, true),
@@ -62,7 +65,12 @@ function normalizeSettings(body) {
   };
   if (Object.values(cleanAnnouncement).some((value) => value === null)
     || Object.values(cleanHero).some((value) => value === null)) return null;
-  return { announcement: cleanAnnouncement, navigation, homepage: { hero: cleanHero } };
+  return {
+    announcement: cleanAnnouncement,
+    navigation,
+    footer: { tagline, browseLinks },
+    homepage: { hero: cleanHero },
+  };
 }
 
 function mergeDefaults(settings) {
@@ -73,6 +81,14 @@ function mergeDefaults(settings) {
     navigation: Array.isArray(settings?.navigation) && settings.navigation.length
       ? settings.navigation
       : DEFAULT_SETTINGS.navigation,
+    footer: {
+      ...DEFAULT_SETTINGS.footer,
+      ...settings?.footer,
+      tagline: { ...DEFAULT_SETTINGS.footer.tagline, ...settings?.footer?.tagline },
+      browseLinks: Array.isArray(settings?.footer?.browseLinks) && settings.footer.browseLinks.length
+        ? settings.footer.browseLinks
+        : DEFAULT_SETTINGS.footer.browseLinks,
+    },
     homepage: {
       ...DEFAULT_SETTINGS.homepage,
       ...settings?.homepage,
@@ -83,13 +99,13 @@ function mergeDefaults(settings) {
 
 export async function getPublicSiteContent(_request, response) {
   if (!isDatabaseConnected()) {
-    const { announcement, navigation, homepage } = mergeDefaults(null);
-    return response.json({ data: { settings: { announcement, navigation, homepage } } });
+    const { announcement, navigation, footer, homepage } = mergeDefaults(null);
+    return response.json({ data: { settings: { announcement, navigation, footer, homepage } } });
   }
-  const settings = await SiteSettings.findOne({ key: "global" }).select("announcement navigation homepage -_id").lean();
-  const { announcement, navigation, homepage } = mergeDefaults(settings);
+  const settings = await SiteSettings.findOne({ key: "global" }).select("announcement navigation footer homepage -_id").lean();
+  const { announcement, navigation, footer, homepage } = mergeDefaults(settings);
   response.setHeader("Cache-Control", "public, max-age=60");
-  return response.json({ data: { settings: { announcement, navigation, homepage } } });
+  return response.json({ data: { settings: { announcement, navigation, footer, homepage } } });
 }
 
 export async function getAdminSiteContent(_request, response) {
@@ -104,7 +120,7 @@ export async function getAdminSiteContent(_request, response) {
 
 export async function updateAdminSiteContent(request, response) {
   const normalized = normalizeSettings(request.body);
-  if (!normalized) return errorResponse(response, 400, "INVALID_SITE_CONTENT", "Check the hero, navigation and announcement content.");
+  if (!normalized) return errorResponse(response, 400, "INVALID_SITE_CONTENT", "Check the hero, navigation, footer and announcement content.");
   const settings = await SiteSettings.findOneAndUpdate(
     { key: "global" },
     { $set: { ...normalized, updatedBy: request.reader._id }, $setOnInsert: { key: "global" } },
