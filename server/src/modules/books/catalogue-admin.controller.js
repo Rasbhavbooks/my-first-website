@@ -70,18 +70,20 @@ export async function updateAdminCatalogueBook(request, response) {
   const body = request.body || {};
   const tone = typeof body.tone === "string" ? body.tone.trim() : "";
   const badge = typeof body.badge === "string" ? body.badge.trim() : "";
-  const price = Number(body.price);
+  const priceValue = body.price;
+  const price = Number(priceValue);
   const validCategory = categories.includes(body.category) && body.category !== "All";
   if (
     !validLocalizedText(body.title, 200)
     || !validLocalizedText(body.description, 4000)
     || !LANGUAGES.has(body.language)
     || !validCategory
-    || body.price === "" || body.price === null || !Number.isFinite(price) || price < 0 || price > 100000
+    || (typeof priceValue !== "number" && (typeof priceValue !== "string" || !priceValue.trim()))
+    || !Number.isFinite(price) || price < 0 || price > 100000
     || !tone || tone.length > 40
     || !badge || badge.length > 40
   ) {
-    return errorResponse(response, 400, "INVALID_CATALOGUE_BOOK", "Check every language field, author, category, price, tone, and badge.");
+    return errorResponse(response, 400, "INVALID_CATALOGUE_BOOK", "Check every language field, category, price, tone, and badge.");
   }
 
   const book = await Book.findOneAndUpdate(
