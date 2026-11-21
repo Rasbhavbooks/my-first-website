@@ -17,6 +17,7 @@ export function CategoryProvider({ children }) {
   useEffect(() => { refreshCategories(); }, [refreshCategories]);
 
   const getCategoryLabel = useCallback((key) => {
+    if (key === "All") return t.all;
     const category = categories.find((item) => item.key === key);
     return category?.labels?.[language] || t.categories[key] || key;
   }, [categories, language, t.categories]);
