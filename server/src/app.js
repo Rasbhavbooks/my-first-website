@@ -23,6 +23,8 @@ import categoriesRoutes from "./modules/books/categories.routes.js";
 import adminCategoriesRoutes from "./modules/books/admin-categories.routes.js";
 import cmsPagesRoutes from "./modules/cms/cms-pages.routes.js";
 import adminCmsPagesRoutes from "./modules/cms/admin-cms-pages.routes.js";
+import siteSettingsRoutes from "./modules/cms/site-settings.routes.js";
+import adminSiteSettingsRoutes from "./modules/cms/admin-site-settings.routes.js";
 
 const app = express();
 app.disable("x-powered-by");
@@ -34,6 +36,7 @@ app.use("/api/v1/health", healthRoutes);
 app.use("/api/v1/books", bookRoutes);
 app.use("/api/v1/categories", categoriesRoutes);
 app.use("/api/v1/pages", cmsPagesRoutes);
+app.use("/api/v1/site-content", siteSettingsRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/wishlist", wishlistRoutes);
 app.use("/api/v1/reader/follows", followsRoutes);
@@ -49,6 +52,7 @@ app.use("/api/v1/admin/authors", authorManagementRoutes);
 app.use("/api/v1/admin/catalogue-books", catalogueAdminRoutes);
 app.use("/api/v1/admin/categories", adminCategoriesRoutes);
 app.use("/api/v1/admin/cms-pages", adminCmsPagesRoutes);
+app.use("/api/v1/admin/site-settings", adminSiteSettingsRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
