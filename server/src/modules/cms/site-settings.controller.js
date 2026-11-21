@@ -3,6 +3,7 @@ import { isDatabaseConnected } from "../../config/database.js";
 import SiteSettings from "./site-settings.model.js";
 
 const LANGUAGES = ["en", "gu", "hi"];
+const HOME_SECTION_IDS = ["hero", "trust", "discovery", "languages", "authors", "community"];
 const DEFAULT_SETTINGS = { key: "global", ...defaultSiteContent };
 
 function errorResponse(response, status, code, message) {
@@ -42,14 +43,28 @@ function normalizeLinks(value) {
   return items.some((item) => item === null) ? null : items;
 }
 
+function normalizeHomeSections(value) {
+  if (!Array.isArray(value) || value.length !== HOME_SECTION_IDS.length) return null;
+  const sections = value.map((item) => {
+    if (!item || !HOME_SECTION_IDS.includes(item.id) || typeof item.enabled !== "boolean") return null;
+    return { id: item.id, enabled: item.enabled };
+  });
+  const ids = sections.filter(Boolean).map((item) => item.id);
+  if (sections.some((item) => item === null)
+    || new Set(ids).size !== HOME_SECTION_IDS.length
+    || HOME_SECTION_IDS.some((id) => !ids.includes(id))
+    || !sections.some((item) => item.enabled)) return null;
+  return sections;
+}
 function normalizeSettings(body) {
   const announcement = body?.announcement;
   const hero = body?.homepage?.hero;
+  const sections = normalizeHomeSections(body?.homepage?.sections);
   const navigation = normalizeLinks(body?.navigation);
   const tagline = localizedGroup(body?.footer?.tagline, 300);
   const browseLinks = normalizeLinks(body?.footer?.browseLinks);
   if (!announcement || typeof announcement.enabled !== "boolean" || !validHref(announcement.href)
-    || !navigation || !tagline || !browseLinks) return null;
+    || !navigation || !tagline || !browseLinks || !sections) return null;
   const cleanAnnouncement = {
     enabled: announcement.enabled,
     text: localizedGroup(announcement.text, 300, true),
@@ -69,7 +84,7 @@ function normalizeSettings(body) {
     announcement: cleanAnnouncement,
     navigation,
     footer: { tagline, browseLinks },
-    homepage: { hero: cleanHero },
+    homepage: { hero: cleanHero, sections },
   };
 }
 
@@ -92,6 +107,7 @@ function mergeDefaults(settings) {
     homepage: {
       ...DEFAULT_SETTINGS.homepage,
       ...settings?.homepage,
+      sections: normalizeHomeSections(settings?.homepage?.sections) || DEFAULT_SETTINGS.homepage.sections,
       hero: { ...DEFAULT_SETTINGS.homepage.hero, ...settings?.homepage?.hero },
     },
   };
@@ -120,7 +136,7 @@ export async function getAdminSiteContent(_request, response) {
 
 export async function updateAdminSiteContent(request, response) {
   const normalized = normalizeSettings(request.body);
-  if (!normalized) return errorResponse(response, 400, "INVALID_SITE_CONTENT", "Check the hero, navigation, footer and announcement content.");
+  if (!normalized) return errorResponse(response, 400, "INVALID_SITE_CONTENT", "Check the homepage sections, hero, navigation, footer and announcement content.");
   const settings = await SiteSettings.findOneAndUpdate(
     { key: "global" },
     { $set: { ...normalized, updatedBy: request.reader._id }, $setOnInsert: { key: "global" } },
