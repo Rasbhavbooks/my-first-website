@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router";
 import { getBookTitle } from "../../data/books.js";
 import AuthorFollowButton from "../../components/books/AuthorFollowButton.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
+import { useCategories } from "../../hooks/useCategories.js";
 import { getPublicAuthorProfile } from "../../services/authorService.js";
 
 const styles = `
@@ -28,6 +29,7 @@ const styles = `
 export default function PublicAuthorPage() {
   const { slug } = useParams();
   const { language, t } = useLanguage();
+  const { getCategoryLabel } = useCategories();
   const [data, setData] = useState(null);
   const [missing, setMissing] = useState(false);
 
@@ -70,7 +72,7 @@ export default function PublicAuthorPage() {
           <article className="public-author-book" key={book.id}>
             <Link to={`/books/${encodeURIComponent(book.id)}`}><h2>{getBookTitle(book, language)}</h2></Link>
             <p>{t.by} {book.author}</p>
-            <p>{t.categories[book.category] || book.category} · {book.language}</p>
+            <p>{getCategoryLabel(book.category)} · {book.language}</p>
           </article>
         ))}</div>
       </>}
