@@ -5,11 +5,13 @@ import { getBookTitle } from "../../data/books.js";
 import BookReviews from "../../components/books/BookReviews.jsx";
 import AuthorFollowButton from "../../components/books/AuthorFollowButton.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
+import { useCategories } from "../../hooks/useCategories.js";
 import { getBookById } from "../../services/bookService.js";
 
 export default function BookDetailsPage() {
   const { bookId } = useParams();
   const { language, t } = useLanguage();
+  const { getCategoryLabel } = useCategories();
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -45,7 +47,7 @@ export default function BookDetailsPage() {
           <p className="detail-description">{t.descriptionText[language]}</p>
           <dl className="detail-facts">
             <div><dt>{t.languageLabel}</dt><dd>{book.language}</dd></div>
-            <div><dt>{t.categoryLabel}</dt><dd>{t.categories[book.category] || book.category}</dd></div>
+            <div><dt>{t.categoryLabel}</dt><dd>{getCategoryLabel(book.category)}</dd></div>
           </dl>
           <p className="demo-note">{t.demoNotice}</p>
         </article>
