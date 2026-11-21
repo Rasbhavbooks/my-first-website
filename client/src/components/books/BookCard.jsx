@@ -2,10 +2,12 @@ import { ArrowUpRight, Heart } from "lucide-react";
 import { Link } from "react-router";
 import { getBookTitle } from "../../data/books.js";
 import { useWishlist } from "../../context/WishlistContext.jsx";
+import { useCategories } from "../../hooks/useCategories.js";
 
 export default function BookCard({ book, language, t }) {
   const title = getBookTitle(book, language);
   const { savedBookIds, toggleWishlist } = useWishlist();
+  const { getCategoryLabel } = useCategories();
   const isSaved = savedBookIds.includes(book.id);
 
   return (
@@ -15,7 +17,7 @@ export default function BookCard({ book, language, t }) {
           <span className="cover-badge">{book.badge}</span><span className="cover-title">{title}</span><span className="cover-author">{book.author}</span><span className="cover-seal">RB</span>
         </div>
         <div className="book-meta">
-          <div className="book-labels"><span>{t.categories[book.category]}</span><span>{book.language}</span></div>
+          <div className="book-labels"><span>{getCategoryLabel(book.category)}</span><span>{book.language}</span></div>
           <h3>{title}</h3><p>{t.by} {book.author}</p>
           <div className="book-bottom"><strong>₹{book.price}</strong><span className="icon-button" aria-hidden="true"><ArrowUpRight size={17} /></span></div>
         </div>
