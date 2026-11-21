@@ -14,6 +14,7 @@ import AuthorApplicationsPage from "../pages/Admin/AuthorApplicationsPage.jsx";
 import AdminDashboardPage from "../pages/Admin/AdminDashboardPage.jsx";
 import AdminUsersPage from "../pages/Admin/AdminUsersPage.jsx";
 import AdminAuthorsPage from "../pages/Admin/AdminAuthorsPage.jsx";
+import AdminCataloguePage from "../pages/Admin/AdminCataloguePage.jsx";
 import AuthorBooksAdminPage from "../pages/Admin/AuthorBooksPage.jsx";
 import AuthorApplicationPage from "../pages/Auth/AuthorApplicationPage.jsx";
 import AuthorStudioPage from "../pages/Auth/AuthorStudioPage.jsx";
@@ -38,6 +39,7 @@ export default function AppRoutes() {
         <Route path="admin" element={<AdminDashboardPage />} />
         <Route path="admin/users" element={<AdminUsersPage />} />
         <Route path="admin/authors" element={<AdminAuthorsPage />} />
+        <Route path="admin/catalogue" element={<AdminCataloguePage />} />
         <Route path="admin/review-moderation" element={<ReviewModerationPage />} />
         <Route path="admin/author-books" element={<AuthorBooksAdminPage />} />
         <Route path="admin/author-applications" element={<AuthorApplicationsPage />} />
