@@ -39,11 +39,20 @@ const navigationItemSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const footerSchema = new mongoose.Schema(
+  {
+    tagline: { type: localizedTextSchema, required: true },
+    browseLinks: { type: [navigationItemSchema], required: true, validate: (items) => items.length >= 1 && items.length <= 8 },
+  },
+  { _id: false },
+);
+
 const siteSettingsSchema = new mongoose.Schema(
   {
     key: { type: String, required: true, unique: true, immutable: true, default: "global" },
     announcement: { type: announcementSchema, required: true },
     navigation: { type: [navigationItemSchema], default: [], validate: (items) => items.length <= 8 },
+    footer: { type: footerSchema, required: true },
     homepage: {
       hero: { type: heroSchema, required: true },
     },
