@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router";
-import { categories } from "../../data/books.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
+import { useCategories } from "../../hooks/useCategories.js";
 import { getAdminCatalogueBooks, updateAdminCatalogueBook } from "../../services/adminCatalogueService.js";
 
 const LANGUAGES = ["en", "gu", "hi"];
@@ -34,6 +34,7 @@ const styles = `
 export default function AdminCataloguePage() {
   const { user, loading } = useAuth();
   const { language, t } = useLanguage();
+  const { categories, getCategoryLabel } = useCategories();
   const [books, setBooks] = useState([]);
   const [drafts, setDrafts] = useState({});
   const [query, setQuery] = useState("");
@@ -112,7 +113,7 @@ export default function AdminCataloguePage() {
         <label>{t.adminCatalogueSearch}<input value={query} maxLength={100} onChange={(event) => setQuery(event.target.value)} /></label>
         <label>{t.bookCategory}<select value={category} onChange={(event) => setCategory(event.target.value)}>
           <option value="">{t.adminCatalogueAllCategories}</option>
-          {categories.filter((item) => item !== "All").map((item) => <option key={item} value={item}>{t.categories[item] || item}</option>)}
+          {categories.filter(({ key }) => key !== "All").map(({ key }) => <option key={key} value={key}>{getCategoryLabel(key)}</option>)}
         </select></label>
         <button type="submit">{t.search}</button>
       </form>
