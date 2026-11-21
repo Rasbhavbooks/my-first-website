@@ -53,9 +53,10 @@ export async function getPublicSiteContent(_request, response) {
   if (!isDatabaseConnected()) {
     return response.json({ data: { settings: DEFAULT_SETTINGS } });
   }
-  const settings = await SiteSettings.findOne({ key: "global" }).lean();
+  const settings = await SiteSettings.findOne({ key: "global" }).select("announcement homepage -_id").lean();
+  const publicSettings = settings || { announcement: DEFAULT_SETTINGS.announcement, homepage: DEFAULT_SETTINGS.homepage };
   response.setHeader("Cache-Control", "public, max-age=60");
-  return response.json({ data: { settings: settings || DEFAULT_SETTINGS } });
+  return response.json({ data: { settings: publicSettings } });
 }
 
 export async function getAdminSiteContent(_request, response) {
