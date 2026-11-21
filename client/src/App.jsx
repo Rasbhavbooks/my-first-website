@@ -2,6 +2,7 @@ import { LanguageProvider } from "./context/LanguageContext.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { WishlistProvider } from "./context/WishlistContext.jsx";
 import { CategoryProvider } from "./hooks/useCategories.js";
+import { SiteContentProvider } from "./hooks/useSiteContent.js";
 import AppRoutes from "./routes/AppRoutes.jsx";
 
 export default function App() {
@@ -10,7 +11,9 @@ export default function App() {
       <AuthProvider>
         <WishlistProvider>
           <CategoryProvider>
-            <AppRoutes />
+            <SiteContentProvider>
+              <AppRoutes />
+            </SiteContentProvider>
           </CategoryProvider>
         </WishlistProvider>
       </AuthProvider>

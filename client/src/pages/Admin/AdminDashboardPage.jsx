@@ -44,6 +44,7 @@ export default function AdminDashboardPage() {
     [t.adminCatalogueTitle, "/admin/catalogue"],
     [t.adminCategoriesTitle, "/admin/categories"],
     [t.cmsPagesTitle, "/admin/cms-pages"],
+    [t.siteSettingsTitle, "/admin/site-settings"],
     [t.authorApplicationsTitle, "/admin/author-applications"],
     [t.adminBookReviewTitle, "/admin/author-books"],
     [t.adminReviewsTitle, "/admin/review-moderation"],

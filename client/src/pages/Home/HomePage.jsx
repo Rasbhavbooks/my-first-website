@@ -5,22 +5,26 @@ import BookCard from "../../components/books/BookCard.jsx";
 import { useCategories } from "../../hooks/useCategories.js";
 import { useBooks } from "../../hooks/useBooks.js";
 import { useLanguage } from "../../hooks/useLanguage.js";
+import { useSiteContent } from "../../hooks/useSiteContent.js";
 import { useFilteredBooks } from "../../hooks/useBooks.js";
 
 export default function HomePage() {
   const { language, setLanguage, t } = useLanguage();
+  const { settings } = useSiteContent();
   const books = useBooks();
   const { categories, getCategoryLabel } = useCategories();
   const [category, setCategory] = useState("All");
   const [query, setQuery] = useState("");
   const [subscribed, setSubscribed] = useState(false);
   const visibleBooks = useFilteredBooks(books, { category, query, language });
+  const hero = settings.homepage?.hero || {};
+  const heroText = (field, fallback) => hero[field]?.[language] || hero[field]?.en || fallback;
 
   return (
     <main>
       <section className="hero">
-        <div className="hero-copy"><div className="eyebrow"><i />{t.eyebrow}</div><h1>{t.headline}</h1><p>{t.intro}</p>
-          <div className="hero-actions"><a className="button button-dark" href="#discover">{t.explore}<ArrowRight size={17} /></a><Link className="button button-light" to="/author/apply">{t.authorCta}<ArrowUpRight size={16} /></Link></div>
+        <div className="hero-copy"><div className="eyebrow"><i />{heroText("eyebrow", t.eyebrow)}</div><h1>{heroText("title", t.headline)}</h1><p>{heroText("description", t.intro)}</p>
+          <div className="hero-actions"><a className="button button-dark" href="#discover">{heroText("primaryCta", t.explore)}<ArrowRight size={17} /></a><Link className="button button-light" to="/author/apply">{heroText("secondaryCta", t.authorCta)}<ArrowUpRight size={16} /></Link></div>
           <div className="hero-note"><span>✳</span>{t.note}</div>
         </div>
         <div className="hero-art" aria-label="A stack of books"><div className="sun-disc" /><div className="hero-caption">THE READING ROOM<br />01 — 03</div><div className="art-leaf">✳</div><div className="display-book book-one"><span>STORIES<br />TO KEEP</span></div><div className="display-book book-two"><span>WORDS<br />THAT STAY</span></div><div className="display-book book-three"><span>RASBHAV<br />BOOKS</span></div></div>
