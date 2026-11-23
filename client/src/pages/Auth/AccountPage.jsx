@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { changeReaderPassword, downloadReaderAccountData, getReaderSessions, revokeReaderSession, updateReaderProfile } from "../../services/authService.js";
+import { changeReaderPassword, downloadReaderAccountData, getReaderSessions, removeReaderAvatar, revokeReaderSession, updateReaderProfile, uploadReaderAvatar } from "../../services/authService.js";
 import FollowedAuthorsPanel from "../../components/account/FollowedAuthorsPanel.jsx";
 
 const accountStyles = `
@@ -52,7 +52,7 @@ export default function AccountPage() {
   const [displayName, setDisplayName] = useState(user?.displayName || "");
   const [bio, setBio] = useState(user?.bio || "");
   const [hobbies, setHobbies] = useState(user?.hobbies?.join(", ") || "");
-  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || "");
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || "");\n  const [avatarPhotoUrl, setAvatarPhotoUrl] = useState(user?.avatarPhotoUrl || "");\n  const [avatarBusy, setAvatarBusy] = useState(false);\n  const [avatarError, setAvatarError] = useState("");
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -70,8 +70,8 @@ export default function AccountPage() {
     setDisplayName(user.displayName || "");
     setBio(user.bio || "");
     setHobbies(user.hobbies?.join(", ") || "");
-    setAvatarUrl(user.avatarUrl || "");
-  }, [user?.id, user?.displayName, user?.bio, user?.hobbies?.join(", "), user?.avatarUrl]);
+    setAvatarUrl(user.avatarUrl || "");\n    setAvatarPhotoUrl(user.avatarPhotoUrl || "");
+  }, [user?.id, user?.displayName, user?.bio, user?.hobbies?.join(", "), user?.avatarUrl, user?.avatarPhotoUrl]);
 
   useEffect(() => {
     let active = true;
@@ -96,6 +96,48 @@ export default function AccountPage() {
 
   if (loading) return <main className="account-page"><p>{t.loadingAccount}</p></main>;
   if (!user && !passwordChanged) return <Navigate to="/reader/login" replace />;
+
+  async function handleAvatarUpload(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setAvatarError("");
+    setAvatarBusy(true);
+    try {
+      await uploadReaderAvatar(file);
+      await refreshSession();
+      setNotice(t.profilePhotoUploaded);
+    } catch (uploadError) {
+      const messages = {
+        FILE_SCANNER_NOT_CONFIGURED: t.assetScannerUnavailable,
+        FILE_SCANNER_UNAVAILABLE: t.assetScannerUnavailable,
+        FILE_SCANNER_TIMEOUT: t.assetScannerUnavailable,
+        FILE_SCAN_FAILED: t.assetScannerUnavailable,
+        STORAGE_NOT_CONFIGURED: t.assetStorageUnavailable,
+        MALWARE_DETECTED: t.assetMalwareDetected,
+        INVALID_AVATAR_SIZE: t.assetInvalidSize,
+        INVALID_AVATAR_TYPE: t.assetInvalidType,
+      };
+      setAvatarError(messages[uploadError.code] || t.profilePhotoUploadError);
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
+
+  async function handleAvatarRemove() {
+    if (!window.confirm(t.profilePhotoRemoveConfirm)) return;
+    setAvatarError("");
+    setAvatarBusy(true);
+    try {
+      await removeReaderAvatar();
+      await refreshSession();
+      setNotice(t.profilePhotoRemoved);
+    } catch {
+      setAvatarError(t.profilePhotoUploadError);
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
 
   async function handleProfile(event) {
     event.preventDefault();
@@ -218,10 +260,14 @@ export default function AccountPage() {
         <section className="account-panel">
           <h2>{t.profileTitle}</h2>
           <form className="account-form" onSubmit={handleProfile}>
-            {avatarUrl
-              ? <img key={avatarUrl} className="account-photo-preview" src={avatarUrl} alt={t.profilePhoto} onError={(event) => { event.currentTarget.hidden = true; }} />
+            {(avatarPhotoUrl || avatarUrl)
+              ? <img key={avatarPhotoUrl || avatarUrl} className="account-photo-preview" src={avatarPhotoUrl || avatarUrl} alt={t.profilePhoto} onError={(event) => { event.currentTarget.hidden = true; }} />
               : <div className="account-photo-preview account-photo-fallback" aria-label={t.profilePhoto}>{displayName.trim().charAt(0).toUpperCase()}</div>}
             <label className="account-field"><span>{t.profilePhotoUrl}</span><input type="url" inputMode="url" autoComplete="url" value={avatarUrl} onChange={(event) => setAvatarUrl(event.target.value)} maxLength={500} placeholder="https://…" /></label>
+            <label className="account-field"><span>{t.uploadProfilePhoto}</span><input type="file" accept="image/jpeg,image/png,image/webp" disabled={avatarBusy} onChange={handleAvatarUpload} /></label>
+            <p className="password-hint">{t.profilePhotoUploadHint}</p>
+            {avatarError && <p className="account-error" role="alert">{avatarError}</p>}
+            <button className="account-submit" type="button" disabled={avatarBusy || !avatarPhotoUrl} onClick={handleAvatarRemove}>{avatarBusy ? t.profilePhotoUploading : t.removeProfilePhoto}</button>
             <label className="account-field"><span>{t.displayName}</span><input value={displayName} onChange={(event) => setDisplayName(event.target.value)} minLength={2} maxLength={80} required /></label>
             <label className="account-field"><span>{t.emailAddress}</span><input value={user.email} readOnly /></label>
             <label className="account-field"><span>{t.readerBio}</span><textarea value={bio} onChange={(event) => setBio(event.target.value)} maxLength={280} rows={4} /></label>
