@@ -70,7 +70,7 @@ export default function AdminMfaSetupPage() {
       setEnrollment(null);
       setCode("");
       setStatus({ enabled: true, recoveryCodesRemaining: result.recoveryCodes?.length || 0, setupAvailable: true });
-      await refreshSession();
+      try { await refreshSession(); } catch { /* The next page load refreshes the newly enabled admin status. */ }
       setNotice(t.adminMfaEnabledNotice);
     } catch (requestError) {
       setError(requestError.code === "INVALID_MFA_CODE" ? t.adminMfaInvalid : t.adminMfaError);
