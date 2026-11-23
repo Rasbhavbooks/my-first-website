@@ -51,3 +51,19 @@ export function reportBookReview(bookId, reviewId, payload) {
     body: JSON.stringify(payload),
   });
 }
+export function getMyHelpfulVotes(bookId, reviewIds) {
+  const query = new URLSearchParams({ reviewIds: reviewIds.join(",") });
+  return request(`/api/v1/books/${encodeURIComponent(bookId)}/reviews/helpful?${query}`);
+}
+
+export function addHelpfulVote(bookId, reviewId) {
+  return request(`/api/v1/books/${encodeURIComponent(bookId)}/reviews/${encodeURIComponent(reviewId)}/helpful`, {
+    method: "POST",
+  });
+}
+
+export function removeHelpfulVote(bookId, reviewId) {
+  return request(`/api/v1/books/${encodeURIComponent(bookId)}/reviews/${encodeURIComponent(reviewId)}/helpful`, {
+    method: "DELETE",
+  });
+}
