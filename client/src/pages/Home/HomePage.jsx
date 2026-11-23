@@ -112,7 +112,7 @@ export default function HomePage() {
         <Fragment key={section.id}>{section.id.startsWith("custom-") ? (
           <section className="section custom-home-section" id={section.id}>
             <div className="section-head"><div className="eyebrow"><i />{t.curated}</div><h2>{section.title?.[language] || section.title?.en}</h2></div>
-            {section.imageUrl && <img loading="lazy" src={section.imageUrl} alt={section.title?.[language] || section.title?.en || ""} style={{ display: "block", maxWidth: "100%", maxHeight: 400, objectFit: "cover", margin: "18px 0" }} />}
+            {section.imageUrl && <img loading="lazy" src={section.imageUrl} alt={section.imageAlt?.[language] || section.imageAlt?.en || section.title?.[language] || section.title?.en || ""} style={{ display: "block", maxWidth: "100%", maxHeight: 400, objectFit: "cover", margin: "18px 0" }} />}
             {section.description?.[language] && <p>{section.description[language]}</p>}
             {section.linkLabel?.[language] && section.href && <a className="text-link" href={section.href}>{section.linkLabel[language]}<ArrowUpRight size={16} /></a>}
           </section>
