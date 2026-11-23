@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { changeReaderPassword, downloadReaderAccountData, updateReaderProfile } from "../../services/authService.js";
+import { changeReaderPassword, downloadReaderAccountData, getReaderSessions, revokeReaderSession, updateReaderProfile } from "../../services/authService.js";
 import FollowedAuthorsPanel from "../../components/account/FollowedAuthorsPanel.jsx";
 
 const accountStyles = `
@@ -28,8 +28,23 @@ const accountStyles = `
 .account-back{display:inline-block;margin-top:24px;font-size:10px;color:#716b63;text-decoration:underline;text-underline-offset:3px}
 .account-success{max-width:500px;margin:70px auto;padding:40px;border:1px solid var(--line);background:#fffdfa;text-align:center}
 .account-success h1{font:500 36px var(--serif)}.account-success p{color:#77716a;font-size:12px;line-height:1.8}
+.account-session-list{display:grid;gap:10px;margin:18px 0 0;padding:0;list-style:none}
+.account-session-row{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px;border:1px solid var(--line);background:#fff}
+.account-session-details{display:grid;gap:5px;min-width:0;font-size:11px;color:#77716a}
+.account-session-details strong{color:#30252c;font-weight:600}
+.account-session-details code{font-size:10px}
+.account-session-current{color:#316342!important}
+.account-session-revoke{min-height:36px;padding:0 12px;border:1px solid #d7cec0;background:#fff;color:#30252c;font-size:10px;cursor:pointer}
+.account-session-revoke:disabled{opacity:.55;cursor:wait}
+@media(max-width:500px){.account-session-row{align-items:flex-start;flex-direction:column}}
 @media(max-width:700px){.account-page{padding:45px 19px 70px}.account-grid{grid-template-columns:1fr}.account-panel{padding:22px}}
 `;
+
+function formatSessionDate(value, language) {
+  const locale = { en: "en-IN", gu: "gu-IN", hi: "hi-IN" }[language] || "en-IN";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "—" : new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(date);
+}
 
 export default function AccountPage() {
   const { t } = useLanguage();
@@ -43,7 +58,7 @@ export default function AccountPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [exportBusy, setExportBusy] = useState(false);
-  const [passwordChanged, setPasswordChanged] = useState(false);
+  const [passwordChanged, setPasswordChanged] = useState(false);\n  const [sessions, setSessions] = useState([]);\n  const [sessionsHasMore, setSessionsHasMore] = useState(false);\n  const [sessionsLoading, setSessionsLoading] = useState(true);\n  const [sessionsBusyId, setSessionsBusyId] = useState("");\n  const [sessionsError, setSessionsError] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -52,6 +67,27 @@ export default function AccountPage() {
     setHobbies(user.hobbies?.join(", ") || "");
     setAvatarUrl(user.avatarUrl || "");
   }, [user?.id, user?.displayName, user?.bio, user?.hobbies?.join(", "), user?.avatarUrl]);
+
+  useEffect(() => {
+    let active = true;
+    if (!user?.id) {
+      setSessions([]);
+      setSessionsLoading(false);
+      return () => { active = false; };
+    }
+    setSessionsLoading(true);
+    getReaderSessions()
+      .then((result) => {
+        if (active) {
+          setSessions(result.sessions || []);
+          setSessionsHasMore(Boolean(result.hasMore));
+          setSessionsError("");
+        }
+      })
+      .catch(() => { if (active) setSessionsError(t.sessionsError); })
+      .finally(() => { if (active) setSessionsLoading(false); });
+    return () => { active = false; };
+  }, [user?.id, t.sessionsError]);
 
   if (loading) return <main className="account-page"><p>{t.loadingAccount}</p></main>;
   if (!user && !passwordChanged) return <Navigate to="/reader/login" replace />;
@@ -103,6 +139,27 @@ export default function AccountPage() {
     setError("");
     setBusy(true);
     try { await signOut(); } catch { setError(t.profileError); } finally { setBusy(false); }
+  }
+
+  async function handleSessionRevoke(session) {
+    if (!window.confirm(t.sessionRevokeConfirm)) return;
+    setSessionsBusyId(session.id);
+    setSessionsError("");
+    try {
+      const result = await revokeReaderSession(session.id);
+      if (result.current) {
+        await refreshSession();
+        return;
+      }
+      const updated = await getReaderSessions();
+      setSessions(updated.sessions || []);
+      setSessionsHasMore(Boolean(updated.hasMore));
+      setNotice(t.sessionRevoked);
+    } catch {
+      setSessionsError(t.sessionsError);
+    } finally {
+      setSessionsBusyId("");
+    }
   }
 
   async function handlePassword(event) {
@@ -178,6 +235,28 @@ export default function AccountPage() {
           </form>
         </section>
       </div>
+      <section className="account-panel" style={{ marginTop: 20 }}>
+        <h2>{t.sessionsTitle}</h2>
+        <p className="account-intro">{t.sessionsIntro}</p>
+        {sessionsLoading && <p role="status">{t.sessionsLoading}</p>}
+        {sessionsError && <p className="account-error" role="alert">{sessionsError}</p>}
+        {!sessionsLoading && !sessionsError && sessions.length === 0 && <p>{t.sessionsEmpty}</p>}
+        {!sessionsLoading && sessions.length > 0 && <ul className="account-session-list" aria-label={t.sessionsTitle}>
+          {sessions.map((session) => (
+            <li className="account-session-row" key={session.id}>
+              <div className="account-session-details">
+                <strong className={session.current ? "account-session-current" : ""}>{session.current ? t.currentSession : t.otherSession}</strong>
+                <span>{t.sessionStarted}: {formatSessionDate(session.createdAt, language)}</span>
+                <span>{t.sessionExpires}: {formatSessionDate(session.expiresAt, language)}</span>
+              </div>
+              <button className="account-session-revoke" type="button" disabled={Boolean(sessionsBusyId)} onClick={() => handleSessionRevoke(session)}>
+                {sessionsBusyId === session.id ? t.sessionRevoking : t.revokeSession}
+              </button>
+            </li>
+          ))}
+        </ul>}
+        {sessionsHasMore && <p className="password-hint">{t.sessionsMore}</p>}
+      </section>
       <section className="account-panel" style={{ marginTop: 20 }}>
         <h2>{t.exportData}</h2>
         <p className="account-intro">{t.exportDataHint}</p>
