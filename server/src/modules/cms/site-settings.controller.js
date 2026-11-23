@@ -66,7 +66,7 @@ function normalizeHomeSections(value) {
     const linkLabel = localizedGroup(item.linkLabel, 80, true);
     const imageUrl = item.imageUrl || "";
     const imageAlt = localizedGroup(item.imageAlt || { en: "", gu: "", hi: "" }, 300, true);
-    const validImageUrl = imageUrl === "" || /^\\/api\\/v1\\/media\\/[a-f0-9]{24}$/i.test(imageUrl);
+    const validImageUrl = imageUrl === "" || /^\/api\/v1\/media\/[a-f0-9]{24}$/i.test(imageUrl);
     if (!title || !description || !linkLabel || !imageAlt || !validHref(item.href || "") || typeof imageUrl !== "string" || !validImageUrl) return null;
     if (imageUrl && Object.values(imageAlt).some((text) => text.length < 2)) return null;
     if (Object.values(linkLabel).some((label) => label.trim()) && !item.href) return null;
