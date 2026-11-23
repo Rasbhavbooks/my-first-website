@@ -60,6 +60,7 @@ export default function AdminDashboardPage() {
   const sections = [
     [t.adminUsersTitle, "/admin/users"],
     [t.adminMfaSetupTitle, "/admin/security/mfa"],
+    [t.adminAuditLogTitle, "/admin/audit-log"],
     [t.adminAuthorsTitle, "/admin/authors"],
     [t.adminCatalogueTitle, "/admin/catalogue"],
     [t.adminCategoriesTitle, "/admin/categories"],
