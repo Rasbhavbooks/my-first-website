@@ -1,5 +1,8 @@
+import { DEFAULT_AUTHOR_UPLOAD_LIMITS_MB } from "./author-upload-limits.js";
+
 export const defaultSiteContent = {
   platform: { defaultLanguage: "en" },
+  uploads: { coverMaxMb: DEFAULT_AUTHOR_UPLOAD_LIMITS_MB.cover, manuscriptMaxMb: DEFAULT_AUTHOR_UPLOAD_LIMITS_MB.manuscript },
   maintenance: {
     enabled: false,
     message: {
