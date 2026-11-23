@@ -19,6 +19,7 @@ function sanitizePath(originalUrl) {
 
 export function recordAdminActivity(request, response, next) {
   if (!MUTATING_METHODS.has(request.method)) return next();
+  const adminBasePath = request.baseUrl || "/api/v1/admin";
 
   response.once("finish", () => {
     const actorId = request.reader?._id;
@@ -29,7 +30,7 @@ export function recordAdminActivity(request, response, next) {
       actorId,
       method: request.method,
       path: sanitizePath(request.route?.path
-        ? `${request.baseUrl}${Array.isArray(request.route.path) ? request.route.path[0] : request.route.path}`
+        ? `${adminBasePath}${Array.isArray(request.route.path) ? request.route.path[0] : request.route.path}`
         : request.originalUrl),
       statusCode: response.statusCode,
     }).catch((error) => {
