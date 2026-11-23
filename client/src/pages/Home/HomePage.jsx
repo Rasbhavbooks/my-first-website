@@ -144,6 +144,7 @@ export default function HomePage() {
               onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder={t.search} /></label>
             {showSearchSuggestions && searchSuggestions.length > 0 && <div className="search-suggestions" role="region" aria-label={t.searchHistoryTitle}>
               <div className="search-suggestions-head"><strong>{t.searchHistoryTitle}</strong><button type="button" onMouseDown={(event) => event.preventDefault()} onClick={clearSearchHistory}>{t.clearSearchHistory}</button></div>
+              <p className="search-suggestions-hint">{t.searchHistoryHint}</p>
               {searchSuggestions.map((term, index) => <button className="search-suggestion" type="button" key={`${term}-${index}`}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => { setQuery(term); setPage(1); setShowSearchSuggestions(false); }}>{term}</button>)}
