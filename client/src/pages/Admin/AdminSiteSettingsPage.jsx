@@ -238,6 +238,20 @@ export default function AdminSiteSettingsPage() {
         </label>
       </section>
       <section className="admin-site-panel">
+        <h2>{t.uploadLimitsTitle}</h2>
+        <p className="admin-site-hint">{t.uploadLimitsHint}</p>
+        <div className="admin-site-grid">
+          <label className="admin-site-field">{t.coverUploadLimitLabel}
+            <input type="number" min="1" max="10" step="1" required value={settings.uploads.coverMaxMb}
+              onChange={(event) => setSettings((current) => ({ ...current, uploads: { ...current.uploads, coverMaxMb: event.target.value === "" ? "" : Number(event.target.value) } }))} />
+          </label>
+          <label className="admin-site-field">{t.manuscriptUploadLimitLabel}
+            <input type="number" min="1" max="25" step="1" required value={settings.uploads.manuscriptMaxMb}
+              onChange={(event) => setSettings((current) => ({ ...current, uploads: { ...current.uploads, manuscriptMaxMb: event.target.value === "" ? "" : Number(event.target.value) } }))} />
+          </label>
+        </div>
+      </section>
+      <section className="admin-site-panel">
         <h2>{t.maintenanceSettingsTitle}</h2>
         <p className="admin-site-hint">{t.maintenanceSettingsHint}</p>
         <label className="admin-site-check">
