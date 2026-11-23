@@ -1,0 +1,15 @@
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm
+    command: sleep infinity
+    init: true
+    volumes:
+      - ..:/workspaces/my-first-website:cached
+    environment:
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: "3310"
+  clamav:
+    image: clamav/clamav:1.5.5-debian13-slim
+    restart: unless-stopped
+    expose:
+      - "3310"
