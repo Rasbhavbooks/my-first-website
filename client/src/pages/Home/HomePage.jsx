@@ -78,6 +78,7 @@ export default function HomePage() {
           <div className="category-list" id="categories" aria-label={t.filter}>
             {categories.map(({ key }) => <button key={key} className={category === key ? "category active" : "category"} onClick={() => setCategory(key)}>{getCategoryLabel(key)}</button>)}
           </div>
+          {category !== "All" && <Link className="text-link" to={`/categories/${encodeURIComponent(category)}`}>{t.categoryPageView}<ArrowUpRight size={16} /></Link>}
         </div>
         {visibleBooks.length
           ? <div className="book-grid">{visibleBooks.map((book) => <BookCard key={book.id} book={book} language={language} t={t} />)}</div>
