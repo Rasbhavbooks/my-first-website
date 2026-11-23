@@ -1,3 +1,4 @@
+import { isValidAuthorUploadLimits } from "../../../../shared/author-upload-limits.js";
 import { defaultSiteContent } from "../../../../shared/site-content.js";
 import { isDatabaseConnected } from "../../config/database.js";
 import SiteSettings from "./site-settings.model.js";
@@ -82,6 +83,7 @@ function normalizeHomeSections(value) {
 }
 function normalizeSettings(body) {
   const platform = body?.platform;
+  const uploads = body?.uploads;
   const maintenance = body?.maintenance;
   const announcement = body?.announcement;
   const hero = body?.homepage?.hero;
@@ -99,6 +101,7 @@ function normalizeSettings(body) {
   const communityTitle = localizedGroup(body?.footer?.communityTitle, 120);
   const communityLinks = normalizeLinks(body?.footer?.communityLinks);
   if (!platform || !["en", "gu", "hi"].includes(platform.defaultLanguage)
+    || !isValidAuthorUploadLimits(uploads)
     || !maintenance || typeof maintenance.enabled !== "boolean"
     || !announcement || typeof announcement.enabled !== "boolean" || !validHref(announcement.href)
     || !navigation || !tagline || !browseLinks || !communityTitle || !communityLinks || !sections || !validFeaturedBookIds) return null;
@@ -129,6 +132,7 @@ function normalizeSettings(body) {
     || Object.values(cleanHero).some((value) => value === null)) return null;
   return {
     platform: { defaultLanguage: platform.defaultLanguage },
+    uploads: { coverMaxMb: uploads.coverMaxMb, manuscriptMaxMb: uploads.manuscriptMaxMb },
     maintenance: cleanMaintenance,
     announcement: cleanAnnouncement,
     navigation,
@@ -142,6 +146,7 @@ function mergeDefaults(settings) {
     ...DEFAULT_SETTINGS,
     ...settings,
     platform: { ...DEFAULT_SETTINGS.platform, ...settings?.platform },
+    uploads: { ...DEFAULT_SETTINGS.uploads, ...settings?.uploads },
     maintenance: {
       ...DEFAULT_SETTINGS.maintenance,
       ...settings?.maintenance,
@@ -183,11 +188,11 @@ function mergeDefaults(settings) {
 
 export async function getPublicSiteContent(_request, response) {
   if (!isDatabaseConnected()) {
-    const { platform, maintenance, announcement, navigation, footer, homepage } = mergeDefaults(null);
-    return response.json({ data: { settings: { platform, maintenance, announcement, navigation, footer, homepage } } });
+    const { platform, uploads, maintenance, announcement, navigation, footer, homepage } = mergeDefaults(null);
+    return response.json({ data: { settings: { platform, uploads, maintenance, announcement, navigation, footer, homepage } } });
   }
-  const settings = await SiteSettings.findOne({ key: "global" }).select("platform maintenance announcement navigation footer homepage -_id").lean();
-  const { platform, maintenance, announcement, navigation, footer, homepage } = mergeDefaults(settings);
+  const settings = await SiteSettings.findOne({ key: "global" }).select("platform uploads maintenance announcement navigation footer homepage -_id").lean();
+  const { platform, uploads, maintenance, announcement, navigation, footer, homepage } = mergeDefaults(settings);
   response.setHeader("Cache-Control", "public, max-age=60");
   return response.json({ data: { settings: { platform, maintenance, announcement, navigation, footer, homepage } } });
 }
