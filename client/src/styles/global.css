@@ -54,6 +54,13 @@ button { color: inherit; }
 .text-link { position: absolute; right: 0; bottom: 10px; display: inline-flex; align-items: center; gap: 7px; font-size: 10px; }
 .catalog-tools { margin: 29px 0 25px; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
 .search { width: 250px; display: flex; align-items: center; gap: 9px; border-bottom: 1px solid #cfc7bc; padding: 9px 0; color: #8b8278; }
+.search-box { position: relative; flex: 0 0 250px; width: 250px; }
+.search-suggestions { position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 8; display: grid; gap: 3px; padding: 10px; border: 1px solid #ded7ce; background: #fffdfa; box-shadow: 0 12px 28px rgba(48,37,44,.12); }
+.search-suggestions-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 3px 4px 7px; color: #77716a; font-size: 9px; }
+.search-suggestions-head button { padding: 3px; border: 0; background: transparent; color: #796747; font: inherit; text-decoration: underline; cursor: pointer; }
+.search-suggestions-hint { margin: -4px 4px 4px; color: #77716a; font-size: 9px; }
+.search-suggestion { width: 100%; padding: 8px 6px; border: 0; background: transparent; color: var(--ink); text-align: left; font: 11px var(--sans); cursor: pointer; }
+.search-suggestion:hover, .search-suggestion:focus-visible { background: #f2eee7; outline: 0; }
 .search input { width: 100%; border: 0; outline: 0; background: transparent; font-size: 10px; color: var(--ink); }
 .search input::placeholder { color: #9b948b; }
 .catalog-refinements { display: flex; gap: 10px; }
@@ -176,7 +183,8 @@ button { color: inherit; }
  .section-head h2 { max-width: 260px; font-size: 34px; }
  .text-link { bottom: 8px; font-size: 9px; }
  .catalog-tools { align-items: stretch; flex-direction: column; }
- .search { width: 100%; }
+ .search-box { width: 100%; flex-basis: auto; }
+.search { width: 100%; }
  .catalog-refinements { width: 100%; }
  .catalog-refinement { flex: 1; min-width: 0; }
  .catalog-refinement select { width: 100%; }

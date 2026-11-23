@@ -29,8 +29,46 @@ export default function HomePage() {
   const [bookLanguage, setBookLanguage] = useState("");
   const [sort, setSort] = useState("featured");
   const [page, setPage] = useState(1);
+  const [searchHistory, setSearchHistory] = useState([]);
+  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const { items: visibleBooks, total: totalBooks, loading: catalogueLoading, hasMore } = usePaginatedBooks({ category, query, language, bookLanguage, sort, page });
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem("rasbhav.books.searchHistory.v1") || "[]");
+      if (Array.isArray(saved)) {
+        setSearchHistory(saved.filter((item) => typeof item === "string" && item.trim() && item.trim().length <= 100).map((item) => item.trim()).slice(0, 8));
+      }
+    } catch {
+      setSearchHistory([]);
+    }
+  }, []);
+
+  function rememberSearch(value) {
+    const term = value.trim();
+    if (!term) return;
+    const locale = { en: "en-IN", gu: "gu-IN", hi: "hi-IN" }[language] || "en-IN";
+    const next = [term, ...searchHistory.filter((item) => item.toLocaleLowerCase(locale) !== term.toLocaleLowerCase(locale))].slice(0, 8);
+    setSearchHistory(next);
+    try {
+      window.localStorage.setItem("rasbhav.books.searchHistory.v1", JSON.stringify(next));
+    } catch {
+      // Search remains usable if browser storage is unavailable.
+    }
+  }
+
+  function clearSearchHistory() {
+    setSearchHistory([]);
+    try {
+      window.localStorage.removeItem("rasbhav.books.searchHistory.v1");
+    } catch {
+      // Clearing the visible in-memory history still works.
+    }
+  }
+
+  const searchSuggestions = searchHistory.filter((item) => !query.trim()
+    || item.toLocaleLowerCase(language).includes(query.trim().toLocaleLowerCase(language)));
   const hero = settings.homepage?.hero || {};
   usePageMetadata({
     title: settings.homepage?.seo?.title?.[language] || "",
@@ -95,7 +133,23 @@ export default function HomePage() {
           <a href="#discover" className="text-link">{t.viewAll}<ArrowUpRight size={16} /></a>
         </div>
         <div className="catalog-tools">
-          <label className="search"><Search size={17} /><span className="sr-only">{t.search}</span><input maxLength={100} value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder={t.search} /></label>
+          <div className="search-box">
+            <label className="search"><Search size={17} /><span className="sr-only">{t.search}</span><input maxLength={100} value={query}
+              onFocus={() => setShowSearchSuggestions(true)}
+              onBlur={() => window.setTimeout(() => setShowSearchSuggestions(false), 120)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") { event.preventDefault(); rememberSearch(event.currentTarget.value); setShowSearchSuggestions(false); }
+                if (event.key === "Escape") setShowSearchSuggestions(false);
+              }}
+              onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder={t.search} /></label>
+            {showSearchSuggestions && searchSuggestions.length > 0 && <div className="search-suggestions" role="region" aria-label={t.searchHistoryTitle}>
+              <div className="search-suggestions-head"><strong>{t.searchHistoryTitle}</strong><button type="button" onMouseDown={(event) => event.preventDefault()} onClick={clearSearchHistory}>{t.clearSearchHistory}</button></div>
+              <p className="search-suggestions-hint">{t.searchHistoryHint}</p>
+              {searchSuggestions.map((term, index) => <button className="search-suggestion" type="button" key={`${term}-${index}`}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => { setQuery(term); setPage(1); setShowSearchSuggestions(false); }}>{term}</button>)}
+            </div>}
+          </div>
           <div className="catalog-refinements">
             <label className="catalog-refinement"><span>{t.bookLanguageFilter}</span><select value={bookLanguage} onChange={(event) => { setBookLanguage(event.target.value); setPage(1); }}>
               <option value="">{t.allLanguages}</option>
