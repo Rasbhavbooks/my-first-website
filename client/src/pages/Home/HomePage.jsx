@@ -6,6 +6,7 @@ import { useCategories } from "../../hooks/useCategories.js";
 import { usePaginatedBooks } from "../../hooks/useBooks.js";
 import { getBookById } from "../../services/bookService.js";
 import { getBookTitle } from "../../data/books.js";
+import { getPopularSearchTrends, recordSearchTrend } from "../../services/searchTrendService.js";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { useSiteContent } from "../../hooks/useSiteContent.js";
 import { usePageMetadata } from "../../hooks/usePageMetadata.js";
@@ -32,6 +33,15 @@ export default function HomePage() {
   const [page, setPage] = useState(1);
   const [searchHistory, setSearchHistory] = useState([]);
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
+  const [popularSearchTrends, setPopularSearchTrends] = useState([]);
+  const [searchAnalyticsConsent, setSearchAnalyticsConsent] = useState(() => {
+    try {
+      const saved = window.localStorage.getItem("rasbhav.books.searchAnalyticsConsent.v1");
+      return saved === "allow" ? true : saved === "decline" ? false : null;
+    } catch {
+      return null;
+    }
+  });
   const [subscribed, setSubscribed] = useState(false);
   const { items: visibleBooks, total: totalBooks, loading: catalogueLoading, hasMore } = usePaginatedBooks({ category, query, language, bookLanguage, sort, page });
 
@@ -57,6 +67,28 @@ export default function HomePage() {
     } catch {
       // Search remains usable if browser storage is unavailable.
     }
+  }
+
+  function chooseSearchAnalyticsConsent(allowed) {
+    setSearchAnalyticsConsent(allowed);
+    try {
+      window.localStorage.setItem("rasbhav.books.searchAnalyticsConsent.v1", allowed ? "allow" : "decline");
+    } catch {
+      // The current choice still applies for this visit if browser storage is unavailable.
+    }
+  }
+
+  function manageSearchAnalyticsConsent() {
+    setSearchAnalyticsConsent(null);
+    try {
+      window.localStorage.removeItem("rasbhav.books.searchAnalyticsConsent.v1");
+    } catch {
+      // The prompt remains available in memory.
+    }
+  }
+
+  async function loadPopularSearchTrends() {
+    setPopularSearchTrends(await getPopularSearchTrends());
   }
 
   function clearSearchHistory() {
@@ -143,14 +175,14 @@ export default function HomePage() {
         <div className="catalog-tools">
           <div className="search-box">
             <label className="search"><Search size={17} /><span className="sr-only">{t.search}</span><input maxLength={100} value={query}
-              onFocus={() => setShowSearchSuggestions(true)}
+              onFocus={() => { setShowSearchSuggestions(true); if (!query.trim()) void loadPopularSearchTrends(); }}
               onBlur={() => window.setTimeout(() => setShowSearchSuggestions(false), 120)}
               onKeyDown={(event) => {
-                if (event.key === "Enter") { event.preventDefault(); rememberSearch(event.currentTarget.value); setShowSearchSuggestions(false); }
+                if (event.key === "Enter") { event.preventDefault(); const term = event.currentTarget.value; rememberSearch(term); if (term.trim() && searchAnalyticsConsent === true) void recordSearchTrend(term); setShowSearchSuggestions(false); }
                 if (event.key === "Escape") setShowSearchSuggestions(false);
               }}
               onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder={t.search} /></label>
-            {showSearchSuggestions && (searchSuggestions.length > 0 || bookSuggestions.length > 0) && <div className="search-suggestions" role="region" aria-label={t.searchBookSuggestions}>
+            {showSearchSuggestions && <div className="search-suggestions" role="region" aria-label={t.searchBookSuggestions}>
               {bookSuggestions.length > 0 && <>
                 <div className="search-suggestions-head"><strong>{t.searchBookSuggestions}</strong></div>
                 {bookSuggestions.map((book) => <Link className="search-suggestion" key={book.id} to={`/books/${encodeURIComponent(book.id)}`}
@@ -159,6 +191,12 @@ export default function HomePage() {
                   {getBookTitle(book, language)} <span>— {t.by} {book.author}</span>
                 </Link>)}
               </>}
+              {!query.trim() && popularSearchTrends.length > 0 && <>
+                <div className="search-suggestions-head"><strong>{t.searchTrendsTitle}</strong></div>
+                {popularSearchTrends.map((term, index) => <button className="search-suggestion" type="button" key={`trend-${term}-${index}`}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => { setQuery(term); setPage(1); setShowSearchSuggestions(false); }}>{term}</button>)}
+              </>}
               {searchSuggestions.length > 0 && <>
                 <div className="search-suggestions-head"><strong>{t.searchHistoryTitle}</strong><button type="button" onMouseDown={(event) => event.preventDefault()} onClick={clearSearchHistory}>{t.clearSearchHistory}</button></div>
                 <p className="search-suggestions-hint">{t.searchHistoryHint}</p>
@@ -166,6 +204,16 @@ export default function HomePage() {
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => { setQuery(term); setPage(1); setShowSearchSuggestions(false); }}>{term}</button>)}
               </>}
+              {searchAnalyticsConsent === null
+                ? <div className="search-analytics-consent">
+                    <p>{t.searchAnalyticsConsentText}</p>
+                    <div><button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => chooseSearchAnalyticsConsent(true)}>{t.enableSearchAnalytics}</button>
+                    <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => chooseSearchAnalyticsConsent(false)}>{t.declineSearchAnalytics}</button></div>
+                  </div>
+                : <div className="search-analytics-consent">
+                    <span>{searchAnalyticsConsent ? t.searchAnalyticsEnabled : t.searchAnalyticsDisabled}</span>
+                    <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={manageSearchAnalyticsConsent}>{t.manageSearchAnalytics}</button>
+                  </div>}
             </div>}
           </div>
           <div className="catalog-refinements">
