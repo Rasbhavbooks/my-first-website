@@ -9,6 +9,15 @@ const localizedTextSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const localizedSummarySchema = new mongoose.Schema(
+  {
+    en: { type: String, trim: true, maxlength: 600, default: "" },
+    gu: { type: String, trim: true, maxlength: 600, default: "" },
+    hi: { type: String, trim: true, maxlength: 600, default: "" },
+  },
+  { _id: false },
+);
+
 const localizedSeoSchema = new mongoose.Schema(
   {
     en: { type: String, trim: true, maxlength: 320, default: "" },
@@ -22,7 +31,7 @@ const blogPostSchema = new mongoose.Schema(
   {
     slug: { type: String, required: true, unique: true, immutable: true, lowercase: true, trim: true, maxlength: 100 },
     title: { type: localizedTextSchema, required: true },
-    summary: { type: localizedTextSchema, required: true },
+    summary: { type: localizedSummarySchema, required: true },
     body: { type: localizedTextSchema, required: true },
     seoTitle: { type: localizedSeoSchema, default: () => ({}) },
     seoDescription: { type: localizedSeoSchema, default: () => ({}) },
