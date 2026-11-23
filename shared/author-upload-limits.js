@@ -17,3 +17,8 @@ export function isValidAuthorUploadLimits(value) {
     && value.manuscriptMaxMb >= 1
     && value.manuscriptMaxMb <= MAX_AUTHOR_UPLOAD_LIMITS_MB.manuscript;
 }
+
+export function resolveAuthorUploadLimits(value) {
+  if (!isValidAuthorUploadLimits(value)) return { ...DEFAULT_AUTHOR_UPLOAD_LIMITS_MB };
+  return { coverMaxMb: value.coverMaxMb, manuscriptMaxMb: value.manuscriptMaxMb };
+}
