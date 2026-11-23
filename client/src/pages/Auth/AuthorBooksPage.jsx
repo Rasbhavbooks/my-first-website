@@ -13,6 +13,7 @@ const blankBook = () => ({
   description: blankLocalized(),
   language: "English",
   category: "Novel",
+  isbn: "",
   price: 0,
   status: "draft",
 });
