@@ -91,3 +91,37 @@ export async function downloadReaderAccountData() {
   }
   return response.blob();
 }
+
+
+export async function getReaderSessions() {
+  const response = await fetch("/api/v1/auth/sessions", {
+    credentials: "include",
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(result?.error?.message || "Could not load active sessions.");
+    error.code = result?.error?.code || "REQUEST_FAILED";
+    error.status = response.status;
+    throw error;
+  }
+  return result.data;
+}
+
+export async function revokeReaderSession(sessionId) {
+  const response = await fetch(`/api/v1/auth/sessions/${encodeURIComponent(sessionId)}`, {
+    method: "DELETE",
+    credentials: "include",
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(result?.error?.message || "Could not sign out this session.");
+    error.code = result?.error?.code || "REQUEST_FAILED";
+    error.status = response.status;
+    throw error;
+  }
+  return result.data;
+}
