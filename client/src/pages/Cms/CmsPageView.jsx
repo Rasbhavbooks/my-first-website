@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { getPublishedCmsPage } from "../../services/cmsPageService.js";
+import { usePageMetadata } from "../../hooks/usePageMetadata.js";
 
 const styles = `
 .cms-page{max-width:850px;min-height:70vh;margin:auto;padding:64px 22px 100px}
@@ -25,23 +26,12 @@ export default function CmsPageView() {
     return () => { active = false; };
   }, [slug]);
 
-  useEffect(() => {
-    if (!page) return undefined;
-    const oldTitle = document.title;
-    const meta = document.querySelector('meta[name="description"]');
-    const oldDescription = meta?.content || "";
-    const createdMeta = !meta;
-    const description = meta || document.createElement("meta");
-    if (createdMeta) { description.name = "description"; document.head.appendChild(description); }
-    const title = page.seoTitle?.[language] || page.title?.[language] || page.title?.en || "Rasbhav Books";
-    document.title = title;
-    description.content = page.seoDescription?.[language] || "";
-    return () => {
-      document.title = oldTitle;
-      if (createdMeta) description.remove();
-      else description.content = oldDescription;
-    };
-  }, [page, language]);
+  usePageMetadata({
+    title: page ? page.seoTitle?.[language] || page.title?.[language] || page.title?.en || "Rasbhav Books" : "",
+    description: page ? page.seoDescription?.[language] || "" : "",
+    type: "article",
+  });
+
 
   if (missing) return <main className="cms-page"><style>{styles}</style><div className="cms-page-error"><h1>{t.pageNotFound}</h1><Link to="/">{t.backHome}</Link></div></main>;
   if (!page) return <main className="cms-page"><p>{t.loading}</p></main>;
