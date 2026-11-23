@@ -78,3 +78,16 @@ export function startAdminMfaSetup(password) {
 export function confirmAdminMfaSetup(code) {
   return postAuthRequest("/api/v1/admin/mfa/confirm", { code });
 }
+export async function downloadReaderAccountData() {
+  const response = await fetch("/api/v1/auth/profile/export", {
+    credentials: "include",
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    const error = new Error(result.error?.message || "Account data export failed.");
+    error.code = result.error?.code || "REQUEST_FAILED";
+    throw error;
+  }
+  return response.blob();
+}
