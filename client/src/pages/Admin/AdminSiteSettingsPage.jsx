@@ -238,6 +238,20 @@ export default function AdminSiteSettingsPage() {
         </label>
       </section>
       <section className="admin-site-panel">
+        <h2>{t.maintenanceSettingsTitle}</h2>
+        <p className="admin-site-hint">{t.maintenanceSettingsHint}</p>
+        <label className="admin-site-check">
+          <input type="checkbox" checked={settings.maintenance.enabled} onChange={(event) => {
+            const enabled = event.target.checked;
+            if (enabled && !window.confirm(t.maintenanceEnableConfirm)) return;
+            setSettings((current) => ({ ...current, maintenance: { ...current.maintenance, enabled } }));
+          }} />
+          {t.maintenanceEnabledLabel}
+        </label>
+        <h3>{t.maintenanceMessageLabel}</h3>
+        {localizedFields(settings.maintenance.message, (language, value) => setSettings((current) => ({ ...current, maintenance: { ...current.maintenance, message: { ...current.maintenance.message, [language]: value } } })), true, 300)}
+      </section>
+      <section className="admin-site-panel">
         <h2>{t.siteAnnouncement}</h2>
         <label className="admin-site-check"><input type="checkbox" checked={settings.announcement.enabled} onChange={(event) => change("announcement", "enabled", "", event.target.checked)} />{t.siteAnnouncementEnabled}</label>
         {localizedFields(settings.announcement.text, (language, value) => setSettings((current) => ({ ...current, announcement: { ...current.announcement, text: { ...current.announcement.text, [language]: value } } })), false, 300)}
