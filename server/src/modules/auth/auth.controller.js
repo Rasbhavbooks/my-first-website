@@ -240,6 +240,11 @@ export async function loginReader(request, response) {
   if (user.role === "admin") {
     const adminMfa = await AdminMfa.findOne({ userId: user._id, enabled: true })
       .select("+encryptedSecret +recoveryCodeHashes");
+    if (user.adminMfaEnabled && !adminMfa) {
+      return response.status(503).json({
+        error: { code: "MFA_CONFIGURATION_UNAVAILABLE", message: "Administrator MFA is temporarily unavailable." },
+      });
+    }
     if (adminMfa) {
       response.setHeader("Cache-Control", "no-store");
       const suppliedCode = typeof request.body?.adminMfaCode === "string" ? request.body.adminMfaCode.trim() : "";
