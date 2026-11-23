@@ -1,4 +1,4 @@
-import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, HeadBucketCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { env } from "../config/env.js";
 
 let client;
@@ -21,6 +21,20 @@ function getClient() {
     });
   }
   return client;
+}
+
+export async function isR2BucketReachable() {
+  if (!env.r2Configured) return false;
+
+  try {
+    await getClient().send(
+      new HeadBucketCommand({ Bucket: env.r2BucketName }),
+      { abortSignal: AbortSignal.timeout(2500) },
+    );
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function storePrivateObject({ key, body, contentType }) {
