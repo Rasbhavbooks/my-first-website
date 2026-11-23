@@ -5,6 +5,7 @@ import BookCard from "../../components/books/BookCard.jsx";
 import { useCategories } from "../../hooks/useCategories.js";
 import { usePaginatedBooks } from "../../hooks/useBooks.js";
 import { getBookById } from "../../services/bookService.js";
+import { getBookTitle } from "../../data/books.js";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { useSiteContent } from "../../hooks/useSiteContent.js";
 import { usePageMetadata } from "../../hooks/usePageMetadata.js";
@@ -69,6 +70,13 @@ export default function HomePage() {
 
   const searchSuggestions = searchHistory.filter((item) => !query.trim()
     || item.toLocaleLowerCase(language).includes(query.trim().toLocaleLowerCase(language)));
+  const searchTerm = query.trim().toLocaleLowerCase({ en: "en-IN", gu: "gu-IN", hi: "hi-IN" }[language] || "en-IN");
+  const bookSuggestions = searchTerm
+    ? visibleBooks.filter((book) => [getBookTitle(book, language), book.author]
+      .filter((value) => typeof value === "string")
+      .some((value) => value.toLocaleLowerCase({ en: "en-IN", gu: "gu-IN", hi: "hi-IN" }[language] || "en-IN").includes(searchTerm)))
+      .slice(0, 5)
+    : [];
   const hero = settings.homepage?.hero || {};
   usePageMetadata({
     title: settings.homepage?.seo?.title?.[language] || "",
@@ -142,12 +150,22 @@ export default function HomePage() {
                 if (event.key === "Escape") setShowSearchSuggestions(false);
               }}
               onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder={t.search} /></label>
-            {showSearchSuggestions && searchSuggestions.length > 0 && <div className="search-suggestions" role="region" aria-label={t.searchHistoryTitle}>
-              <div className="search-suggestions-head"><strong>{t.searchHistoryTitle}</strong><button type="button" onMouseDown={(event) => event.preventDefault()} onClick={clearSearchHistory}>{t.clearSearchHistory}</button></div>
-              <p className="search-suggestions-hint">{t.searchHistoryHint}</p>
-              {searchSuggestions.map((term, index) => <button className="search-suggestion" type="button" key={`${term}-${index}`}
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => { setQuery(term); setPage(1); setShowSearchSuggestions(false); }}>{term}</button>)}
+            {showSearchSuggestions && (searchSuggestions.length > 0 || bookSuggestions.length > 0) && <div className="search-suggestions" role="region" aria-label={t.searchBookSuggestions}>
+              {bookSuggestions.length > 0 && <>
+                <div className="search-suggestions-head"><strong>{t.searchBookSuggestions}</strong></div>
+                {bookSuggestions.map((book) => <Link className="search-suggestion" key={book.id} to={`/books/${encodeURIComponent(book.id)}`}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => setShowSearchSuggestions(false)}>
+                  {getBookTitle(book, language)} <span>— {t.by} {book.author}</span>
+                </Link>)}
+              </>}
+              {searchSuggestions.length > 0 && <>
+                <div className="search-suggestions-head"><strong>{t.searchHistoryTitle}</strong><button type="button" onMouseDown={(event) => event.preventDefault()} onClick={clearSearchHistory}>{t.clearSearchHistory}</button></div>
+                <p className="search-suggestions-hint">{t.searchHistoryHint}</p>
+                {searchSuggestions.map((term, index) => <button className="search-suggestion" type="button" key={`${term}-${index}`}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => { setQuery(term); setPage(1); setShowSearchSuggestions(false); }}>{term}</button>)}
+              </>}
             </div>}
           </div>
           <div className="catalog-refinements">
