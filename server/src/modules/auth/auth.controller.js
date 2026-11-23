@@ -4,6 +4,8 @@ import VerificationToken from "./verification-token.model.js";
 import ReaderSession from "./reader-session.model.js";
 import PasswordResetToken from "./password-reset-token.model.js";
 import { env } from "../../config/env.js";
+import AdminMfa from "./admin-mfa.model.js";
+import { decryptAdminMfaSecret, hashRecoveryCode, verifyAdminMfaCode } from "./admin-mfa.service.js";
 import { sendPasswordResetEmail, sendVerificationEmail } from "../../services/email.service.js";
 
 const VERIFICATION_TTL_MS = 30 * 60 * 1000;
@@ -31,6 +33,7 @@ function safeUser(user) {
     hobbies: Array.isArray(user.hobbies) ? user.hobbies : [],
     role: user.role,
     accountStatus: user.accountStatus,
+    ...(user.role === "admin" ? { adminMfaEnabled: Boolean(user.adminMfaEnabled) } : {}),
   };
 }
 
@@ -232,6 +235,55 @@ export async function loginReader(request, response) {
       error: { code: user.accountStatus === "pending_verification" ? "EMAIL_NOT_VERIFIED" : "ACCOUNT_UNAVAILABLE",
         message: user.accountStatus === "pending_verification" ? "Verify your email before signing in." : "This account is unavailable." },
     });
+  }
+
+  if (user.role === "admin") {
+    const adminMfa = await AdminMfa.findOne({ userId: user._id, enabled: true })
+      .select("+encryptedSecret +recoveryCodeHashes");
+    if (user.adminMfaEnabled && !adminMfa) {
+      return response.status(503).json({
+        error: { code: "MFA_CONFIGURATION_UNAVAILABLE", message: "Administrator MFA is temporarily unavailable." },
+      });
+    }
+    if (adminMfa) {
+      response.setHeader("Cache-Control", "no-store");
+      const suppliedCode = typeof request.body?.adminMfaCode === "string" ? request.body.adminMfaCode.trim() : "";
+      if (!suppliedCode) {
+        return response.status(401).json({
+          error: { code: "MFA_REQUIRED", message: "Enter your authenticator code or a recovery code." },
+        });
+      }
+      let verified = false;
+      if (/^\d{6}$/.test(suppliedCode)) {
+        if (!env.adminMfaConfigured) {
+          return response.status(503).json({
+            error: { code: "MFA_CONFIGURATION_UNAVAILABLE", message: "Administrator MFA is temporarily unavailable." },
+          });
+        }
+        try {
+          verified = verifyAdminMfaCode(decryptAdminMfaSecret(adminMfa.encryptedSecret), suppliedCode);
+        } catch {
+          return response.status(503).json({
+            error: { code: "MFA_CONFIGURATION_UNAVAILABLE", message: "Administrator MFA is temporarily unavailable." },
+          });
+        }
+      } else {
+        const recoveryHash = hashRecoveryCode(suppliedCode);
+        if (recoveryHash) {
+          const consumed = await AdminMfa.findOneAndUpdate(
+            { _id: adminMfa._id, enabled: true, recoveryCodeHashes: recoveryHash },
+            { $pull: { recoveryCodeHashes: recoveryHash } },
+            { new: true },
+          ).select("_id");
+          verified = Boolean(consumed);
+        }
+      }
+      if (!verified) {
+        return response.status(401).json({
+          error: { code: "INVALID_MFA_CODE", message: "The authenticator or recovery code is invalid." },
+        });
+      }
+    }
   }
 
   const existingToken = readSessionCookie(request);

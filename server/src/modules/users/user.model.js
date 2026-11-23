@@ -71,6 +71,11 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    adminMfaEnabled: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
   },
   {
     timestamps: true,

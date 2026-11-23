@@ -40,6 +40,7 @@ export default function AdminDashboardPage() {
   if (user.role !== "admin") return <main className="admin-home"><h1>{t.adminOnly}</h1><Link to="/">{t.backHome}</Link></main>;
   const sections = [
     [t.adminUsersTitle, "/admin/users"],
+    [t.adminMfaSetupTitle, "/admin/security/mfa"],
     [t.adminAuthorsTitle, "/admin/authors"],
     [t.adminCatalogueTitle, "/admin/catalogue"],
     [t.adminCategoriesTitle, "/admin/categories"],

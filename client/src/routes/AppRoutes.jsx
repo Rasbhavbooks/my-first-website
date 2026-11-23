@@ -1,4 +1,5 @@
 import { Route, Routes } from "react-router";
+import AdminMfaGuard from "../components/auth/AdminMfaGuard.jsx";
 import PublicLayout from "../layouts/PublicLayout.jsx";
 import HomePage from "../pages/Home/HomePage.jsx";
 import BookDetailsPage from "../pages/BookDetails/BookDetailsPage.jsx";
@@ -16,6 +17,7 @@ import AdminUsersPage from "../pages/Admin/AdminUsersPage.jsx";
 import AdminAuthorsPage from "../pages/Admin/AdminAuthorsPage.jsx";
 import AdminCataloguePage from "../pages/Admin/AdminCataloguePage.jsx";
 import AdminCategoriesPage from "../pages/Admin/AdminCategoriesPage.jsx";
+import AdminMfaSetupPage from "../pages/Admin/AdminMfaSetupPage.jsx";
 import AdminCmsPagesPage from "../pages/Cms/AdminCmsPagesPage.jsx";
 import AdminSiteSettingsPage from "../pages/Admin/AdminSiteSettingsPage.jsx";
 import CmsPageView from "../pages/Cms/CmsPageView.jsx";
@@ -39,23 +41,26 @@ export default function AppRoutes() {
         <Route path="reader/login" element={<LoginPage expectedRole="reader" />} />
         <Route path="author/login" element={<LoginPage expectedRole="author" />} />
         <Route path="admin/login" element={<LoginPage expectedRole="admin" />} />
+        <Route path="admin/security/mfa" element={<AdminMfaSetupPage />} />
         <Route path="password-reset" element={<PasswordResetPage />} />
-        <Route path="admin" element={<AdminDashboardPage />} />
-        <Route path="admin/users" element={<AdminUsersPage />} />
-        <Route path="admin/authors" element={<AdminAuthorsPage />} />
-        <Route path="admin/catalogue" element={<AdminCataloguePage />} />
-        <Route path="admin/categories" element={<AdminCategoriesPage />} />
-        <Route path="admin/cms-pages" element={<AdminCmsPagesPage />} />
-        <Route path="admin/site-settings" element={<AdminSiteSettingsPage />} />
         <Route path="pages/:slug" element={<CmsPageView />} />
-        <Route path="admin/review-moderation" element={<ReviewModerationPage />} />
-        <Route path="admin/author-books" element={<AuthorBooksAdminPage />} />
-        <Route path="admin/author-applications" element={<AuthorApplicationsPage />} />
         <Route path="author/apply" element={<AuthorApplicationPage />} />
         <Route path="author/studio" element={<AuthorStudioPage />} />
         <Route path="author/books" element={<AuthorBooksPage />} />
         <Route path="authors/:slug" element={<PublicAuthorPage />} />
         <Route path="account" element={<AccountPage />} />
+        <Route element={<AdminMfaGuard />}>
+          <Route path="admin" element={<AdminDashboardPage />} />
+          <Route path="admin/users" element={<AdminUsersPage />} />
+          <Route path="admin/authors" element={<AdminAuthorsPage />} />
+          <Route path="admin/catalogue" element={<AdminCataloguePage />} />
+          <Route path="admin/categories" element={<AdminCategoriesPage />} />
+          <Route path="admin/cms-pages" element={<AdminCmsPagesPage />} />
+          <Route path="admin/site-settings" element={<AdminSiteSettingsPage />} />
+          <Route path="admin/review-moderation" element={<ReviewModerationPage />} />
+          <Route path="admin/author-books" element={<AuthorBooksAdminPage />} />
+          <Route path="admin/author-applications" element={<AuthorApplicationsPage />} />
+        </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

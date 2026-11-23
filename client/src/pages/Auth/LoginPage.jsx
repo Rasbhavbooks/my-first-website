@@ -26,7 +26,8 @@ export default function LoginPage({ expectedRole = "reader" }) {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { user, loading, signIn, signOut } = useAuth();
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ email: "", password: "", adminMfaCode: "" });
+  const [needsMfa, setNeedsMfa] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -41,15 +42,22 @@ export default function LoginPage({ expectedRole = "reader" }) {
     setBusy(true);
     try {
       const signedInUser = await signIn(form);
-      setForm((current) => ({ ...current, password: "" }));
+      setForm((current) => ({ ...current, password: "", adminMfaCode: "" }));
       if (signedInUser.role !== expectedRole) {
         await signOut();
         setError(t.roleLoginMismatch);
         return;
       }
+      if (expectedRole === "admin" && !signedInUser.adminMfaEnabled) {
+        navigate("/admin/security/mfa", { replace: true });
+        return;
+      }
       navigate(expectedRole === "author" ? "/author/studio" : expectedRole === "admin" ? "/admin" : "/", { replace: true });
     } catch (requestError) {
       if (requestError.code === "EMAIL_NOT_VERIFIED") setError(t.verifyFirst);
+      else if (requestError.code === "MFA_REQUIRED") { setNeedsMfa(true); setError(t.adminMfaPrompt); }
+      else if (requestError.code === "INVALID_MFA_CODE") { setNeedsMfa(true); setError(t.adminMfaInvalid); }
+      else if (requestError.code === "MFA_CONFIGURATION_UNAVAILABLE") setError(t.adminMfaUnavailable);
       else setError(requestError.code === "INVALID_CREDENTIALS" ? t.loginError : t.registrationError);
     } finally {
       setBusy(false);
@@ -61,7 +69,8 @@ export default function LoginPage({ expectedRole = "reader" }) {
     setError("");
     try {
       await signOut();
-      setForm({ email: "", password: "" });
+      setForm({ email: "", password: "", adminMfaCode: "" });
+      setNeedsMfa(false);
     } catch {
       setError(t.registrationError);
     } finally {
@@ -84,7 +93,7 @@ export default function LoginPage({ expectedRole = "reader" }) {
             <p>{user.displayName}</p>
             <p>{user.email}</p>
             {user.role === expectedRole
-              ? <Link to={expectedRole === "author" ? "/author/studio" : expectedRole === "admin" ? "/admin" : "/account"}>{expectedRole === "author" ? t.authorStudio : expectedRole === "admin" ? t.adminDashboardTitle : t.accountPage}</Link>
+              ? <Link to={expectedRole === "admin" && !user.adminMfaEnabled ? "/admin/security/mfa" : expectedRole === "author" ? "/author/studio" : expectedRole === "admin" ? "/admin" : "/account"}>{expectedRole === "admin" && !user.adminMfaEnabled ? t.adminMfaSetupTitle : expectedRole === "author" ? t.authorStudio : expectedRole === "admin" ? t.adminDashboardTitle : t.accountPage}</Link>
               : <><p className="login-message error">{t.roleLoginMismatch}</p><Link to="/login">{t.chooseLoginPortal}</Link></>}
             <button className="login-submit" type="button" disabled={busy} onClick={handleLogout}>
               {busy ? t.signingOut : t.signOut}
@@ -105,6 +114,10 @@ export default function LoginPage({ expectedRole = "reader" }) {
                 </button>
               </div>
             </label>
+            {expectedRole === "admin" && needsMfa && <label className="login-field">
+              <span>{t.adminMfaCode}</span>
+              <input name="adminMfaCode" type="text" inputMode="numeric" autoComplete="one-time-code" required maxLength={32} value={form.adminMfaCode} onChange={updateField} />
+            </label>}
             <Link className="login-foot" style={{ marginTop: 0, textAlign: "right" }} to="/password-reset">{t.forgotPassword}</Link>
             <button className="login-submit" type="submit" disabled={busy}>
               {busy ? t.signingIn : t.signIn}

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import ReaderSession from "./reader-session.model.js";
 import AuthorProfile from "./author-profile.model.js";
+import AdminMfa from "./admin-mfa.model.js";
 
 const SESSION_COOKIE = "rasbhav_reader_session";
 
@@ -46,10 +47,24 @@ export async function requireReader(request, response, next) {
 }
 
 
-export function requireAdmin(request, response, next) {
+export function requireAdminIdentity(request, response, next) {
   if (request.reader?.role !== "admin") {
     return response.status(403).json({
       error: { code: "ADMIN_ACCESS_REQUIRED", message: "Administrator access is required." },
+    });
+  }
+  return next();
+}
+
+export async function requireAdmin(request, response, next) {
+  if (request.reader?.role !== "admin") {
+    return response.status(403).json({
+      error: { code: "ADMIN_ACCESS_REQUIRED", message: "Administrator access is required." },
+    });
+  }
+  if (!request.reader.adminMfaEnabled || !await AdminMfa.exists({ userId: request.reader._id, enabled: true })) {
+    return response.status(403).json({
+      error: { code: "ADMIN_MFA_REQUIRED", message: "Set up administrator multi-factor authentication to continue." },
     });
   }
   return next();

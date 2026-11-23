@@ -16,7 +16,7 @@ These documents are the source of truth for future work. Follow the phases in or
 
 ## Current phase
 
-Phase 6 — admin and CMS: Phase 5's author workflow is implemented, and initial admin user management is now available. Admins can search/filter accounts, manage author storefronts, edit existing catalogue metadata, manage localized categories, static CMS pages, homepage hero/announcement content, header navigation, footer copy/browse links, and homepage section visibility/order in three languages, view workflow totals, and suspend/restore verified accounts and author profiles; publishing remains disabled until rights wording is approved. reader and author foundation is implemented, including profiles, wishlists, reviews, author applications, and public author pages. Authors can update storefront branding, feature books from their existing public catalogue, view follower and book-workflow totals, prepare drafts, and submit files for admin review. Uploads use private Cloudflare R2 storage and ClamAV scanning, and stay disabled until both services are configured. Admin approval does not publish books until the author rights wording is approved. The first admin can be set up with the private, one-time CLI command below. Production registration and password reset stay disabled until email settings and the public app URL are configured.
+Phase 6 — admin and CMS: Phase 5's author workflow is implemented, and initial admin user management is now available. Admins can search/filter accounts, manage author storefronts, edit existing catalogue metadata, manage localized categories, static CMS pages, homepage hero/announcement content, header navigation, footer copy/browse links, and homepage section visibility/order in three languages, view workflow totals, and suspend/restore verified accounts and author profiles; publishing remains disabled until rights wording is approved. reader and author foundation is implemented, including profiles, wishlists, reviews, author applications, and public author pages. Authors can update storefront branding, feature books from their existing public catalogue, view follower and book-workflow totals, prepare drafts, and submit files for admin review. Uploads use private Cloudflare R2 storage and ClamAV scanning, and stay disabled until both services are configured. Admin approval does not publish books until the author rights wording is approved. The first admin can be set up with the private, one-time CLI command below. Administrator pages require authenticator MFA and the persistent `ADMIN_MFA_ENCRYPTION_KEY` secret. Production registration and password reset stay disabled until email settings and the public app URL are configured.
 
 ## Run in GitHub Codespaces
 
@@ -29,11 +29,18 @@ npm install
 Set these Codespaces secrets, then restart the Codespace:
 
 - `MONGODB_URI` — MongoDB Atlas connection string.
+- `ADMIN_MFA_ENCRYPTION_KEY` — a private 32-byte encryption key, generated with the command below.
 - `RESEND_API_KEY` — private API key from Resend.
 - `EMAIL_FROM` — sender address verified with Resend, for example `Rasbhav Books <noreply@your-domain.example>`.
 - `APP_BASE_URL` — public HTTPS URL for the frontend on port 5173, without a path.
 - `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `R2_BUCKET_NAME` — credentials and private bucket name from Cloudflare R2.
 - `CLAMAV_HOST` and `CLAMAV_PORT` — private network address and port of the ClamAV daemon reachable by the API. Do not expose the daemon publicly.
+
+Generate the admin MFA key once in the Codespaces terminal:
+```sh
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+Save the 64-character output as the Codespaces secret `ADMIN_MFA_ENCRYPTION_KEY`, then restart the Codespace. Keep a secure backup of this key: administrator authenticator secrets are encrypted with it, so losing it prevents admin sign-ins until the MFA credentials are reset through a recovery procedure. Never commit the generated value or paste it into chat.
 
 The upload API fails closed until both R2 and ClamAV are reachable. Create the R2 bucket as private and create a scoped R2 API token for that bucket. Never put R2 credentials in frontend variables or commit them. `server/.env.example` lists all server settings.
 
