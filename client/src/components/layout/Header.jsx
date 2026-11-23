@@ -15,8 +15,8 @@ export default function Header() {
   const [open, setOpen] = useState(false);
   return (
     <header className="site-header">
-      <a className="brand" href="#home" aria-label="Rasbhav Books home">
-        <span className="brand-mark"><BookOpen size={19} /></span><span className="brand-name">rasbhav<span>books</span></span>
+      <a className="brand" href="#home" aria-label={`${settings.platform?.siteName || "Rasbhav Books"} home`}>
+        <span className="brand-mark"><BookOpen size={19} /></span><span className="brand-name">{settings.platform?.siteName || "Rasbhav Books"}</span>
       </a>
       <nav className={open ? "main-nav is-open" : "main-nav"} aria-label="Main navigation">
         {navigation.map((item, index) => <Link key={`${item.href}-${index}`} to={item.href} onClick={() => setOpen(false)}>{item.label?.[language] || item.label?.en}</Link>)}
