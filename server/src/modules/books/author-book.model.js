@@ -1,3 +1,4 @@
+import { normalizeIsbn } from "../../../../shared/isbn.js";
 import mongoose from "mongoose";
 
 const localizedTextSchema = new mongoose.Schema(
@@ -26,6 +27,13 @@ const authorBookSchema = new mongoose.Schema(
   {
     authorId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
     authorName: { type: String, required: true, trim: true, maxlength: 100 },
+    isbn: {
+      type: String,
+      trim: true,
+      default: "",
+      maxlength: 13,
+      validate: { validator: (value) => !value || normalizeIsbn(value) === value, message: "Enter a valid ISBN-10 or ISBN-13." },
+    },
     title: { type: localizedTextSchema, required: true },
     description: { type: localizedTextSchema, required: true },
     language: { type: String, enum: ["Gujarati", "Hindi", "English"], required: true, default: "English" },

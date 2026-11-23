@@ -1,3 +1,4 @@
+import { normalizeIsbn } from "../../../../shared/isbn.js";
 import Book from "./book.model.js";
 import Category from "./category.model.js";
 
@@ -24,6 +25,7 @@ function bookDto(book) {
     id: book.catalogueId,
     title: book.title,
     author: book.author,
+    isbn: book.isbn || "",
     language: book.language,
     category: book.category,
     price: book.price,
@@ -52,6 +54,7 @@ export async function listAdminCatalogueBooks(request, response) {
     filter.$or = [
       { author: pattern },
       { catalogueId: pattern },
+      { isbn: pattern },
       { "title.en": pattern },
       { "title.gu": pattern },
       { "title.hi": pattern },
@@ -69,6 +72,8 @@ export async function updateAdminCatalogueBook(request, response) {
   const catalogueId = typeof request.params.bookId === "string" ? request.params.bookId.trim() : "";
   if (!catalogueId || catalogueId.length > 120) return errorResponse(response, 400, "INVALID_BOOK_ID", "Choose a valid catalogue book.");
   const body = request.body || {};
+  const isbn = normalizeIsbn(body.isbn ?? "");
+  if (isbn === null) return errorResponse(response, 400, "INVALID_BOOK_ISBN", "Enter a valid ISBN-10 or ISBN-13, or leave it blank.");
   const tone = typeof body.tone === "string" ? body.tone.trim() : "";
   const badge = typeof body.badge === "string" ? body.badge.trim() : "";
   const priceValue = body.price;
@@ -89,7 +94,7 @@ export async function updateAdminCatalogueBook(request, response) {
 
   const book = await Book.findOneAndUpdate(
     { catalogueId },
-    { $set: { title: Object.fromEntries(FIELDS.map((field) => [field, body.title[field].trim()])), description: Object.fromEntries(FIELDS.map((field) => [field, body.description[field].trim()])), language: body.language, category: body.category, price, tone, badge } },
+    { $set: { title: Object.fromEntries(FIELDS.map((field) => [field, body.title[field].trim()])), description: Object.fromEntries(FIELDS.map((field) => [field, body.description[field].trim()])), isbn, language: body.language, category: body.category, price, tone, badge } },
     { new: true, runValidators: true },
   ).lean();
   if (!book) return errorResponse(response, 404, "BOOK_NOT_FOUND", "Catalogue book not found.");

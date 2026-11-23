@@ -59,6 +59,7 @@ function authorBookDto(book) {
     authorName: book.authorName,
     title: book.title,
     description: book.description,
+    isbn: book.isbn || "",
     language: book.language,
     category: book.category,
     price: book.price,
