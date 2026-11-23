@@ -19,6 +19,7 @@ export function useFilteredBooks(books, { category, query, language, bookLanguag
         book.author,
         book.category,
         book.language,
+        book.isbn,
       ];
       const searchable = searchableValues.filter((value) => typeof value === "string").join(" ").toLocaleLowerCase(locale);
       const matchesCategory = category === "All" || book.category === category;
