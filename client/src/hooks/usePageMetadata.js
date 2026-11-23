@@ -11,13 +11,17 @@ function publicImageUrl(value) {
   return "";
 }
 
-export function usePageMetadata({ title = "", description = "", type = "website", imageUrl = "" }) {
+export function usePageMetadata({ title = "", description = "", type = "website", imageUrl = "", structuredData = null }) {
   const pathname = typeof window === "undefined" ? "/" : window.location.pathname;
+  const structuredDataJson = structuredData ? JSON.stringify(structuredData).replace(/</g, "\\\\u003c") : "";
   useEffect(() => {
     const previousTitle = document.title;
     const canonical = new URL(pathname, window.location.origin).href;
     const image = publicImageUrl(imageUrl);
     const snapshots = [];
+    let schemaScript = document.head.querySelector('script[type="application/ld+json"][data-rasbhav-page-schema="true"]');
+    const createdSchemaScript = !schemaScript;
+    const previousSchema = schemaScript?.textContent || "";
 
     function setMeta(attribute, key, value) {
       let element = document.head.querySelector(`meta[${attribute}="${key}"]`);
@@ -54,6 +58,15 @@ export function usePageMetadata({ title = "", description = "", type = "website"
       setMeta("property", "og:image", image);
       setMeta("name", "twitter:image", image);
     }
+    if (structuredDataJson) {
+      if (!schemaScript) {
+        schemaScript = document.createElement("script");
+        schemaScript.type = "application/ld+json";
+        schemaScript.dataset.rasbhavPageSchema = "true";
+        document.head.appendChild(schemaScript);
+      }
+      schemaScript.textContent = structuredDataJson;
+    }
 
     return () => {
       document.title = previousTitle;
@@ -65,6 +78,10 @@ export function usePageMetadata({ title = "", description = "", type = "website"
       if (createdCanonical) link.remove();
       else if (previousCanonical === null) link.removeAttribute("href");
       else link.setAttribute("href", previousCanonical);
+      if (schemaScript) {
+        if (createdSchemaScript) schemaScript.remove();
+        else schemaScript.textContent = previousSchema;
+      }
     };
-  }, [description, imageUrl, pathname, title, type]);
+  }, [description, imageUrl, pathname, structuredDataJson, title, type]);
 }
