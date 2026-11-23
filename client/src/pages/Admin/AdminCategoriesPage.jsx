@@ -17,7 +17,7 @@ const styles = `
 .admin-category-form{display:grid;grid-template-columns:minmax(130px,.6fr) minmax(0,2fr) 110px auto;align-items:end;gap:12px}
 .admin-category-field{display:grid;gap:5px;color:#77716a;font-size:11px}
 .admin-category-field input,.admin-category-field textarea{width:100%;min-height:40px;padding:8px 10px;border:1px solid #d8d0c4;background:white;color:#30252c}.admin-category-field textarea{min-height:86px;resize:vertical}
-.admin-category-labels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.admin-category-descriptions{grid-column:1/-1}
+.admin-category-labels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.admin-category-descriptions{grid-column:1/-1}.admin-category-descriptions>span{grid-column:1/-1;color:#514a44;font-size:11px;font-weight:600}
 .admin-category-usage{grid-column:1/-1;color:#77716a;font-size:10px}
 .admin-category-form button{min-height:40px;padding:0 14px;border:1px solid #30252c;background:#30252c;color:white;cursor:pointer}
 .admin-category-form button:disabled{opacity:.5;cursor:not-allowed}
