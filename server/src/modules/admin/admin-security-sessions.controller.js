@@ -1,7 +1,7 @@
 import ReaderSession from "../auth/reader-session.model.js";
 import User from "../users/user.model.js";
 
-export async function listAdminSecuritySessions(_request, response) {
+export async function listAdminSecuritySessions(request, response) {
   response.setHeader("Cache-Control", "no-store");
   const now = new Date();
   const admins = await User.find({ role: "admin", accountStatus: "active" })
@@ -19,7 +19,7 @@ export async function listAdminSecuritySessions(_request, response) {
       .lean(),
   ]);
 
-  const currentSessionId = String(response.locals.readerSessionId || "");
+  const currentSessionId = String(request.readerSession?._id || "");
   return response.json({
     data: {
       sessions: sessions.map((session) => {
