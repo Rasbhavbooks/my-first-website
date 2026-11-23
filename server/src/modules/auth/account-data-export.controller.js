@@ -26,6 +26,7 @@ function fileMetadata(asset) {
 }
 
 export async function exportReaderAccountData(request, response) {
+  response.setHeader("Cache-Control", "private, no-store");
   if (!isDatabaseConnected()) return unavailable(response);
   const userId = request.reader._id;
   const [
@@ -111,7 +112,6 @@ export async function exportReaderAccountData(request, response) {
     ],
   };
 
-  response.setHeader("Cache-Control", "private, no-store");
   response.setHeader("Content-Type", "application/json; charset=utf-8");
   response.setHeader("Content-Disposition", 'attachment; filename="rasbhav-books-account-data.json"');
   return response.status(200).send(JSON.stringify(payload, null, 2));
