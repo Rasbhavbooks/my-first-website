@@ -105,7 +105,7 @@ const authorUploadLimitsSchema = new mongoose.Schema(
 const siteSettingsSchema = new mongoose.Schema(
   {
     key: { type: String, required: true, unique: true, immutable: true, default: "global" },
-    platform: { defaultLanguage: { type: String, enum: ["en", "gu", "hi"], required: true, default: "en" }, siteName: { type: String, required: true, trim: true, minlength: 2, maxlength: 80, default: "Rasbhav Books" }, supportEmail: { type: String, required: true, trim: true, lowercase: true, maxlength: 254, match: /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/, default: "hello@rasbhavbooks.com" } },
+    platform: { defaultLanguage: { type: String, enum: ["en", "gu", "hi"], required: true, default: "en" }, siteName: { type: String, required: true, trim: true, minlength: 2, maxlength: 80, default: "Rasbhav Books" }, supportEmail: { type: String, required: true, trim: true, lowercase: true, maxlength: 254, match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, default: "hello@rasbhavbooks.com" } },
     uploads: { type: authorUploadLimitsSchema, required: true, default: () => ({ coverMaxMb: DEFAULT_AUTHOR_UPLOAD_LIMITS_MB.cover, manuscriptMaxMb: DEFAULT_AUTHOR_UPLOAD_LIMITS_MB.manuscript }) },
     maintenance: { type: maintenanceSchema, required: true },
     announcement: { type: announcementSchema, required: true },
