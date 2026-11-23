@@ -16,6 +16,7 @@ export const messages = {
     bookSubmissionIncomplete: "Add a title and a description of at least 40 characters in the selected language.",
     bookPriceInr: "Planned price (INR)",
     uploadLimitsTitle: "Author file size limits",
+    uploadLimitsInvalid: "Choose whole numbers: covers 1–10 MB and manuscripts 1–25 MB.",
     coverUploadLimitLabel: "Maximum cover size (MB)",
     manuscriptUploadLimitLabel: "Maximum PDF manuscript size (MB)",
     uploadLimitsHint: "Limits apply to new uploads only. Covers can be 1–10 MB and manuscripts 1–25 MB. Files still require a clean security scan and private storage.",
@@ -127,6 +128,7 @@ export const messages = {
     bookSubmissionIncomplete: "પસંદ કરેલી ભાષામાં પુસ્તકનું નામ અને ઓછામાં ઓછા 40 અક્ષરનું વર્ણન ઉમેરો.",
     bookPriceInr: "રાખેલી કિંમત (રૂપિયા)",
     uploadLimitsTitle: "લેખકની ફાઇલની કદ મર્યાદા",
+    uploadLimitsInvalid: "પૂર્ણાંક પસંદ કરો: કવર 1–10 MB અને હસ્તપ્રત 1–25 MB.",
     coverUploadLimitLabel: "કવરનું મહત્તમ કદ (MB)",
     manuscriptUploadLimitLabel: "PDF હસ્તપ્રતનું મહત્તમ કદ (MB)",
     uploadLimitsHint: "આ મર્યાદા નવી ફાઇલ પર લાગુ પડશે. કવર 1–10 MB અને હસ્તપ્રત 1–25 MB હોઈ શકે. ફાઇલનું સુરક્ષા સ્કેન સ્વચ્છ હોવું અને ખાનગી સ્ટોરેજમાં જવું જરૂરી છે.",
@@ -238,6 +240,7 @@ export const messages = {
     bookSubmissionIncomplete: "चुनी हुई भाषा में किताब का नाम और कम से कम 40 अक्षर का परिचय जोड़ें।",
     bookPriceInr: "रखी गई कीमत (INR)",
     uploadLimitsTitle: "लेखक फ़ाइल आकार सीमाएँ",
+    uploadLimitsInvalid: "पूर्ण संख्या चुनें: कवर 1–10 MB और पांडुलिपि 1–25 MB.",
     coverUploadLimitLabel: "कवर का अधिकतम आकार (MB)",
     manuscriptUploadLimitLabel: "PDF पांडुलिपि का अधिकतम आकार (MB)",
     uploadLimitsHint: "सीमाएँ केवल नई फ़ाइलों पर लागू होती हैं। कवर 1–10 MB और पांडुलिपि 1–25 MB हो सकती है। फ़ाइल की सुरक्षा जाँच साफ़ होनी चाहिए और उसे निजी स्टोरेज में ही रखा जाएगा।"
