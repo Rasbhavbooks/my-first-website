@@ -15,6 +15,7 @@ import {
 } from "./auth.controller.js";
 import { requireReader } from "./auth.middleware.js";
 import { exportReaderAccountData } from "./account-data-export.controller.js";
+import { listReaderSessions, revokeReaderSession } from "./reader-sessions.controller.js";
 
 const router = Router();
 const registrationLimiter = rateLimit({
@@ -47,6 +48,12 @@ const passwordChangeLimiter = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
 });
+const sessionManagementLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 30,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+});
 const accountExportLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   limit: 3,
@@ -61,6 +68,8 @@ router.post("/login", loginLimiter, loginReader);
 router.get("/session", getReaderSession);
 router.post("/logout", logoutReader);
 router.get("/profile/export", requireReader, accountExportLimiter, exportReaderAccountData);
+router.get("/sessions", requireReader, sessionManagementLimiter, listReaderSessions);
+router.delete("/sessions/:sessionId", requireReader, sessionManagementLimiter, revokeReaderSession);
 router.get("/profile", requireReader, getReaderProfile);
 router.patch("/profile", requireReader, updateReaderProfile);
 router.post("/change-password", requireReader, passwordChangeLimiter, changeReaderPassword);
