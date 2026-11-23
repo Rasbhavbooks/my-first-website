@@ -1,7 +1,8 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import BookCard from "../../components/books/BookCard.jsx";
 import { useCategories } from "../../hooks/useCategories.js";
-import { useBooks, useFilteredBooks } from "../../hooks/useBooks.js";
+import { usePaginatedBooks } from "../../hooks/useBooks.js";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { usePageMetadata } from "../../hooks/usePageMetadata.js";
 
@@ -18,10 +19,11 @@ export default function CategoryPage() {
   const { categoryKey = "" } = useParams();
   const { language, t } = useLanguage();
   const { categories, getCategoryLabel, loaded: categoriesLoaded } = useCategories();
-  const books = useBooks();
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [categoryKey]);
   const category = categories.find((item) => item.key === categoryKey && item.active !== false);
   const label = category ? getCategoryLabel(category.key) : "";
-  const categoryBooks = useFilteredBooks(books, { category: categoryKey, query: "", language });
+  const { items: categoryBooks, loading: booksLoading, hasMore } = usePaginatedBooks({ category: categoryKey, query: "", language, bookLanguage: "", sort: "featured", page });
   const pageTitle = label ? `${label} | Rasbhav Books` : t.notFound;
   const localizedDescription = category?.descriptions?.[language]?.trim();
   const pageDescription = label ? localizedDescription || t.categoryPageMeta.replace("{category}", label) : t.notFound;
@@ -62,9 +64,10 @@ export default function CategoryPage() {
       <div className="eyebrow"><i />{t.categoryLabel}</div>
       <h1>{label}</h1>
       <p className="category-page-intro">{localizedDescription || t.categoryPageIntro.replace("{category}", label)}</p>
-      {categoryBooks.length
-        ? <div className="category-page-grid">{categoryBooks.map((book) => <BookCard key={book.id} book={book} language={language} t={t} />)}</div>
-        : <div className="category-page-empty">{t.categoryPageEmpty}</div>}
+      {categoryBooks.length > 0 && <div className="category-page-grid">{categoryBooks.map((book) => <BookCard key={book.id} book={book} language={language} t={t} />)}</div>}
+      {booksLoading && <p role="status" aria-live="polite">{t.loading}</p>}
+      {!booksLoading && !categoryBooks.length && <div className="category-page-empty">{t.categoryPageEmpty}</div>}
+      {hasMore && <button className="button button-light" type="button" disabled={booksLoading} onClick={() => setPage((current) => current + 1)}>{t.catalogueShowMore}</button>}
     </main>
   );
 }
