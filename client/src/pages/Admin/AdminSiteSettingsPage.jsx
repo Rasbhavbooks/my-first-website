@@ -233,6 +233,10 @@ export default function AdminSiteSettingsPage() {
       {notice && <p className="admin-site-success" role="status">{notice}</p>}
       <section className="admin-site-panel">
         <h2>{t.platformSettingsTitle}</h2>
+        <label className="admin-site-field">{t.siteNameLabel}
+          <input type="text" maxLength={80} required value={settings.platform.siteName} onChange={(event) => setSettings((current) => ({ ...current, platform: { ...current.platform, siteName: event.target.value } }))} />
+        </label>
+        <p className="admin-site-hint">{t.siteNameHint}</p>
         <p className="admin-site-hint">{t.defaultLanguageHint}</p>
         <label className="admin-site-field">{t.defaultLanguageLabel}
           <select value={settings.platform.defaultLanguage} onChange={(event) => setSettings((current) => ({ ...current, platform: { ...current.platform, defaultLanguage: event.target.value } }))}>
