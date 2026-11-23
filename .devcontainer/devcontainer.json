@@ -1,0 +1,9 @@
+{
+  "name": "Rasbhav Books V3.0",
+  "dockerComposeFile": "compose.yaml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/my-first-website",
+  "forwardPorts": [5173, 4000],
+  "postCreateCommand": "npm install",
+  "shutdownAction": "stopCompose"
+}
