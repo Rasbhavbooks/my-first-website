@@ -72,7 +72,7 @@ export async function getPublishedBlogPost(request, response) {
 
 export async function listAdminBlogPosts(_request, response) {
   const posts = await BlogPost.find()
-    .select("slug title summary status publishedAt createdAt updatedAt")
+    .select("slug title summary body seoTitle seoDescription status publishedAt createdAt updatedAt")
     .sort({ updatedAt: -1, _id: -1 })
     .limit(100)
     .lean();
