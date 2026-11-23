@@ -25,6 +25,7 @@ export const defaultSiteContent = {
     communityLinks: [
       { enabled: true, href: "/#about", label: { en: "Our story", gu: "અમારી વાત", hi: "हमारी कहानी" } },
       { enabled: true, href: "/author/apply", label: { en: "Write with us", gu: "અમારી સાથે લખો", hi: "हमारे साथ लिखें" } },
+      { enabled: true, href: "/blog", label: { en: "Stories", gu: "લેખો", hi: "लेख" } },
     ],
   },
   homepage: {
