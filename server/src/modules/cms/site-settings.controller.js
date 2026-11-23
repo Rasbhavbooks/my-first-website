@@ -1,9 +1,11 @@
 import { defaultSiteContent } from "../../../../shared/site-content.js";
 import { isDatabaseConnected } from "../../config/database.js";
 import SiteSettings from "./site-settings.model.js";
+import Book from "../books/book.model.js";
 
 const LANGUAGES = ["en", "gu", "hi"];
-const HOME_SECTION_IDS = ["hero", "trust", "discovery", "languages", "authors", "community"];
+const HOME_SECTION_IDS = ["hero", "trust", "discovery", "featured", "languages", "authors", "community"];
+const LEGACY_HOME_SECTION_IDS = ["hero", "trust", "discovery", "languages", "authors", "community"];
 const DEFAULT_SETTINGS = { key: "global", ...defaultSiteContent };
 
 function errorResponse(response, status, code, message) {
@@ -44,9 +46,18 @@ function normalizeLinks(value) {
 }
 
 function normalizeHomeSections(value) {
+  if (!Array.isArray(value) || value.length < LEGACY_HOME_SECTION_IDS.length || value.length > HOME_SECTION_IDS.length + 4) return null;
+  let input = value;
+  if (!input.some((item) => item?.id === "featured")) {
+    const existingBuiltIns = input.filter((item) => LEGACY_HOME_SECTION_IDS.includes(item?.id)).map((item) => item.id);
+    if (LEGACY_HOME_SECTION_IDS.every((id) => existingBuiltIns.includes(id))) {
+      const insertAt = Math.max(0, input.findIndex((item) => item?.id === "languages"));
+      input = [...input.slice(0, insertAt), { id: "featured", enabled: false }, ...input.slice(insertAt)];
+    }
+  }
   const builtInIds = HOME_SECTION_IDS;
-  if (!Array.isArray(value) || value.length < builtInIds.length || value.length > builtInIds.length + 4) return null;
-  const sections = value.map((item) => {
+  if (input.length < builtInIds.length || input.length > builtInIds.length + 4) return null;
+  const sections = input.map((item) => {
     if (!item || typeof item.id !== "string" || typeof item.enabled !== "boolean") return null;
     if (builtInIds.includes(item.id)) return { id: item.id, enabled: item.enabled };
     if (!/^custom-[a-z0-9-]{1,48}$/.test(item.id)) return null;
@@ -55,7 +66,7 @@ function normalizeHomeSections(value) {
     const linkLabel = localizedGroup(item.linkLabel, 80, true);
     const imageUrl = item.imageUrl || "";
     const imageAlt = localizedGroup(item.imageAlt || { en: "", gu: "", hi: "" }, 300, true);
-    const validImageUrl = imageUrl === "" || /^\/api\/v1\/media\/[a-f0-9]{24}$/i.test(imageUrl);
+    const validImageUrl = imageUrl === "" || /^\\/api\\/v1\\/media\\/[a-f0-9]{24}$/i.test(imageUrl);
     if (!title || !description || !linkLabel || !imageAlt || !validHref(item.href || "") || typeof imageUrl !== "string" || !validImageUrl) return null;
     if (imageUrl && Object.values(imageAlt).some((text) => text.length < 2)) return null;
     if (Object.values(linkLabel).some((label) => label.trim()) && !item.href) return null;
@@ -72,13 +83,19 @@ function normalizeSettings(body) {
   const announcement = body?.announcement;
   const hero = body?.homepage?.hero;
   const sections = normalizeHomeSections(body?.homepage?.sections);
+  const featuredBookIds = body?.homepage?.featuredBookIds;
+  const validFeaturedBookIds = Array.isArray(featuredBookIds) && featuredBookIds.length <= 4
+    && featuredBookIds.every((id) => typeof id === "string" && id.trim().length > 0 && id.trim().length <= 100)
+    && new Set(featuredBookIds.map((id) => id.trim())).size === featuredBookIds.length
+    ? featuredBookIds.map((id) => id.trim())
+    : null;
   const navigation = normalizeLinks(body?.navigation);
   const tagline = localizedGroup(body?.footer?.tagline, 300);
   const browseLinks = normalizeLinks(body?.footer?.browseLinks);
   const communityTitle = localizedGroup(body?.footer?.communityTitle, 120);
   const communityLinks = normalizeLinks(body?.footer?.communityLinks);
   if (!announcement || typeof announcement.enabled !== "boolean" || !validHref(announcement.href)
-    || !navigation || !tagline || !browseLinks || !communityTitle || !communityLinks || !sections) return null;
+    || !navigation || !tagline || !browseLinks || !communityTitle || !communityLinks || !sections || !validFeaturedBookIds) return null;
   const cleanAnnouncement = {
     enabled: announcement.enabled,
     text: localizedGroup(announcement.text, 300, true),
@@ -98,7 +115,7 @@ function normalizeSettings(body) {
     announcement: cleanAnnouncement,
     navigation,
     footer: { tagline, browseLinks, communityTitle, communityLinks },
-    homepage: { hero: cleanHero, sections },
+    homepage: { hero: cleanHero, sections, featuredBookIds: validFeaturedBookIds },
   };
 }
 
@@ -126,6 +143,9 @@ function mergeDefaults(settings) {
       ...DEFAULT_SETTINGS.homepage,
       ...settings?.homepage,
       sections: normalizeHomeSections(settings?.homepage?.sections) || DEFAULT_SETTINGS.homepage.sections,
+      featuredBookIds: Array.isArray(settings?.homepage?.featuredBookIds) && settings.homepage.featuredBookIds.length <= 4
+        ? settings.homepage.featuredBookIds
+        : DEFAULT_SETTINGS.homepage.featuredBookIds,
       hero: { ...DEFAULT_SETTINGS.homepage.hero, ...settings?.homepage?.hero },
     },
   };
@@ -155,6 +175,13 @@ export async function getAdminSiteContent(_request, response) {
 export async function updateAdminSiteContent(request, response) {
   const normalized = normalizeSettings(request.body);
   if (!normalized) return errorResponse(response, 400, "INVALID_SITE_CONTENT", "Check the homepage sections, hero, navigation, footer and announcement content.");
+  const featuredIds = normalized.homepage.featuredBookIds;
+  if (featuredIds.length) {
+    const availableCount = await Book.countDocuments({ catalogueId: { $in: featuredIds } });
+    if (availableCount !== featuredIds.length) {
+      return errorResponse(response, 400, "INVALID_FEATURED_BOOKS", "Choose only books that are already in the public catalogue.");
+    }
+  }
   const settings = await SiteSettings.findOneAndUpdate(
     { key: "global" },
     { $set: { ...normalized, updatedBy: request.reader._id }, $setOnInsert: { key: "global" } },
