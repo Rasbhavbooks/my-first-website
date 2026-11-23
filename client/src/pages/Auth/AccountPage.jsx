@@ -52,7 +52,10 @@ export default function AccountPage() {
   const [displayName, setDisplayName] = useState(user?.displayName || "");
   const [bio, setBio] = useState(user?.bio || "");
   const [hobbies, setHobbies] = useState(user?.hobbies?.join(", ") || "");
-  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || "");\n  const [avatarPhotoUrl, setAvatarPhotoUrl] = useState(user?.avatarPhotoUrl || "");\n  const [avatarBusy, setAvatarBusy] = useState(false);\n  const [avatarError, setAvatarError] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || "");
+  const [avatarPhotoUrl, setAvatarPhotoUrl] = useState(user?.avatarPhotoUrl || "");
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -70,7 +73,8 @@ export default function AccountPage() {
     setDisplayName(user.displayName || "");
     setBio(user.bio || "");
     setHobbies(user.hobbies?.join(", ") || "");
-    setAvatarUrl(user.avatarUrl || "");\n    setAvatarPhotoUrl(user.avatarPhotoUrl || "");
+    setAvatarUrl(user.avatarUrl || "");
+    setAvatarPhotoUrl(user.avatarPhotoUrl || "");
   }, [user?.id, user?.displayName, user?.bio, user?.hobbies?.join(", "), user?.avatarUrl, user?.avatarPhotoUrl]);
 
   useEffect(() => {
