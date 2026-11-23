@@ -237,6 +237,10 @@ export default function AdminSiteSettingsPage() {
           <input type="text" maxLength={80} required value={settings.platform.siteName} onChange={(event) => setSettings((current) => ({ ...current, platform: { ...current.platform, siteName: event.target.value } }))} />
         </label>
         <p className="admin-site-hint">{t.siteNameHint}</p>
+        <label className="admin-site-field">{t.supportEmailLabel}
+          <input type="email" maxLength={254} required value={settings.platform.supportEmail} onChange={(event) => setSettings((current) => ({ ...current, platform: { ...current.platform, supportEmail: event.target.value } }))} />
+        </label>
+        <p className="admin-site-hint">{t.supportEmailHint}</p>
         <p className="admin-site-hint">{t.defaultLanguageHint}</p>
         <label className="admin-site-field">{t.defaultLanguageLabel}
           <select value={settings.platform.defaultLanguage} onChange={(event) => setSettings((current) => ({ ...current, platform: { ...current.platform, defaultLanguage: event.target.value } }))}>

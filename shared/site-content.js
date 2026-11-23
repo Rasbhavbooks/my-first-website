@@ -1,7 +1,7 @@
 import { DEFAULT_AUTHOR_UPLOAD_LIMITS_MB } from "./author-upload-limits.js";
 
 export const defaultSiteContent = {
-  platform: { defaultLanguage: "en", siteName: "Rasbhav Books" },
+  platform: { defaultLanguage: "en", siteName: "Rasbhav Books", supportEmail: "hello@rasbhavbooks.com" },
   uploads: { coverMaxMb: DEFAULT_AUTHOR_UPLOAD_LIMITS_MB.cover, manuscriptMaxMb: DEFAULT_AUTHOR_UPLOAD_LIMITS_MB.manuscript },
   maintenance: {
     enabled: false,

@@ -101,8 +101,10 @@ function normalizeSettings(body) {
   const communityTitle = localizedGroup(body?.footer?.communityTitle, 120);
   const communityLinks = normalizeLinks(body?.footer?.communityLinks);
   const siteName = typeof platform?.siteName === "string" ? platform.siteName.trim() : "";
+  const supportEmail = typeof platform?.supportEmail === "string" ? platform.supportEmail.trim().toLowerCase() : "";
+  const validSupportEmail = supportEmail.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(supportEmail);
   if (!platform || !["en", "gu", "hi"].includes(platform.defaultLanguage)
-    || siteName.length < 2 || siteName.length > 80
+    || siteName.length < 2 || siteName.length > 80 || !validSupportEmail
     || !isValidAuthorUploadLimits(uploads)
     || !maintenance || typeof maintenance.enabled !== "boolean"
     || !announcement || typeof announcement.enabled !== "boolean" || !validHref(announcement.href)
@@ -133,7 +135,7 @@ function normalizeSettings(body) {
     || Object.values(cleanSeo).some((value) => value === null)
     || Object.values(cleanHero).some((value) => value === null)) return null;
   return {
-    platform: { defaultLanguage: platform.defaultLanguage, siteName },
+    platform: { defaultLanguage: platform.defaultLanguage, siteName, supportEmail },
     uploads: { coverMaxMb: uploads.coverMaxMb, manuscriptMaxMb: uploads.manuscriptMaxMb },
     maintenance: cleanMaintenance,
     announcement: cleanAnnouncement,
