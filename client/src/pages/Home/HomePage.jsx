@@ -1,9 +1,10 @@
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { ArrowRight, ArrowUpRight, BookOpen, Check, Search, Sparkles, Users } from "lucide-react";
 import BookCard from "../../components/books/BookCard.jsx";
 import { useCategories } from "../../hooks/useCategories.js";
-import { useBooks, useFilteredBooks } from "../../hooks/useBooks.js";
+import { usePaginatedBooks } from "../../hooks/useBooks.js";
+import { getBookById } from "../../services/bookService.js";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { useSiteContent } from "../../hooks/useSiteContent.js";
 import { usePageMetadata } from "../../hooks/usePageMetadata.js";
@@ -12,14 +13,24 @@ import { defaultSiteContent } from "../../../../shared/site-content.js";
 export default function HomePage() {
   const { language, setLanguage, t } = useLanguage();
   const { settings } = useSiteContent();
-  const books = useBooks();
   const { categories, getCategoryLabel } = useCategories();
+  const featuredBookIds = settings.homepage?.featuredBookIds || [];
+  const featuredBookIdsKey = featuredBookIds.join("|");
+  const [featuredBooks, setFeaturedBooks] = useState([]);
+  useEffect(() => {
+    let active = true;
+    Promise.all(featuredBookIds.map((id) => getBookById(id))).then((results) => {
+      if (active) setFeaturedBooks(results.filter(Boolean));
+    });
+    return () => { active = false; };
+  }, [featuredBookIdsKey]);
   const [category, setCategory] = useState("All");
   const [query, setQuery] = useState("");
   const [bookLanguage, setBookLanguage] = useState("");
   const [sort, setSort] = useState("featured");
+  const [page, setPage] = useState(1);
   const [subscribed, setSubscribed] = useState(false);
-  const visibleBooks = useFilteredBooks(books, { category, query, language, bookLanguage, sort });
+  const { items: visibleBooks, total: totalBooks, loading: catalogueLoading, hasMore } = usePaginatedBooks({ category, query, language, bookLanguage, sort, page });
   const hero = settings.homepage?.hero || {};
   usePageMetadata({
     title: settings.homepage?.seo?.title?.[language] || "",
@@ -70,10 +81,10 @@ export default function HomePage() {
       </section>
     ),
     featured: (
-      (settings.homepage?.featuredBookIds || []).map((id) => books.find((book) => book.id === id)).filter(Boolean).length ? (
+      featuredBooks.length ? (
         <section className="section" id="featured-books">
           <div className="section-head"><div className="eyebrow"><i />{t.curated}</div><h2>{t.featuredBooksWidgetHeading}</h2></div>
-          <div className="book-grid">{settings.homepage.featuredBookIds.map((id) => books.find((book) => book.id === id)).filter(Boolean).map((book) => <BookCard key={book.id} book={book} language={language} t={t} />)}</div>
+          <div className="book-grid">{featuredBooks.map((book) => <BookCard key={book.id} book={book} language={language} t={t} />)}</div>
         </section>
       ) : null
     ),
@@ -84,28 +95,29 @@ export default function HomePage() {
           <a href="#discover" className="text-link">{t.viewAll}<ArrowUpRight size={16} /></a>
         </div>
         <div className="catalog-tools">
-          <label className="search"><Search size={17} /><span className="sr-only">{t.search}</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t.search} /></label>
+          <label className="search"><Search size={17} /><span className="sr-only">{t.search}</span><input maxLength={100} value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder={t.search} /></label>
           <div className="catalog-refinements">
-            <label className="catalog-refinement"><span>{t.bookLanguageFilter}</span><select value={bookLanguage} onChange={(event) => setBookLanguage(event.target.value)}>
+            <label className="catalog-refinement"><span>{t.bookLanguageFilter}</span><select value={bookLanguage} onChange={(event) => { setBookLanguage(event.target.value); setPage(1); }}>
               <option value="">{t.allLanguages}</option>
               <option value="Gujarati">{t.gujarati}</option>
               <option value="Hindi">{t.hindi}</option>
               <option value="English">{t.english}</option>
             </select></label>
-            <label className="catalog-refinement"><span>{t.sortBooks}</span><select value={sort} onChange={(event) => setSort(event.target.value)}>
+            <label className="catalog-refinement"><span>{t.sortBooks}</span><select value={sort} onChange={(event) => { setSort(event.target.value); setPage(1); }}>
               <option value="featured">{t.sortFeatured}</option>
               <option value="title">{t.sortTitle}</option>
               <option value="author">{t.sortAuthor}</option>
             </select></label>
           </div>
           <div className="category-list" id="categories" aria-label={t.filter}>
-            {categories.map(({ key }) => <button key={key} className={category === key ? "category active" : "category"} onClick={() => setCategory(key)}>{getCategoryLabel(key)}</button>)}
+            {categories.map(({ key }) => <button key={key} className={category === key ? "category active" : "category"} onClick={() => { setCategory(key); setPage(1); }}>{getCategoryLabel(key)}</button>)}
           </div>
           {category !== "All" && <Link className="text-link" to={`/categories/${encodeURIComponent(category)}`}>{t.categoryPageView}<ArrowUpRight size={16} /></Link>}
         </div>
-        {visibleBooks.length
-          ? <div className="book-grid">{visibleBooks.map((book) => <BookCard key={book.id} book={book} language={language} t={t} />)}</div>
-          : <div className="empty-state">{t.noResults}</div>}
+        {visibleBooks.length > 0 && <div className="book-grid">{visibleBooks.map((book) => <BookCard key={book.id} book={book} language={language} t={t} />)}</div>}
+        {catalogueLoading && <p role="status" aria-live="polite">{t.loading}</p>}
+        {!catalogueLoading && !visibleBooks.length && <div className="empty-state">{t.noResults}</div>}
+        {hasMore && <button className="button button-light" type="button" disabled={catalogueLoading} onClick={() => setPage((current) => current + 1)}>{t.catalogueShowMore} · {visibleBooks.length}/{totalBooks}</button>}
       </section>
     ),
     languages: (

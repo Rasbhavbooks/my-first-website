@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getBooks } from "../services/bookService.js";
+import { getBooks, getBooksPage } from "../services/bookService.js";
 import { books as sampleBooks } from "../data/books.js";
 
 export function useBooks() {
@@ -33,4 +33,35 @@ export function useFilteredBooks(books, { category, query, language, bookLanguag
     }
     return filtered;
   }, [books, bookLanguage, category, language, query, sort]);
+}
+
+
+export function usePaginatedBooks({ category, query, language, bookLanguage, sort, page }) {
+  const [items, setItems] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    const timer = setTimeout(() => {
+      setLoading(true);
+      getBooksPage({ category, query, language, bookLanguage, sort, page })
+        .then((result) => {
+          if (!active) return;
+          setItems((current) => page === 1 ? result.items : [...current, ...result.items]);
+          setTotal(result.total);
+          setTotalPages(result.totalPages);
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+    }, query ? 250 : 0);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [category, query, language, bookLanguage, sort, page]);
+
+  return { items, total, totalPages, loading, hasMore: page < totalPages };
 }
