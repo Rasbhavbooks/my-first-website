@@ -39,6 +39,7 @@ export default function BookDetailsPage() {
       name: title,
       description: book.description?.[language] || book.description?.en || "",
       author: { "@type": "Person", name: book.author },
+      isbn: book.isbn || undefined,
       url: typeof window === "undefined" ? "" : window.location.href.split("?")[0],
     } : null,
   });
@@ -63,6 +64,7 @@ export default function BookDetailsPage() {
           <dl className="detail-facts">
             <div><dt>{t.languageLabel}</dt><dd>{book.language}</dd></div>
             <div><dt>{t.categoryLabel}</dt><dd>{getCategoryLabel(book.category)}</dd></div>
+            {book.isbn && <div><dt>{t.bookIsbn}</dt><dd>{book.isbn}</dd></div>}
           </dl>
           <p className="demo-note">{t.demoNotice}</p>
         </article>
