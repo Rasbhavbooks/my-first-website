@@ -53,7 +53,15 @@ export default function HomePage() {
         <span><Users size={16} /> Made for readers</span>
       </section>
     ),
-    featured: (\n      (settings.homepage?.featuredBookIds || []).map((id) => books.find((book) => book.id === id)).filter(Boolean).length ? (\n        <section className="section" id="featured-books">\n          <div className="section-head"><div className="eyebrow"><i />{t.curated}</div><h2>{t.featuredBooksWidgetHeading}</h2></div>\n          <div className="book-grid">{settings.homepage.featuredBookIds.map((id) => books.find((book) => book.id === id)).filter(Boolean).map((book) => <BookCard key={book.id} book={book} language={language} t={t} />)}</div>\n        </section>\n      ) : null\n    ),\n    discovery: (
+    featured: (
+      (settings.homepage?.featuredBookIds || []).map((id) => books.find((book) => book.id === id)).filter(Boolean).length ? (
+        <section className="section" id="featured-books">
+          <div className="section-head"><div className="eyebrow"><i />{t.curated}</div><h2>{t.featuredBooksWidgetHeading}</h2></div>
+          <div className="book-grid">{settings.homepage.featuredBookIds.map((id) => books.find((book) => book.id === id)).filter(Boolean).map((book) => <BookCard key={book.id} book={book} language={language} t={t} />)}</div>
+        </section>
+      ) : null
+    ),
+    discovery: (
       <section className="section" id="discover">
         <div className="section-head">
           <div className="eyebrow"><i />{t.curated}</div><h2>{t.picks}</h2>
