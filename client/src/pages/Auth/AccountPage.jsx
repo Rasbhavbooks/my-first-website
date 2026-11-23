@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { changeReaderPassword, updateReaderProfile } from "../../services/authService.js";
+import { changeReaderPassword, downloadReaderAccountData, updateReaderProfile } from "../../services/authService.js";
 import FollowedAuthorsPanel from "../../components/account/FollowedAuthorsPanel.jsx";
 
 const accountStyles = `
@@ -42,6 +42,7 @@ export default function AccountPage() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [exportBusy, setExportBusy] = useState(false);
   const [passwordChanged, setPasswordChanged] = useState(false);
 
   useEffect(() => {
@@ -73,6 +74,28 @@ export default function AccountPage() {
       setError(t.profileError);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleExport() {
+    setNotice("");
+    setError("");
+    setExportBusy(true);
+    try {
+      const blob = await downloadReaderAccountData();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "rasbhav-books-account-data.json";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setNotice(t.exportDataSuccess);
+    } catch {
+      setError(t.exportDataError);
+    } finally {
+      setExportBusy(false);
     }
   }
 
@@ -155,6 +178,13 @@ export default function AccountPage() {
           </form>
         </section>
       </div>
+      <section className="account-panel" style={{ marginTop: 20 }}>
+        <h2>{t.exportData}</h2>
+        <p className="account-intro">{t.exportDataHint}</p>
+        <button className="account-submit" style={{ width: "min(100%, 320px)" }} type="button" disabled={exportBusy} onClick={handleExport}>
+          {exportBusy ? t.exportingData : t.exportData}
+        </button>
+      </section>
       <FollowedAuthorsPanel />
       <button className="account-submit" style={{ width: "min(100%, 260px)", marginTop: 18 }} type="button" disabled={busy} onClick={handleLogout}>{t.signOut}</button>
       <Link className="account-back" to="/">{t.backHome}</Link>
