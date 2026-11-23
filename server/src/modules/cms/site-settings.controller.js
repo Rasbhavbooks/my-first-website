@@ -2,6 +2,7 @@ import { defaultSiteContent } from "../../../../shared/site-content.js";
 import { isDatabaseConnected } from "../../config/database.js";
 import SiteSettings from "./site-settings.model.js";
 import Book from "../books/book.model.js";
+import { invalidateMaintenanceModeCache } from "../../middleware/maintenanceMode.js";
 
 const LANGUAGES = ["en", "gu", "hi"];
 const HOME_SECTION_IDS = ["hero", "trust", "discovery", "featured", "languages", "authors", "community"];
@@ -81,6 +82,7 @@ function normalizeHomeSections(value) {
 }
 function normalizeSettings(body) {
   const platform = body?.platform;
+  const maintenance = body?.maintenance;
   const announcement = body?.announcement;
   const hero = body?.homepage?.hero;
   const seo = body?.homepage?.seo;
@@ -97,6 +99,7 @@ function normalizeSettings(body) {
   const communityTitle = localizedGroup(body?.footer?.communityTitle, 120);
   const communityLinks = normalizeLinks(body?.footer?.communityLinks);
   if (!platform || !["en", "gu", "hi"].includes(platform.defaultLanguage)
+    || !maintenance || typeof maintenance.enabled !== "boolean"
     || !announcement || typeof announcement.enabled !== "boolean" || !validHref(announcement.href)
     || !navigation || !tagline || !browseLinks || !communityTitle || !communityLinks || !sections || !validFeaturedBookIds) return null;
   const cleanAnnouncement = {
@@ -104,6 +107,10 @@ function normalizeSettings(body) {
     text: localizedGroup(announcement.text, 300, true),
     linkLabel: localizedGroup(announcement.linkLabel, 80, true),
     href: announcement.href.trim(),
+  };
+  const cleanMaintenance = {
+    enabled: maintenance.enabled,
+    message: localizedGroup(maintenance.message, 300),
   };
   const cleanSeo = {
     title: localizedGroup(seo?.title, 70),
@@ -117,10 +124,12 @@ function normalizeSettings(body) {
     secondaryCta: localizedGroup(hero?.secondaryCta, 80),
   };
   if (Object.values(cleanAnnouncement).some((value) => value === null)
+    || Object.values(cleanMaintenance).some((value) => value === null)
     || Object.values(cleanSeo).some((value) => value === null)
     || Object.values(cleanHero).some((value) => value === null)) return null;
   return {
     platform: { defaultLanguage: platform.defaultLanguage },
+    maintenance: cleanMaintenance,
     announcement: cleanAnnouncement,
     navigation,
     footer: { tagline, browseLinks, communityTitle, communityLinks },
@@ -133,6 +142,11 @@ function mergeDefaults(settings) {
     ...DEFAULT_SETTINGS,
     ...settings,
     platform: { ...DEFAULT_SETTINGS.platform, ...settings?.platform },
+    maintenance: {
+      ...DEFAULT_SETTINGS.maintenance,
+      ...settings?.maintenance,
+      message: { ...DEFAULT_SETTINGS.maintenance.message, ...settings?.maintenance?.message },
+    },
     announcement: { ...DEFAULT_SETTINGS.announcement, ...settings?.announcement },
     navigation: Array.isArray(settings?.navigation) && settings.navigation.length
       ? settings.navigation
@@ -169,13 +183,13 @@ function mergeDefaults(settings) {
 
 export async function getPublicSiteContent(_request, response) {
   if (!isDatabaseConnected()) {
-    const { platform, announcement, navigation, footer, homepage } = mergeDefaults(null);
-    return response.json({ data: { settings: { platform, announcement, navigation, footer, homepage } } });
+    const { platform, maintenance, announcement, navigation, footer, homepage } = mergeDefaults(null);
+    return response.json({ data: { settings: { platform, maintenance, announcement, navigation, footer, homepage } } });
   }
-  const settings = await SiteSettings.findOne({ key: "global" }).select("platform announcement navigation footer homepage -_id").lean();
-  const { platform, announcement, navigation, footer, homepage } = mergeDefaults(settings);
+  const settings = await SiteSettings.findOne({ key: "global" }).select("platform maintenance announcement navigation footer homepage -_id").lean();
+  const { platform, maintenance, announcement, navigation, footer, homepage } = mergeDefaults(settings);
   response.setHeader("Cache-Control", "public, max-age=60");
-  return response.json({ data: { settings: { platform, announcement, navigation, footer, homepage } } });
+  return response.json({ data: { settings: { platform, maintenance, announcement, navigation, footer, homepage } } });
 }
 
 export async function getAdminSiteContent(_request, response) {
@@ -203,6 +217,7 @@ export async function updateAdminSiteContent(request, response) {
     { $set: { ...normalized, updatedBy: request.reader._id }, $setOnInsert: { key: "global" } },
     { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true },
   ).lean();
+  invalidateMaintenanceModeCache();
   response.setHeader("Cache-Control", "no-store");
   return response.json({ data: { settings: mergeDefaults(settings) } });
 }

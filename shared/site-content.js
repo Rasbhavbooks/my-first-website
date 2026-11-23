@@ -1,5 +1,13 @@
 export const defaultSiteContent = {
   platform: { defaultLanguage: "en" },
+  maintenance: {
+    enabled: false,
+    message: {
+      en: "We are making a few improvements. Please check back soon.",
+      gu: "અમે કેટલીક સુધારાઓ કરી રહ્યા છીએ. કૃપા કરીને થોડી વાર પછી ફરી આવો.",
+      hi: "हम कुछ सुधार कर रहे हैं। कृपया थोड़ी देर बाद फिर आएँ।",
+    },
+  },
   announcement: {
     enabled: false,
     text: { en: "", gu: "", hi: "" },
