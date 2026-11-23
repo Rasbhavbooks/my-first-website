@@ -15,7 +15,6 @@ const announcementSchema = new mongoose.Schema(
     text: { type: localizedTextSchema, required: true },
     linkLabel: { type: localizedTextSchema, required: true },
     href: { type: String, trim: true, maxlength: 300, default: "" },
-    imageUrl: { type: String, trim: true, maxlength: 60, default: "" },
   },
   { _id: false },
 );
@@ -57,6 +56,7 @@ const homepageSectionSchema = new mongoose.Schema(
     description: { type: localizedTextSchema, default: undefined },
     linkLabel: { type: localizedTextSchema, default: undefined },
     href: { type: String, trim: true, maxlength: 300, default: "" },
+    imageUrl: { type: String, trim: true, maxlength: 60, default: "" },
     enabled: { type: Boolean, required: true, default: true },
   },
   { _id: false },
