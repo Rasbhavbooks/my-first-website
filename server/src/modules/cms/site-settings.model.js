@@ -49,7 +49,11 @@ const footerSchema = new mongoose.Schema(
 
 const homepageSectionSchema = new mongoose.Schema(
   {
-    id: { type: String, enum: ["hero", "trust", "discovery", "languages", "authors", "community"], required: true },
+    id: { type: String, required: true, match: /^(hero|trust|discovery|languages|authors|community|custom-[a-z0-9-]{1,48})$/ },
+    title: { type: localizedTextSchema, default: undefined },
+    description: { type: localizedTextSchema, default: undefined },
+    linkLabel: { type: localizedTextSchema, default: undefined },
+    href: { type: String, trim: true, maxlength: 300, default: "" },
     enabled: { type: Boolean, required: true, default: true },
   },
   { _id: false },
