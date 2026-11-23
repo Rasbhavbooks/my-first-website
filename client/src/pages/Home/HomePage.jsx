@@ -1,9 +1,10 @@
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { ArrowRight, ArrowUpRight, BookOpen, Check, Search, Sparkles, Users } from "lucide-react";
 import BookCard from "../../components/books/BookCard.jsx";
 import { useCategories } from "../../hooks/useCategories.js";
-import { useBooks, usePaginatedBooks } from "../../hooks/useBooks.js";
+import { usePaginatedBooks } from "../../hooks/useBooks.js";
+import { getBookById } from "../../services/bookService.js";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { useSiteContent } from "../../hooks/useSiteContent.js";
 import { usePageMetadata } from "../../hooks/usePageMetadata.js";
@@ -12,8 +13,17 @@ import { defaultSiteContent } from "../../../../shared/site-content.js";
 export default function HomePage() {
   const { language, setLanguage, t } = useLanguage();
   const { settings } = useSiteContent();
-  const books = useBooks();
   const { categories, getCategoryLabel } = useCategories();
+  const featuredBookIds = settings.homepage?.featuredBookIds || [];
+  const featuredBookIdsKey = featuredBookIds.join("|");
+  const [featuredBooks, setFeaturedBooks] = useState([]);
+  useEffect(() => {
+    let active = true;
+    Promise.all(featuredBookIds.map((id) => getBookById(id))).then((results) => {
+      if (active) setFeaturedBooks(results.filter(Boolean));
+    });
+    return () => { active = false; };
+  }, [featuredBookIdsKey]);
   const [category, setCategory] = useState("All");
   const [query, setQuery] = useState("");
   const [bookLanguage, setBookLanguage] = useState("");
@@ -71,10 +81,10 @@ export default function HomePage() {
       </section>
     ),
     featured: (
-      (settings.homepage?.featuredBookIds || []).map((id) => books.find((book) => book.id === id)).filter(Boolean).length ? (
+      featuredBooks.length ? (
         <section className="section" id="featured-books">
           <div className="section-head"><div className="eyebrow"><i />{t.curated}</div><h2>{t.featuredBooksWidgetHeading}</h2></div>
-          <div className="book-grid">{settings.homepage.featuredBookIds.map((id) => books.find((book) => book.id === id)).filter(Boolean).map((book) => <BookCard key={book.id} book={book} language={language} t={t} />)}</div>
+          <div className="book-grid">{featuredBooks.map((book) => <BookCard key={book.id} book={book} language={language} t={t} />)}</div>
         </section>
       ) : null
     ),
