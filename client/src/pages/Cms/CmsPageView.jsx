@@ -29,7 +29,7 @@ export default function CmsPageView() {
   usePageMetadata({
     title: page ? page.seoTitle?.[language] || page.title?.[language] || page.title?.en || "Rasbhav Books" : "",
     description: page ? page.seoDescription?.[language] || "" : "",
-    type: "article",
+    type: "website",
   });
 
 
