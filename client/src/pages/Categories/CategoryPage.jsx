@@ -17,7 +17,7 @@ const styles = `
 export default function CategoryPage() {
   const { categoryKey = "" } = useParams();
   const { language, t } = useLanguage();
-  const { categories, getCategoryLabel } = useCategories();
+  const { categories, getCategoryLabel, loaded: categoriesLoaded } = useCategories();
   const books = useBooks();
   const category = categories.find((item) => item.key === categoryKey && item.active !== false);
   const label = category ? getCategoryLabel(category.key) : "";
@@ -25,6 +25,10 @@ export default function CategoryPage() {
   const pageTitle = label ? `${label} | Rasbhav Books` : t.notFound;
   const pageDescription = label ? t.categoryPageMeta.replace("{category}", label) : t.notFound;
   usePageMetadata({ title: pageTitle, description: pageDescription, type: "website" });
+
+  if (!category && !categoriesLoaded) {
+    return <main className="category-page"><style>{styles}</style><p>{t.categoryPageLoading}</p></main>;
+  }
 
   if (!category) {
     return <main className="category-page"><style>{styles}</style><Link className="category-page-back" to="/#discover">{t.backToCatalogue}</Link><h1>{t.categoryPageNotFound}</h1><Link to="/">{t.backHome}</Link></main>;
