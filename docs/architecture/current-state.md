@@ -13,6 +13,7 @@ This file records implementation status; the complete requirements remain in the
 - Readers can request a new verification email without revealing whether an email belongs to a pending account. Login and authentication endpoints are rate-limited.
 - Signed-in readers can update display name, bio, up to 10 hobbies, and an HTTPS profile-photo URL. Photo upload/storage is not configured. Password changes and resets revoke existing sessions.
 - Guest wishlists are browser-local. Signed-in readers can sync saved catalogue books to an account-owned MongoDB wishlist.
+- Public home, book-detail, author-profile, CMS-page, and blog-post routes update localized page titles/descriptions and canonical/Open Graph/Twitter metadata in the client. Search/social crawlers that do not execute the SPA still need server-rendered route metadata; root-level sitemap/robots routing depends on the production host and remains pending.
 - Readers can write one 1–5 star review per catalogue book, edit/delete their own review, report other reviews, and follow/unfollow catalogue authors. Public review summaries omit reader email and credentials.
 - Admin-only review moderation routes and page can list reports, resolve them, and hide/restore reviews.
 - The MFA-protected admin dashboard shows aggregate account/workflow counts and safe setup readiness for database, email, MFA, R2, and ClamAV configuration. Readiness does not reveal secret values and does not claim to probe R2, email delivery, or ClamAV reachability.
@@ -38,7 +39,7 @@ This file records implementation status; the complete requirements remain in the
 
 ## Not implemented
 
-Broader platform settings, book publication to the public catalogue, account deletion/export, passkeys/WebAuthn and hardware keys, verified-purchase review labels, helpful-review voting, production email deliverability monitoring, paid reader access and reading, purchases/payments, subscriptions, royalty ledger, broader CMS features, affiliates, institutions, audiobooks, AI tools, and mobile apps.
+Broader platform settings, server-rendered SEO metadata and root-level sitemap/robots routing, book publication to the public catalogue, account deletion/export, passkeys/WebAuthn and hardware keys, verified-purchase review labels, helpful-review voting, production email deliverability monitoring, paid reader access and reading, purchases/payments, subscriptions, royalty ledger, broader CMS features, affiliates, institutions, audiobooks, AI tools, and mobile apps.
 
 ## Next phase
 

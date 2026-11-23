@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { getPublishedBlogPost } from "../../services/blogService.js";
+import { usePageMetadata } from "../../hooks/usePageMetadata.js";
 
 const styles = `
 .blog-post{max-width:850px;min-height:70vh;margin:auto;padding:64px 22px 100px}
@@ -28,22 +29,12 @@ export default function BlogPostPage() {
     return () => { active = false; };
   }, [slug]);
 
-  useEffect(() => {
-    if (!post) return undefined;
-    const oldTitle = document.title;
-    const meta = document.querySelector('meta[name="description"]');
-    const oldDescription = meta?.content || "";
-    const createdMeta = !meta;
-    const description = meta || document.createElement("meta");
-    if (createdMeta) { description.name = "description"; document.head.appendChild(description); }
-    document.title = post.seoTitle?.[language] || post.title?.[language] || post.title?.en || "Rasbhav Books";
-    description.content = post.seoDescription?.[language] || post.summary?.[language] || post.summary?.en || "";
-    return () => {
-      document.title = oldTitle;
-      if (createdMeta) description.remove();
-      else description.content = oldDescription;
-    };
-  }, [post, language]);
+  usePageMetadata({
+    title: post ? post.seoTitle?.[language] || post.title?.[language] || post.title?.en || "Rasbhav Books" : "",
+    description: post ? post.seoDescription?.[language] || post.summary?.[language] || post.summary?.en || "" : "",
+    type: "article",
+  });
+
 
   return (
     <main className="blog-post">
