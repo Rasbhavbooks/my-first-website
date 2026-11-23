@@ -94,7 +94,7 @@ export default function AdminMediaLibraryPage() {
   }
 
   async function copyUrl(asset) {
-    try { await navigator.clipboard.writeText(new URL(asset.url, window.location.origin).toString()); setNotice(t.mediaLibraryCopied); }
+    try { await navigator.clipboard.writeText(asset.url); setNotice(t.mediaLibraryCopied); }
     catch { setError(t.mediaLibraryError); }
   }
 
