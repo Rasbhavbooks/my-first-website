@@ -77,7 +77,7 @@ router.post("/logout", logoutReader);
 router.get("/profile/export", requireReader, accountExportLimiter, exportReaderAccountData);
 router.get("/profile/photo", requireReader, getReaderAvatar);
 router.put("/profile/photo", requireReader, avatarUploadLimiter, raw({ type: "*/*", limit: "5mb" }), uploadReaderAvatar);
-router.delete("/profile/photo", requireReader, deleteReaderAvatar);
+router.delete("/profile/photo", requireReader, avatarUploadLimiter, deleteReaderAvatar);
 router.get("/sessions", requireReader, sessionManagementLimiter, listReaderSessions);
 router.delete("/sessions/:sessionId", requireReader, sessionManagementLimiter, revokeReaderSession);
 router.get("/profile", requireReader, getReaderProfile);
