@@ -6,16 +6,11 @@ export async function getAdminMedia() {
 }
 
 export async function uploadAdminMedia(file, altText) {
-  const response = await fetch("/api/v1/admin/media", {
+  const query = new URLSearchParams({ altEn: altText.en, altGu: altText.gu, altHi: altText.hi });
+  const response = await fetch(`/api/v1/admin/media?${query}`, {
     method: "POST",
     credentials: "include",
-    headers: {
-      "Content-Type": file.type,
-      "X-File-Name": encodeURIComponent(file.name),
-      "X-Alt-En": altText.en,
-      "X-Alt-Gu": altText.gu,
-      "X-Alt-Hi": altText.hi,
-    },
+    headers: { "Content-Type": file.type, "X-File-Name": encodeURIComponent(file.name) },
     body: file,
   });
   const result = await response.json().catch(() => ({}));
@@ -32,12 +27,12 @@ export async function updateAdminMedia(assetId, payload) {
     method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
   });
   const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result.error?.message || "The image could not be updated.");
+  if (!response.ok) { const error = new Error(result.error?.message || "The image could not be updated."); error.code = result.error?.code; throw error; }
   return result.data.asset;
 }
 
 export async function deleteAdminMedia(assetId) {
   const response = await fetch(`/api/v1/admin/media/${encodeURIComponent(assetId)}`, { method: "DELETE", credentials: "include" });
   const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result.error?.message || "The image could not be deleted.");
+  if (!response.ok) { const error = new Error(result.error?.message || "The image could not be deleted."); error.code = result.error?.code; throw error; }
 }
