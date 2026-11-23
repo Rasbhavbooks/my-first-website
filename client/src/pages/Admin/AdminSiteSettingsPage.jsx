@@ -227,6 +227,17 @@ export default function AdminSiteSettingsPage() {
       {error && <p className="admin-site-error" role="alert">{error}</p>}
       {notice && <p className="admin-site-success" role="status">{notice}</p>}
       <section className="admin-site-panel">
+        <h2>{t.platformSettingsTitle}</h2>
+        <p className="admin-site-hint">{t.defaultLanguageHint}</p>
+        <label className="admin-site-field">{t.defaultLanguageLabel}
+          <select value={settings.platform.defaultLanguage} onChange={(event) => setSettings((current) => ({ ...current, platform: { ...current.platform, defaultLanguage: event.target.value } }))}>
+            <option value="en">English</option>
+            <option value="gu">ગુજરાતી</option>
+            <option value="hi">हिन्दी</option>
+          </select>
+        </label>
+      </section>
+      <section className="admin-site-panel">
         <h2>{t.siteAnnouncement}</h2>
         <label className="admin-site-check"><input type="checkbox" checked={settings.announcement.enabled} onChange={(event) => change("announcement", "enabled", "", event.target.checked)} />{t.siteAnnouncementEnabled}</label>
         {localizedFields(settings.announcement.text, (language, value) => setSettings((current) => ({ ...current, announcement: { ...current.announcement, text: { ...current.announcement.text, [language]: value } } })), false, 300)}
