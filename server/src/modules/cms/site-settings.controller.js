@@ -2,6 +2,7 @@ import { defaultSiteContent } from "../../../../shared/site-content.js";
 import { isDatabaseConnected } from "../../config/database.js";
 import SiteSettings from "./site-settings.model.js";
 import Book from "../books/book.model.js";
+import { invalidateMaintenanceModeCache } from "../../middleware/maintenanceMode.js";
 
 const LANGUAGES = ["en", "gu", "hi"];
 const HOME_SECTION_IDS = ["hero", "trust", "discovery", "featured", "languages", "authors", "community"];
@@ -216,6 +217,7 @@ export async function updateAdminSiteContent(request, response) {
     { $set: { ...normalized, updatedBy: request.reader._id }, $setOnInsert: { key: "global" } },
     { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true },
   ).lean();
+  invalidateMaintenanceModeCache();
   response.setHeader("Cache-Control", "no-store");
   return response.json({ data: { settings: mergeDefaults(settings) } });
 }
