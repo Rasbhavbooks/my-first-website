@@ -3,11 +3,14 @@ import { Link } from "react-router";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import {
+  addHelpfulVote,
   createBookReview,
   deleteBookReview,
   getBookReviews,
+  getMyHelpfulVotes,
   getMyBookReview,
   reportBookReview,
+  removeHelpfulVote,
   updateBookReview,
 } from "../../services/reviewService.js";
 
@@ -36,7 +39,10 @@ const styles = `
 .review-reader-name{font-size:11px;font-weight:600}.review-date{margin-top:4px;color:#81796f;font-size:9px}
 .review-stars{color:#9a7136;letter-spacing:2px;font-size:13px;white-space:nowrap}
 .review-body{margin:14px 0 0;color:#615b54;font-size:12px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}
-.review-actions{display:flex;gap:12px;margin-top:12px}
+.review-actions{display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
+.review-helpful-button{padding:0;border:0;background:transparent;color:#796747;font-size:9px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.review-helpful-button:disabled{opacity:.6;cursor:wait}
+.review-helpful-button:focus-visible{outline:2px solid #d6ae68;outline-offset:3px}
 .review-text-button{padding:0;border:0;background:transparent;color:#796747;font-size:9px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .review-report-form{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .review-report-form select,.review-report-form input{min-height:34px;padding:6px 9px;border:1px solid #d7cec0;background:#fff;font-size:10px}
@@ -52,6 +58,8 @@ export default function BookReviews({ bookId }) {
   const [rating, setRating] = useState("5");
   const [body, setBody] = useState("");
   const [reportId, setReportId] = useState("");
+  const [helpfulVoteIds, setHelpfulVoteIds] = useState([]);
+  const [helpfulBusyId, setHelpfulBusyId] = useState("");
   const [reportReason, setReportReason] = useState("spam");
   const [reportDetails, setReportDetails] = useState("");
   const [busy, setBusy] = useState(false);
@@ -61,15 +69,24 @@ export default function BookReviews({ bookId }) {
   async function loadReviews() {
     const result = await getBookReviews(bookId);
     setData(result);
+    if (!user || !result.reviews.length) {
+      setHelpfulVoteIds([]);
+      return;
+    }
+    try {
+      const votes = await getMyHelpfulVotes(bookId, result.reviews.map((review) => review.id));
+      setHelpfulVoteIds(votes.reviewIds || []);
+    } catch {
+      setHelpfulVoteIds([]);
+    }
   }
 
   useEffect(() => {
     let active = true;
-    getBookReviews(bookId)
-      .then((result) => { if (active) setData(result); })
+    loadReviews()
       .catch(() => { if (active) setError(t.reviewsLoadError); });
     return () => { active = false; };
-  }, [bookId, t.reviewsLoadError]);
+  }, [bookId, user?.id, t.reviewsLoadError]);
 
   useEffect(() => {
     let active = true;
@@ -133,6 +150,37 @@ export default function BookReviews({ bookId }) {
       setError(t.reviewActionError);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleHelpfulVote(review) {
+    if (!user || helpfulBusyId) return;
+    const wasHelpful = helpfulVoteIds.includes(review.id);
+    setHelpfulBusyId(review.id);
+    setNotice("");
+    setError("");
+    try {
+      const result = wasHelpful
+        ? await removeHelpfulVote(bookId, review.id)
+        : await addHelpfulVote(bookId, review.id);
+      setHelpfulVoteIds((current) => wasHelpful
+        ? current.filter((id) => id !== review.id)
+        : [...new Set([...current, review.id])]);
+      setData((current) => ({
+        ...current,
+        reviews: current.reviews.map((item) => item.id === review.id
+          ? { ...item, helpfulCount: result.helpfulCount }
+          : item),
+      }));
+    } catch (requestError) {
+      if (requestError.code === "HELPFUL_VOTE_EXISTS") {
+        setHelpfulVoteIds((current) => current.includes(review.id) ? current : [...current, review.id]);
+        setNotice(t.helpfulAlready);
+      } else {
+        setError(requestError.code === "CANNOT_VOTE_OWN_REVIEW" ? t.helpfulOwnReview : t.helpfulError);
+      }
+    } finally {
+      setHelpfulBusyId("");
     }
   }
 
@@ -204,6 +252,13 @@ export default function BookReviews({ bookId }) {
               <p className="review-body">{review.body}</p>
               {user && myReview?.id !== review.id && (
                 <div className="review-actions">
+                  <button
+                    className="review-helpful-button"
+                    type="button"
+                    aria-pressed={helpfulVoteIds.includes(review.id)}
+                    disabled={helpfulBusyId === review.id}
+                    onClick={() => handleHelpfulVote(review)}
+                  >{helpfulVoteIds.includes(review.id) ? t.helpfulMarked : t.helpful} · {review.helpfulCount || 0}</button>
                   <button className="review-text-button" type="button" onClick={() => setReportId(reportId === review.id ? "" : review.id)}>{t.reportReview}</button>
                 </div>
               )}
