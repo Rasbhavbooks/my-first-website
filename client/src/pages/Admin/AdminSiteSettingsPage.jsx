@@ -132,6 +132,20 @@ export default function AdminSiteSettingsPage() {
     }));
   }
 
+  function updateCommunityLink(index, update) {
+    setSettings((current) => ({ ...current, footer: { ...current.footer, communityLinks: current.footer.communityLinks.map((item, itemIndex) => itemIndex === index ? update(item) : item) } }));
+  }
+
+  function moveCommunityLink(index, offset) {
+    setSettings((current) => {
+      const communityLinks = [...current.footer.communityLinks];
+      const destination = index + offset;
+      if (destination < 0 || destination >= communityLinks.length) return current;
+      [communityLinks[index], communityLinks[destination]] = [communityLinks[destination], communityLinks[index]];
+      return { ...current, footer: { ...current.footer, communityLinks } };
+    });
+  }
+
   function moveHomeSection(index, offset) {
     setSettings((current) => {
       const sections = [...current.homepage.sections];
@@ -242,6 +256,22 @@ export default function AdminSiteSettingsPage() {
           </div>
         </div>)}
         <button className="admin-site-add" type="button" disabled={settings.footer.browseLinks.length >= 8} onClick={() => setSettings((current) => ({ ...current, footer: { ...current.footer, browseLinks: [...current.footer.browseLinks, { enabled: true, href: "/", label: { en: "New link", gu: "નવી લિંક", hi: "नई कड़ी" } }] } }))}>{t.addNavigationItem}</button>
+
+        <h3>{t.footerCommunityTitleLabel}</h3>
+        {localizedFields(settings.footer.communityTitle, (language, value) => setSettings((current) => ({ ...current, footer: { ...current.footer, communityTitle: { ...current.footer.communityTitle, [language]: value } } })), false, 120)}
+        <p className="admin-site-hint">{t.footerCommunityColumnHint}</p>
+        <h3>{t.footerCommunityLinksLabel}</h3>
+        {settings.footer.communityLinks.map((item, index) => <div className="admin-site-menu-item" key={`community-${index}`}>
+          <label className="admin-site-check"><input type="checkbox" checked={item.enabled} onChange={(event) => updateCommunityLink(index, (current) => ({ ...current, enabled: event.target.checked }))} />{t.siteNavigationEnabled}</label>
+          {localizedFields(item.label, (language, value) => updateCommunityLink(index, (current) => ({ ...current, label: { ...current.label, [language]: value } })), false, 80)}
+          <label className="admin-site-field">{t.siteNavigationHref}<input maxLength={300} value={item.href} onChange={(event) => updateCommunityLink(index, (current) => ({ ...current, href: event.target.value }))} /></label>
+          <div className="admin-site-item-actions">
+            <button type="button" disabled={index === 0} onClick={() => moveCommunityLink(index, -1)}>{t.moveNavigationUp}</button>
+            <button type="button" disabled={index === settings.footer.communityLinks.length - 1} onClick={() => moveCommunityLink(index, 1)}>{t.moveNavigationDown}</button>
+            {settings.footer.communityLinks.length > 1 && <button type="button" onClick={() => setSettings((current) => ({ ...current, footer: { ...current.footer, communityLinks: current.footer.communityLinks.filter((_link, linkIndex) => linkIndex !== index) } }))}>{t.removeNavigationItem}</button>}
+          </div>
+        </div>)}
+        <button className="admin-site-add" type="button" disabled={settings.footer.communityLinks.length >= 8} onClick={() => setSettings((current) => ({ ...current, footer: { ...current.footer, communityLinks: [...current.footer.communityLinks, { enabled: true, href: "/", label: { en: "New link", gu: "નવી લિંક", hi: "नई कड़ी" } }] } }))}>{t.addNavigationItem}</button>
       </section>
       <section className="admin-site-panel">
         <h2>{t.homepageSections}</h2>
