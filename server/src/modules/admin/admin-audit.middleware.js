@@ -28,7 +28,9 @@ export function recordAdminActivity(request, response, next) {
     void AdminAuditEvent.create({
       actorId,
       method: request.method,
-      path: sanitizePath(request.originalUrl),
+      path: sanitizePath(request.route?.path
+        ? `${request.baseUrl}${Array.isArray(request.route.path) ? request.route.path[0] : request.route.path}`
+        : request.originalUrl),
       statusCode: response.statusCode,
     }).catch((error) => {
       console.error("Could not record an administrator activity event.", error);
