@@ -33,6 +33,14 @@ export default function BookDetailsPage() {
     title: book ? `${title} — ${book.author} | Rasbhav Books` : "",
     description: book?.description?.[language] || book?.description?.en || "",
     type: "book",
+    structuredData: book ? {
+      "@context": "https://schema.org",
+      "@type": "Book",
+      name: title,
+      description: book.description?.[language] || book.description?.en || "",
+      author: { "@type": "Person", name: book.author },
+      url: typeof window === "undefined" ? "" : window.location.href.split("?")[0],
+    } : null,
   });
 
   if (loading) return <main className="detail-state" aria-live="polite">{t.loading}</main>;
