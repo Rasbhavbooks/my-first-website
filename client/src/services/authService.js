@@ -66,3 +66,15 @@ export function resetReaderPassword(payload) {
 export function resendReaderVerification(email) {
   return postAuthRequest("/api/v1/auth/resend-verification", { email });
 }
+
+export function getAdminMfaStatus() {
+  return postAuthRequest("/api/v1/admin/mfa/status", undefined, "GET");
+}
+
+export function startAdminMfaSetup(password) {
+  return postAuthRequest("/api/v1/admin/mfa/setup", { password });
+}
+
+export function confirmAdminMfaSetup(code) {
+  return postAuthRequest("/api/v1/admin/mfa/confirm", { code });
+}
