@@ -25,11 +25,11 @@ export async function isClamavReachable() {
       resolve(reachable);
     }
 
-    socket.once("connect", () => socket.write(Buffer.from("zPING\\0")));
+    socket.once("connect", () => socket.write(Buffer.from("zPING\0")));
     socket.on("data", (chunk) => {
       response += chunk.toString("utf8");
       if (response.length > 64) return finish(false);
-      if (!response.includes("\\0")) return;
+      if (!response.includes("\0")) return;
       finish(response.slice(0, -1) === "PONG");
     });
     socket.once("error", () => finish(false));
