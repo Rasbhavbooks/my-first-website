@@ -8,6 +8,7 @@ import { useLanguage } from "../../hooks/useLanguage.js";
 import { useCategories } from "../../hooks/useCategories.js";
 import { getBookById } from "../../services/bookService.js";
 import { usePageMetadata } from "../../hooks/usePageMetadata.js";
+import { formatInr } from "../../utils/formatCurrency.js";
 
 export default function BookDetailsPage() {
   const { bookId } = useParams();
@@ -59,7 +60,7 @@ export default function BookDetailsPage() {
           <h1>{title}</h1>
           <p className="detail-author">{t.by} <strong>{book.author}</strong></p>
           <AuthorFollowButton authorName={book.author} />
-          <div className="detail-price">₹{book.price}</div>
+          <div className="detail-price">{formatInr(book.price, language)}</div>
           <p className="detail-description">{t.descriptionText[language]}</p>
           <dl className="detail-facts">
             <div><dt>{t.languageLabel}</dt><dd>{book.language}</dd></div>

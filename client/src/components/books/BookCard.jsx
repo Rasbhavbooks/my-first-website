@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { getBookTitle } from "../../data/books.js";
 import { useWishlist } from "../../context/WishlistContext.jsx";
 import { useCategories } from "../../hooks/useCategories.js";
+import { formatInr } from "../../utils/formatCurrency.js";
 
 export default function BookCard({ book, language, t }) {
   const title = getBookTitle(book, language);
@@ -19,7 +20,7 @@ export default function BookCard({ book, language, t }) {
         <div className="book-meta">
           <div className="book-labels"><span>{getCategoryLabel(book.category)}</span><span>{book.language}</span></div>
           <h3>{title}</h3><p>{t.by} {book.author}</p>
-          <div className="book-bottom"><strong>₹{book.price}</strong><span className="icon-button" aria-hidden="true"><ArrowUpRight size={17} /></span></div>
+          <div className="book-bottom"><strong>{formatInr(book.price, language)}</strong><span className="icon-button" aria-hidden="true"><ArrowUpRight size={17} /></span></div>
         </div>
       </Link>
       <button
