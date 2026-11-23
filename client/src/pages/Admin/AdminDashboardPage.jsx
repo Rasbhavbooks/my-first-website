@@ -19,9 +19,12 @@ const styles = `
 .admin-readiness-card{display:grid;gap:8px;padding:16px;border:1px solid #e4ddd1;background:#fffdfa}
 .admin-readiness-card strong{font:500 18px var(--serif);color:#30252c}
 .admin-readiness-card p{margin:0;color:#77716a;font-size:10px;line-height:1.7}
+.admin-readiness-action{margin-top:14px;padding:10px 14px;border:1px solid #a8844b;background:#fffdfa;color:#30252c;font:inherit;font-size:12px;cursor:pointer}
+.admin-readiness-action:disabled{opacity:.55;cursor:not-allowed}
 .admin-readiness-status{font-size:10px;font-weight:700}
 .admin-readiness-status[data-state="configured"],.admin-readiness-status[data-state="connected"]{color:#28724f}
-.admin-readiness-status[data-state="missing"]{color:#9b4c35}
+.admin-readiness-status[data-state="missing"],.admin-readiness-status[data-state="unavailable"]{color:#9b4c35}
+.admin-readiness-status[data-state="not-checked"]{color:#796747}
 .admin-readiness-status[data-state="disabled"]{color:#796747}
 .admin-home-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:28px}
 .admin-home-card{display:flex;min-height:150px;flex-direction:column;justify-content:space-between;padding:22px;border:1px solid #e4ddd1;background:#fffdfa;color:#30252c;text-decoration:none;transition:border-color .2s,transform .2s}
@@ -36,6 +39,7 @@ export default function AdminDashboardPage() {
   const [statsError, setStatsError] = useState("");
   const [readiness, setReadiness] = useState(null);
   const [readinessError, setReadinessError] = useState("");
+  const [r2Checking, setR2Checking] = useState(false);
   useEffect(() => {
     let active = true;
     if (user?.role !== "admin") return () => { active = false; };
@@ -53,6 +57,19 @@ export default function AdminDashboardPage() {
       .catch(() => { if (active) setReadinessError(t.adminReadinessError); });
     return () => { active = false; };
   }, [user?.id, user?.role, t.adminReadinessError]);
+
+  async function checkR2Storage() {
+    setR2Checking(true);
+    try {
+      const result = await getAdminPlatformReadiness({ probeR2: true });
+      setReadiness(result);
+      setReadinessError("");
+    } catch {
+      setReadinessError(t.adminReadinessError);
+    } finally {
+      setR2Checking(false);
+    }
+  }
 
   if (loading) return <main className="admin-home"><p>{t.loadingAccount}</p></main>;
   if (!user) return <Navigate to="/admin/login" replace />;
@@ -106,18 +123,26 @@ export default function AdminDashboardPage() {
             ["emailConfigured", t.adminReadinessEmail, t.adminReadinessEmailHint, "configured"],
             ["adminMfaKeyConfigured", t.adminReadinessMfa, t.adminReadinessMfaHint, "configured"],
             ["r2CredentialsConfigured", t.adminReadinessStorage, t.adminReadinessStorageHint, "configured"],
+            ["r2BucketReachable", t.adminReadinessBucket, t.adminReadinessBucketHint, "connected"],
             ["clamavHostConfigured", t.adminReadinessScannerConfig, t.adminReadinessScannerConfigHint, "configured"],
             ["clamavReachable", t.adminReadinessScanner, t.adminReadinessScannerHint, "connected"],
             ["publishingEnabled", t.adminReadinessPublishing, t.adminReadinessPublishingHint, "configured"],
           ].map(([key, label, hint, configuredState]) => {
             const enabled = readiness[key];
-            const state = key === "publishingEnabled" && !enabled ? "disabled" : enabled ? configuredState : "missing";
-            const stateLabel = state === "disabled" ? t.adminReadinessDisabled : state === "missing" ? t.adminReadinessMissing : state === "connected" ? t.adminReadinessConnected : t.adminReadinessConfigured;
+            const connectionCheck = key === "clamavReachable" || key === "r2BucketReachable";
+            const state = key === "publishingEnabled" && !enabled ? "disabled" : enabled === null ? "not-checked" : connectionCheck ? enabled ? "connected" : "unavailable" : enabled ? configuredState : "missing";
+            const stateLabel = state === "disabled" ? t.adminReadinessDisabled : state === "not-checked" ? t.adminReadinessNotChecked : state === "unavailable" ? t.adminReadinessUnavailable : state === "missing" ? t.adminReadinessMissing : state === "connected" ? t.adminReadinessConnected : t.adminReadinessConfigured;
             return <article className="admin-readiness-card" key={key}>
               <strong>{label}</strong><span className="admin-readiness-status" data-state={state}>{stateLabel}</span><p>{hint}</p>
             </article>;
           })}
         </div>}
+        {readiness && <button
+          className="admin-readiness-action"
+          type="button"
+          onClick={checkR2Storage}
+          disabled={r2Checking || !readiness.r2CredentialsConfigured}
+        >{r2Checking ? t.adminReadinessChecking : t.adminReadinessCheckR2}</button>}
       </section>
       <div className="admin-home-grid">
         {sections.map(([label, path]) => <Link className="admin-home-card" key={path} to={path}><strong>{label}</strong><span>{t.openAdminSection} ↗</span></Link>)}

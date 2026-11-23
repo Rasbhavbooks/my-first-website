@@ -15,7 +15,7 @@ export async function getAdminDashboardStats() {
   return result.stats;
 }
 
-export async function getAdminPlatformReadiness() {
-  const result = await adminDashboardRequest("/readiness");
+export async function getAdminPlatformReadiness({ probeR2 = false } = {}) {
+  const result = await adminDashboardRequest(`/readiness${probeR2 ? "?probeR2=true" : ""}`);
   return result.readiness;
 }
