@@ -321,6 +321,12 @@ export default function AdminSiteSettingsPage() {
           {book.title?.[language] || book.title?.en} — {book.author}
         </label>)}
 
+        <h2>{t.homepageSeoSettings}</h2>
+        <p className="admin-site-hint">{t.homepageSeoHint}</p>
+        <h3>{t.homepageSeoTitle}</h3>
+        {localizedFields(settings.homepage.seo.title, (language, value) => setSettings((current) => ({ ...current, homepage: { ...current.homepage, seo: { ...current.homepage.seo, title: { ...current.homepage.seo.title, [language]: value } } } })), false, 70)}
+        <h3>{t.homepageSeoDescription}</h3>
+        {localizedFields(settings.homepage.seo.description, (language, value) => setSettings((current) => ({ ...current, homepage: { ...current.homepage, seo: { ...current.homepage.seo, description: { ...current.homepage.seo.description, [language]: value } } } })), true, 200)}
         <h2>{t.siteHomepageHero}</h2>
         {[
           ["eyebrow", t.siteHeroEyebrow, 150, false],

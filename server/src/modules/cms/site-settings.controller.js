@@ -82,6 +82,7 @@ function normalizeHomeSections(value) {
 function normalizeSettings(body) {
   const announcement = body?.announcement;
   const hero = body?.homepage?.hero;
+  const seo = body?.homepage?.seo;
   const sections = normalizeHomeSections(body?.homepage?.sections);
   const featuredBookIds = body?.homepage?.featuredBookIds;
   const validFeaturedBookIds = Array.isArray(featuredBookIds) && featuredBookIds.length <= 4
@@ -102,6 +103,10 @@ function normalizeSettings(body) {
     linkLabel: localizedGroup(announcement.linkLabel, 80, true),
     href: announcement.href.trim(),
   };
+  const cleanSeo = {
+    title: localizedGroup(seo?.title, 70),
+    description: localizedGroup(seo?.description, 200),
+  };
   const cleanHero = {
     eyebrow: localizedGroup(hero?.eyebrow, 150),
     title: localizedGroup(hero?.title, 120),
@@ -110,12 +115,13 @@ function normalizeSettings(body) {
     secondaryCta: localizedGroup(hero?.secondaryCta, 80),
   };
   if (Object.values(cleanAnnouncement).some((value) => value === null)
+    || Object.values(cleanSeo).some((value) => value === null)
     || Object.values(cleanHero).some((value) => value === null)) return null;
   return {
     announcement: cleanAnnouncement,
     navigation,
     footer: { tagline, browseLinks, communityTitle, communityLinks },
-    homepage: { hero: cleanHero, sections, featuredBookIds: validFeaturedBookIds },
+    homepage: { hero: cleanHero, seo: cleanSeo, sections, featuredBookIds: validFeaturedBookIds },
   };
 }
 
@@ -146,6 +152,12 @@ function mergeDefaults(settings) {
       featuredBookIds: Array.isArray(settings?.homepage?.featuredBookIds) && settings.homepage.featuredBookIds.length <= 4
         ? settings.homepage.featuredBookIds
         : DEFAULT_SETTINGS.homepage.featuredBookIds,
+      seo: {
+        ...DEFAULT_SETTINGS.homepage.seo,
+        ...settings?.homepage?.seo,
+        title: { ...DEFAULT_SETTINGS.homepage.seo.title, ...settings?.homepage?.seo?.title },
+        description: { ...DEFAULT_SETTINGS.homepage.seo.description, ...settings?.homepage?.seo?.description },
+      },
       hero: { ...DEFAULT_SETTINGS.homepage.hero, ...settings?.homepage?.hero },
     },
   };

@@ -39,6 +39,18 @@ export const defaultSiteContent = {
       { id: "community", enabled: true },
     ],
     featuredBookIds: [],
+    seo: {
+      title: {
+        en: "Rasbhav Books — Every book has a soul",
+        gu: "રसभવ બુક્સ — દરેક પુસ્તકમાં એક આત્મા છે",
+        hi: "रसभव बुक्स — हर किताब में एक आत्मा है",
+      },
+      description: {
+        en: "Discover Indian stories and independent authors at Rasbhav Books.",
+        gu: "રसभવ બુક્સ પર ભારતીય વાર્તાઓ અને સ્વતંત્ર લેખકોને શોધો.",
+        hi: "रसभव बुक्स पर भारतीय कहानियाँ और स्वतंत्र लेखक खोजें।",
+      },
+    },
     hero: {
       eyebrow: {
         en: "Stories rooted in India, shared with the world",
