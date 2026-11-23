@@ -75,8 +75,8 @@ export default function AdminMediaLibraryPage() {
       const updated = await updateAdminMedia(selectedId, { altText, published: !asset.published });
       setAssets((current) => current.map((item) => item.id === updated.id ? updated : item));
       setNotice(t.mediaLibrarySaved);
-    } catch {
-      setError(t.mediaLibraryError);
+    } catch (requestError) {
+      setError(requestError.code === "MEDIA_IN_USE" ? t.mediaLibraryInUse : t.mediaLibraryError);
     } finally { setBusy(false); }
   }
 
@@ -88,8 +88,8 @@ export default function AdminMediaLibraryPage() {
       setAssets((current) => current.filter((item) => item.id !== asset.id));
       if (selectedId === asset.id) setSelectedId("");
       setNotice(t.mediaLibraryDeleted);
-    } catch {
-      setError(t.mediaLibraryError);
+    } catch (requestError) {
+      setError(requestError.code === "MEDIA_IN_USE" ? t.mediaLibraryInUse : t.mediaLibraryError);
     } finally { setBusy(false); }
   }
 
