@@ -29,7 +29,7 @@ function safeUser(user) {
     displayName: user.displayName,
     email: user.email,
     avatarUrl: user.avatarUrl || "",
-    avatarPhotoUrl: user.avatarAssetKey ? "/api/v1/auth/profile/photo" : "",
+    avatarPhotoUrl: user.avatarAssetKey ? `/api/v1/auth/profile/photo?v=${new Date(user.avatarUploadedAt || 0).getTime()}` : "",
     bio: user.bio || "",
     hobbies: Array.isArray(user.hobbies) ? user.hobbies : [],
     role: user.role,
