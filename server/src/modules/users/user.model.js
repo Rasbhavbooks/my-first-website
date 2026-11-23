@@ -86,7 +86,11 @@ const userSchema = new mongoose.Schema(
     versionKey: false,
     toJSON: {
       transform(_document, result) {
-        delete result.passwordHash;\n        delete result.avatarAssetKey;\n        delete result.avatarAssetContentType;\n        delete result.avatarAssetSize;\n        delete result.avatarUploadedAt;
+        delete result.passwordHash;
+        delete result.avatarAssetKey;
+        delete result.avatarAssetContentType;
+        delete result.avatarAssetSize;
+        delete result.avatarUploadedAt;
         return result;
       },
     },
