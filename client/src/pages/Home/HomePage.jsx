@@ -178,7 +178,7 @@ export default function HomePage() {
               onFocus={() => { setShowSearchSuggestions(true); if (!query.trim()) void loadPopularSearchTrends(); }}
               onBlur={() => window.setTimeout(() => setShowSearchSuggestions(false), 120)}
               onKeyDown={(event) => {
-                if (event.key === "Enter") { event.preventDefault(); const term = event.currentTarget.value; rememberSearch(term); if (searchAnalyticsConsent === true) void recordSearchTrend(term); setShowSearchSuggestions(false); }
+                if (event.key === "Enter") { event.preventDefault(); const term = event.currentTarget.value; rememberSearch(term); if (term.trim() && searchAnalyticsConsent === true) void recordSearchTrend(term); setShowSearchSuggestions(false); }
                 if (event.key === "Escape") setShowSearchSuggestions(false);
               }}
               onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder={t.search} /></label>
