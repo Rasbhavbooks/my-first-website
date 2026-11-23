@@ -7,6 +7,7 @@ import ReviewReport from "../books/review-report.model.js";
 import { env } from "../../config/env.js";
 import { isDatabaseConnected } from "../../config/database.js";
 import { isClamavReachable } from "../../services/clamav.service.js";
+import { isR2BucketReachable } from "../../services/r2-storage.service.js";
 
 export async function getAdminDashboardStats(_request, response) {
   const [
@@ -44,8 +45,11 @@ export async function getAdminDashboardStats(_request, response) {
 }
 
 
-export async function getAdminPlatformReadiness(_request, response) {
-  const clamavReachable = await isClamavReachable();
+export async function getAdminPlatformReadiness(request, response) {
+  const [clamavReachable, r2BucketReachable] = await Promise.all([
+    isClamavReachable(),
+    request.query.probeR2 === "true" ? isR2BucketReachable() : null,
+  ]);
   response.setHeader("Cache-Control", "no-store");
   return response.json({
     data: {
@@ -54,6 +58,7 @@ export async function getAdminPlatformReadiness(_request, response) {
         emailConfigured: env.emailConfigured,
         adminMfaKeyConfigured: env.adminMfaConfigured,
         r2CredentialsConfigured: env.r2Configured,
+        r2BucketReachable,
         clamavHostConfigured: env.clamavConfigured,
         clamavReachable,
         publishingEnabled: false,
