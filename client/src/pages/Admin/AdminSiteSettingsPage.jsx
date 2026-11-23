@@ -4,6 +4,7 @@ import { defaultSiteContent } from "../../../../shared/site-content.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useSiteContent } from "../../hooks/useSiteContent.js";
 import { useLanguage } from "../../hooks/useLanguage.js";
+import { useBooks } from "../../hooks/useBooks.js";
 import { getAdminSiteContent, updateAdminSiteContent } from "../../services/siteContentService.js";
 
 const LANGUAGES = ["en", "gu", "hi"];
@@ -31,7 +32,8 @@ const styles = `
 
 export default function AdminSiteSettingsPage() {
   const { user, loading } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const catalogueBooks = useBooks();
   const { refreshSiteContent } = useSiteContent();
   const [settings, setSettings] = useState(defaultSiteContent);
   const [busy, setBusy] = useState(false);
@@ -166,6 +168,17 @@ export default function AdminSiteSettingsPage() {
     }));
   }
 
+  function toggleFeaturedBook(bookId) {
+    setSettings((current) => {
+      const selected = current.homepage.featuredBookIds || [];
+      if (selected.includes(bookId)) {
+        return { ...current, homepage: { ...current.homepage, featuredBookIds: selected.filter((id) => id !== bookId) } };
+      }
+      if (selected.length >= 4) return current;
+      return { ...current, homepage: { ...current.homepage, featuredBookIds: [...selected, bookId] } };
+    });
+  }
+
   function updateCustomHomeSection(sectionId, update) {
     setSettings((current) => ({ ...current, homepage: { ...current.homepage, sections: current.homepage.sections.map((section) => section.id === sectionId ? update(section) : section) } }));
   }
@@ -298,6 +311,16 @@ export default function AdminSiteSettingsPage() {
           </>}
         </div>)}
         <button className="admin-site-add" type="button" disabled={settings.homepage.sections.filter((section) => section.id.startsWith("custom-")).length >= 4} onClick={addCustomHomeSection}>{t.addCustomHomepageSection}</button>
+        <h3>{t.featuredBooksWidgetTitle}</h3>
+        <p className="admin-site-hint">{t.featuredBooksWidgetHint}</p>
+        <p className="admin-site-hint">{(settings.homepage.featuredBookIds || []).length}/4 {t.featuredBooksWidgetMax}</p>
+        {catalogueBooks.map((book) => <label className="admin-site-check" key={book.id}>
+          <input type="checkbox" checked={(settings.homepage.featuredBookIds || []).includes(book.id)}
+            disabled={!(settings.homepage.featuredBookIds || []).includes(book.id) && (settings.homepage.featuredBookIds || []).length >= 4}
+            onChange={() => toggleFeaturedBook(book.id)} />
+          {book.title?.[language] || book.title?.en} — {book.author}
+        </label>)}
+
         <h2>{t.siteHomepageHero}</h2>
         {[
           ["eyebrow", t.siteHeroEyebrow, 150, false],
