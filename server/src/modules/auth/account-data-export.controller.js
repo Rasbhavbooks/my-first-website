@@ -48,7 +48,7 @@ export async function exportReaderAccountData(request, response) {
     AuthorProfile.findOne({ userId })
       .select("slug authorName catalogueAuthorName biography writingLanguages genres writingSampleUrl websiteUrl profilePhotoUrl coverImageUrl featuredBookIds status createdAt updatedAt -_id").lean(),
     AuthorBook.find({ authorId: userId })
-      .select("authorName title description language category price status adminNote assets.cover.fileName assets.cover.contentType assets.cover.size assets.cover.scanStatus assets.cover.uploadedAt assets.manuscript.fileName assets.manuscript.contentType assets.manuscript.size assets.manuscript.scanStatus assets.manuscript.uploadedAt submittedAt reviewedAt createdAt updatedAt").sort({ createdAt: 1 }).lean(),
+      .select("authorName title description isbn language category price status adminNote assets.cover.fileName assets.cover.contentType assets.cover.size assets.cover.scanStatus assets.cover.uploadedAt assets.manuscript.fileName assets.manuscript.contentType assets.manuscript.size assets.manuscript.scanStatus assets.manuscript.uploadedAt submittedAt reviewedAt createdAt updatedAt").sort({ createdAt: 1 }).lean(),
     AuthorBookChapter.find({ authorId: userId })
       .select("bookId title content order createdAt updatedAt -_id").sort({ bookId: 1, order: 1, createdAt: 1 }).lean(),
   ]);
@@ -82,6 +82,7 @@ export async function exportReaderAccountData(request, response) {
         authorName: book.authorName,
         title: book.title,
         description: book.description,
+        isbn: book.isbn || "",
         language: book.language,
         category: book.category,
         plannedPriceInr: book.price,
