@@ -109,7 +109,13 @@ export default function HomePage() {
   return (
     <main>
       {sections.filter((section) => section.enabled).map((section) => (
-        <Fragment key={section.id}>{sectionContent[section.id] || null}</Fragment>
+        <Fragment key={section.id}>{section.id.startsWith("custom-") ? (
+          <section className="section custom-home-section" id={section.id}>
+            <div className="section-head"><div className="eyebrow"><i />{t.curated}</div><h2>{section.title?.[language] || section.title?.en}</h2></div>
+            {section.description?.[language] && <p>{section.description[language]}</p>}
+            {section.linkLabel?.[language] && section.href && <a className="text-link" href={section.href}>{section.linkLabel[language]}<ArrowUpRight size={16} /></a>}
+          </section>
+        ) : sectionContent[section.id] || null}</Fragment>
       ))}
     </main>
   );
