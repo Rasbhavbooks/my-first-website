@@ -7,10 +7,12 @@ const CategoryContext = createContext(null);
 export function CategoryProvider({ children }) {
   const { language, t } = useLanguage();
   const [categories, setCategories] = useState([{ key: "All", labels: {} }]);
+  const [loaded, setLoaded] = useState(false);
 
   const refreshCategories = useCallback(async () => {
     const result = await getCategories();
     setCategories(result);
+    setLoaded(true);
     return result;
   }, []);
 
@@ -22,7 +24,7 @@ export function CategoryProvider({ children }) {
     return category?.labels?.[language] || t.categories[key] || key;
   }, [categories, language, t.categories]);
 
-  const value = useMemo(() => ({ categories, refreshCategories, getCategoryLabel }), [categories, refreshCategories, getCategoryLabel]);
+  const value = useMemo(() => ({ categories, loaded, refreshCategories, getCategoryLabel }), [categories, loaded, refreshCategories, getCategoryLabel]);
   return createElement(CategoryContext.Provider, { value }, children);
 }
 
