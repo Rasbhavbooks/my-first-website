@@ -100,7 +100,9 @@ function normalizeSettings(body) {
   const browseLinks = normalizeLinks(body?.footer?.browseLinks);
   const communityTitle = localizedGroup(body?.footer?.communityTitle, 120);
   const communityLinks = normalizeLinks(body?.footer?.communityLinks);
+  const siteName = typeof platform?.siteName === "string" ? platform.siteName.trim() : "";
   if (!platform || !["en", "gu", "hi"].includes(platform.defaultLanguage)
+    || siteName.length < 2 || siteName.length > 80
     || !isValidAuthorUploadLimits(uploads)
     || !maintenance || typeof maintenance.enabled !== "boolean"
     || !announcement || typeof announcement.enabled !== "boolean" || !validHref(announcement.href)
@@ -131,7 +133,7 @@ function normalizeSettings(body) {
     || Object.values(cleanSeo).some((value) => value === null)
     || Object.values(cleanHero).some((value) => value === null)) return null;
   return {
-    platform: { defaultLanguage: platform.defaultLanguage },
+    platform: { defaultLanguage: platform.defaultLanguage, siteName },
     uploads: { coverMaxMb: uploads.coverMaxMb, manuscriptMaxMb: uploads.manuscriptMaxMb },
     maintenance: cleanMaintenance,
     announcement: cleanAnnouncement,
