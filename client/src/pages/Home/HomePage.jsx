@@ -16,8 +16,10 @@ export default function HomePage() {
   const { categories, getCategoryLabel } = useCategories();
   const [category, setCategory] = useState("All");
   const [query, setQuery] = useState("");
+  const [bookLanguage, setBookLanguage] = useState("");
+  const [sort, setSort] = useState("featured");
   const [subscribed, setSubscribed] = useState(false);
-  const visibleBooks = useFilteredBooks(books, { category, query, language });
+  const visibleBooks = useFilteredBooks(books, { category, query, language, bookLanguage, sort });
   const hero = settings.homepage?.hero || {};
   usePageMetadata({
     title: settings.homepage?.seo?.title?.[language] || "",
@@ -83,6 +85,19 @@ export default function HomePage() {
         </div>
         <div className="catalog-tools">
           <label className="search"><Search size={17} /><span className="sr-only">{t.search}</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t.search} /></label>
+          <div className="catalog-refinements">
+            <label className="catalog-refinement"><span>{t.bookLanguageFilter}</span><select value={bookLanguage} onChange={(event) => setBookLanguage(event.target.value)}>
+              <option value="">{t.allLanguages}</option>
+              <option value="Gujarati">{t.gujarati}</option>
+              <option value="Hindi">{t.hindi}</option>
+              <option value="English">{t.english}</option>
+            </select></label>
+            <label className="catalog-refinement"><span>{t.sortBooks}</span><select value={sort} onChange={(event) => setSort(event.target.value)}>
+              <option value="featured">{t.sortFeatured}</option>
+              <option value="title">{t.sortTitle}</option>
+              <option value="author">{t.sortAuthor}</option>
+            </select></label>
+          </div>
           <div className="category-list" id="categories" aria-label={t.filter}>
             {categories.map(({ key }) => <button key={key} className={category === key ? "category active" : "category"} onClick={() => setCategory(key)}>{getCategoryLabel(key)}</button>)}
           </div>
