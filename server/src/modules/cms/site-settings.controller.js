@@ -102,7 +102,7 @@ function normalizeSettings(body) {
   const communityLinks = normalizeLinks(body?.footer?.communityLinks);
   const siteName = typeof platform?.siteName === "string" ? platform.siteName.trim() : "";
   const supportEmail = typeof platform?.supportEmail === "string" ? platform.supportEmail.trim().toLowerCase() : "";
-  const validSupportEmail = supportEmail.length <= 254 && /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(supportEmail);
+  const validSupportEmail = supportEmail.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(supportEmail);
   if (!platform || !["en", "gu", "hi"].includes(platform.defaultLanguage)
     || siteName.length < 2 || siteName.length > 80 || !validSupportEmail
     || !isValidAuthorUploadLimits(uploads)
