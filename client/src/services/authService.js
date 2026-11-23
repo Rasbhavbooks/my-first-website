@@ -125,3 +125,39 @@ export async function revokeReaderSession(sessionId) {
   }
   return result.data;
 }
+
+
+export async function uploadReaderAvatar(file) {
+  const response = await fetch("/api/v1/auth/profile/photo", {
+    method: "PUT",
+    credentials: "include",
+    cache: "no-store",
+    headers: { "Content-Type": file.type, Accept: "application/json" },
+    body: file,
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(result?.error?.message || "Could not upload this profile photo.");
+    error.code = result?.error?.code || "REQUEST_FAILED";
+    error.status = response.status;
+    throw error;
+  }
+  return result.data;
+}
+
+export async function removeReaderAvatar() {
+  const response = await fetch("/api/v1/auth/profile/photo", {
+    method: "DELETE",
+    credentials: "include",
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(result?.error?.message || "Could not remove this profile photo.");
+    error.code = result?.error?.code || "REQUEST_FAILED";
+    error.status = response.status;
+    throw error;
+  }
+  return result.data;
+}

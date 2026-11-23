@@ -1,5 +1,5 @@
 import { rateLimit } from "express-rate-limit";
-import { Router } from "express";
+import { raw, Router } from "express";
 import {
   changeReaderPassword,
   getReaderProfile,
@@ -16,6 +16,7 @@ import {
 import { requireReader } from "./auth.middleware.js";
 import { exportReaderAccountData } from "./account-data-export.controller.js";
 import { listReaderSessions, revokeReaderSession } from "./reader-sessions.controller.js";
+import { deleteReaderAvatar, getReaderAvatar, uploadReaderAvatar } from "./reader-avatar.controller.js";
 
 const router = Router();
 const registrationLimiter = rateLimit({
@@ -54,6 +55,12 @@ const sessionManagementLimiter = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
 });
+const avatarUploadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+});
 const accountExportLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   limit: 3,
@@ -68,6 +75,9 @@ router.post("/login", loginLimiter, loginReader);
 router.get("/session", getReaderSession);
 router.post("/logout", logoutReader);
 router.get("/profile/export", requireReader, accountExportLimiter, exportReaderAccountData);
+router.get("/profile/photo", requireReader, getReaderAvatar);
+router.put("/profile/photo", requireReader, avatarUploadLimiter, raw({ type: "*/*", limit: "5mb" }), uploadReaderAvatar);
+router.delete("/profile/photo", requireReader, avatarUploadLimiter, deleteReaderAvatar);
 router.get("/sessions", requireReader, sessionManagementLimiter, listReaderSessions);
 router.delete("/sessions/:sessionId", requireReader, sessionManagementLimiter, revokeReaderSession);
 router.get("/profile", requireReader, getReaderProfile);

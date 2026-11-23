@@ -41,6 +41,10 @@ const userSchema = new mongoose.Schema(
         message: "Profile photo URL must use HTTPS.",
       },
     },
+    avatarAssetKey: { type: String, select: false },
+    avatarAssetContentType: { type: String, enum: ["image/jpeg", "image/png", "image/webp"], select: false },
+    avatarAssetSize: { type: Number, min: 1, max: 5 * 1024 * 1024, select: false },
+    avatarUploadedAt: { type: Date, select: false },
     email: {
       type: String,
       required: true,
@@ -83,6 +87,10 @@ const userSchema = new mongoose.Schema(
     toJSON: {
       transform(_document, result) {
         delete result.passwordHash;
+        delete result.avatarAssetKey;
+        delete result.avatarAssetContentType;
+        delete result.avatarAssetSize;
+        delete result.avatarUploadedAt;
         return result;
       },
     },
