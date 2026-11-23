@@ -42,11 +42,14 @@ export async function recordSearchTrend(request, response) {
 
   const now = new Date();
   const expiresAt = new Date(now.getTime() + MAX_TREND_AGE_DAYS * 24 * 60 * 60 * 1000);
-  await SearchTrend.updateOne(
-    { normalizedTerm: term },
-    { $set: { displayTerm: term, lastSearchedAt: now, expiresAt }, $inc: { searches: 1 } },
-    { upsert: true },
-  );
+  const filter = { normalizedTerm: term };
+  const update = { $set: { displayTerm: term, lastSearchedAt: now, expiresAt }, $inc: { searches: 1 } };
+  try {
+    await SearchTrend.updateOne(filter, update, { upsert: true });
+  } catch (error) {
+    if (error?.code !== 11000) throw error;
+    await SearchTrend.updateOne(filter, update);
+  }
   return response.status(204).end();
 }
 
