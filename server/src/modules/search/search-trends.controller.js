@@ -18,6 +18,7 @@ function databaseUnavailable(response) {
 }
 
 export async function recordSearchTrend(request, response) {
+  response.setHeader("Cache-Control", "no-store");
   if (!isDatabaseConnected()) return databaseUnavailable(response);
   if (request.body?.consent !== true) {
     return response.status(400).json({ error: { code: "CONSENT_REQUIRED", message: "Opt-in consent is required." } });
@@ -50,6 +51,7 @@ export async function recordSearchTrend(request, response) {
 }
 
 export async function listPopularSearchTrends(_request, response) {
+  response.setHeader("Cache-Control", "no-store");
   if (!isDatabaseConnected()) return databaseUnavailable(response);
   const earliest = new Date(Date.now() - MAX_TREND_AGE_DAYS * 24 * 60 * 60 * 1000);
   const trends = await SearchTrend.find({
