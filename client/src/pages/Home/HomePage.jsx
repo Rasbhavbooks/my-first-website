@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { ArrowRight, ArrowUpRight, BookOpen, Check, Search, Sparkles, Users } from "lucide-react";
 import BookCard from "../../components/books/BookCard.jsx";
@@ -18,6 +18,28 @@ export default function HomePage() {
   const [subscribed, setSubscribed] = useState(false);
   const visibleBooks = useFilteredBooks(books, { category, query, language });
   const hero = settings.homepage?.hero || {};
+  useEffect(() => {
+    const seo = settings.homepage?.seo;
+    const title = seo?.title?.[language]?.trim();
+    const seoDescription = seo?.description?.[language]?.trim();
+    if (!title && !seoDescription) return undefined;
+    const previousTitle = document.title;
+    const meta = document.querySelector('meta[name="description"]');
+    const previousDescription = meta?.content || "";
+    const createdMeta = !meta;
+    const description = meta || document.createElement("meta");
+    if (createdMeta) {
+      description.name = "description";
+      document.head.appendChild(description);
+    }
+    if (title) document.title = title;
+    if (seoDescription) description.content = seoDescription;
+    return () => {
+      document.title = previousTitle;
+      if (createdMeta) description.remove();
+      else description.content = previousDescription;
+    };
+  }, [settings.homepage?.seo, language]);
   const heroText = (field, fallback) => hero[field]?.[language] || hero[field]?.en || fallback;
   const sections = Array.isArray(settings.homepage?.sections)
     ? settings.homepage.sections
