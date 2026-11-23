@@ -130,12 +130,12 @@ export default function AdminMediaLibraryPage() {
                 <div className="admin-media-grid">{LANGUAGES.map((language) => <label className="admin-media-field" key={language}>{language.toUpperCase()}<textarea required maxLength={300} value={altText[language]} onChange={(event) => setAltText((current) => ({ ...current, [language]: event.target.value }))} /></label>)}</div>
                 <div className="admin-media-actions">
                   <button type="submit" disabled={busy}>{asset.published ? t.mediaLibraryUnpublish : t.mediaLibraryPublish}</button>
-                  <button type="button" disabled={busy} onClick={() => removeAsset(asset)}>{t.delete}</button>
+                  <button type="button" disabled={busy} onClick={() => removeAsset(asset)}>{t.mediaLibraryDeleteButton}</button>
                   <button type="button" disabled={busy} onClick={resetUpload}>{t.cancel}</button>
                 </div>
                 {asset.published && <p className="admin-media-hint">{t.mediaLibraryUrl}: <code>{asset.url}</code> <button type="button" onClick={() => copyUrl(asset)}>{t.mediaLibraryCopyUrl}</button></p>}
               </form>
-            ) : <div className="admin-media-actions"><button type="button" onClick={() => selectAsset(asset)}>{t.edit}</button>{asset.published && <button type="button" onClick={() => copyUrl(asset)}>{t.mediaLibraryCopyUrl}</button>}</div>}
+            ) : <div className="admin-media-actions"><button type="button" onClick={() => selectAsset(asset)}>{t.mediaLibraryEditButton}</button>{asset.published && <button type="button" onClick={() => copyUrl(asset)}>{t.mediaLibraryCopyUrl}</button>}</div>}
           </div>
         </article>)}
       </section>
