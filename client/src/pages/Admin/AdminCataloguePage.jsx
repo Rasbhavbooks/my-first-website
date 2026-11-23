@@ -93,8 +93,8 @@ export default function AdminCataloguePage() {
       setBooks((current) => current.map((item) => item.id === book.id ? result.book : item));
       setDrafts((current) => ({ ...current, [book.id]: result.book }));
       setNotice(t.adminCatalogueSaved);
-    } catch {
-      setError(t.adminCatalogueError);
+    } catch (requestError) {
+      setError(requestError.code === "INVALID_BOOK_ISBN" ? t.bookIsbnInvalid : t.adminCatalogueError);
     } finally {
       setBusyId("");
     }
@@ -128,6 +128,7 @@ export default function AdminCataloguePage() {
             <p className="admin-catalogue-field"><span>{t.by}</span><strong>{draft.author}</strong></p>
             <label className="admin-catalogue-field">{t.bookLanguage}<select value={draft.language} onChange={(event) => updateDraft(book, "language", event.target.value)}>{["Gujarati", "Hindi", "English"].map((item) => <option key={item} value={item}>{t.bookLanguages[item]}</option>)}</select></label>
             <label className="admin-catalogue-field">{t.bookCategory}<select value={draft.category} onChange={(event) => updateDraft(book, "category", event.target.value)}>{categories.filter(({ key }) => key !== "All").map(({ key }) => <option key={key} value={key}>{getCategoryLabel(key)}</option>)}</select></label>
+            <label className="admin-catalogue-field">{t.bookIsbnOptional}<input maxLength={32} autoComplete="off" placeholder={t.bookIsbnHint} value={draft.isbn || ""} onChange={(event) => updateDraft(book, "isbn", event.target.value)} /></label>
             <label className="admin-catalogue-field">{t.bookPriceInr}<input type="number" required min="0" max="100000" step="0.01" value={draft.price} onChange={(event) => updateDraft(book, "price", event.target.value)} /></label>
             <label className="admin-catalogue-field">{t.bookBadge}<input required maxLength={40} value={draft.badge} onChange={(event) => updateDraft(book, "badge", event.target.value)} /></label>
             <label className="admin-catalogue-field">{t.bookTone}<input required maxLength={40} value={draft.tone} onChange={(event) => updateDraft(book, "tone", event.target.value)} /></label>
