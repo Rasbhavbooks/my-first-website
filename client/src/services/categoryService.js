@@ -2,7 +2,7 @@ import { categoryDefinitions } from "../data/books.js";
 
 const fallbackCategories = [
   { key: "All", labels: {} },
-  ...categoryDefinitions.map(({ key, labels, sortOrder }) => ({ key, labels, sortOrder, active: true })),
+  ...categoryDefinitions.map(({ key, labels, sortOrder }) => ({ key, labels, descriptions: { en: "", gu: "", hi: "" }, sortOrder, active: true })),
 ];
 
 export async function getCategories() {
