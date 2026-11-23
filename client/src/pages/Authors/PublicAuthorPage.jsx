@@ -48,6 +48,17 @@ export default function PublicAuthorPage() {
     description: currentAuthor?.biography || "",
     type: "profile",
     imageUrl: currentAuthor?.coverImageUrl || currentAuthor?.profilePhotoUrl || "",
+    structuredData: currentAuthor ? {
+      "@context": "https://schema.org",
+      "@type": "ProfilePage",
+      mainEntity: {
+        "@type": "Person",
+        name: currentAuthor.authorName,
+        description: currentAuthor.biography || "",
+        url: typeof window === "undefined" ? "" : window.location.href.split("?")[0],
+        image: currentAuthor.profilePhotoUrl || currentAuthor.coverImageUrl || undefined,
+      },
+    } : null,
   });
 
   if (missing) return <main className="public-author"><style>{styles}</style><div className="public-author-error"><h1>{t.authorNotFound}</h1><Link to="/">{t.backHome}</Link></div></main>;

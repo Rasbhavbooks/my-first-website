@@ -23,6 +23,14 @@ export default function HomePage() {
     title: settings.homepage?.seo?.title?.[language] || "",
     description: settings.homepage?.seo?.description?.[language] || "",
     type: "website",
+    structuredData: {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Rasbhav Books",
+      description: settings.homepage?.seo?.description?.[language] || "",
+      url: typeof window === "undefined" ? "" : window.location.origin,
+      inLanguage: { en: "en", gu: "gu-IN", hi: "hi-IN" }[language],
+    },
   });
   const heroText = (field, fallback) => hero[field]?.[language] || hero[field]?.en || fallback;
   const sections = Array.isArray(settings.homepage?.sections)

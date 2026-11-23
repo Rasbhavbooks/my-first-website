@@ -30,6 +30,14 @@ export default function CmsPageView() {
     title: page ? page.seoTitle?.[language] || page.title?.[language] || page.title?.en || "Rasbhav Books" : "",
     description: page ? page.seoDescription?.[language] || "" : "",
     type: "website",
+    structuredData: page ? {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: page.title?.[language] || page.title?.en || "",
+      description: page.seoDescription?.[language] || "",
+      url: typeof window === "undefined" ? "" : window.location.href.split("?")[0],
+      inLanguage: { en: "en", gu: "gu-IN", hi: "hi-IN" }[language],
+    } : null,
   });
 
 

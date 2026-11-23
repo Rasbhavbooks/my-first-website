@@ -33,6 +33,15 @@ export default function BlogPostPage() {
     title: post ? post.seoTitle?.[language] || post.title?.[language] || post.title?.en || "Rasbhav Books" : "",
     description: post ? post.seoDescription?.[language] || post.summary?.[language] || post.summary?.en || "" : "",
     type: "article",
+    structuredData: post ? {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      headline: post.title?.[language] || post.title?.en || "",
+      description: post.seoDescription?.[language] || post.summary?.[language] || post.summary?.en || "",
+      datePublished: post.publishedAt || undefined,
+      url: typeof window === "undefined" ? "" : window.location.href.split("?")[0],
+      inLanguage: { en: "en", gu: "gu-IN", hi: "hi-IN" }[language],
+    } : null,
   });
 
 
