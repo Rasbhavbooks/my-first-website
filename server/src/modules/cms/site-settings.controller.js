@@ -44,16 +44,24 @@ function normalizeLinks(value) {
 }
 
 function normalizeHomeSections(value) {
-  if (!Array.isArray(value) || value.length !== HOME_SECTION_IDS.length) return null;
+  const builtInIds = HOME_SECTION_IDS;
+  if (!Array.isArray(value) || value.length < builtInIds.length || value.length > builtInIds.length + 4) return null;
   const sections = value.map((item) => {
-    if (!item || !HOME_SECTION_IDS.includes(item.id) || typeof item.enabled !== "boolean") return null;
-    return { id: item.id, enabled: item.enabled };
+    if (!item || typeof item.id !== "string" || typeof item.enabled !== "boolean") return null;
+    if (builtInIds.includes(item.id)) return { id: item.id, enabled: item.enabled };
+    if (!/^custom-[a-z0-9-]{1,48}$/.test(item.id)) return null;
+    const title = localizedGroup(item.title, 120);
+    const description = localizedGroup(item.description, 500, true);
+    const linkLabel = localizedGroup(item.linkLabel, 80, true);
+    if (!title || !description || !linkLabel || !validHref(item.href || "")) return null;
+    if (Object.values(linkLabel).some((label) => label.trim()) && !item.href) return null;
+    return { id: item.id, enabled: item.enabled, title, description, linkLabel, href: (item.href || "").trim() };
   });
+  const builtIns = sections.filter((item) => item && builtInIds.includes(item.id)).map((item) => item.id);
   const ids = sections.filter(Boolean).map((item) => item.id);
-  if (sections.some((item) => item === null)
-    || new Set(ids).size !== HOME_SECTION_IDS.length
-    || HOME_SECTION_IDS.some((id) => !ids.includes(id))
-    || !sections.some((item) => item.id === "discovery" && item.enabled)) return null;
+  if (sections.some((item) => item === null) || new Set(ids).size !== ids.length
+    || builtIns.length !== builtInIds.length || builtInIds.some((id) => !builtIns.includes(id))
+    || !sections.some((item) => item?.id === "discovery" && item.enabled)) return null;
   return sections;
 }
 function normalizeSettings(body) {
