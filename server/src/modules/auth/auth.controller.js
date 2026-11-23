@@ -254,7 +254,7 @@ export async function loginReader(request, response) {
         });
       }
       let verified = false;
-      if (/^\\d{6}$/.test(suppliedCode)) {
+      if (/^\d{6}$/.test(suppliedCode)) {
         if (!env.adminMfaConfigured) {
           return response.status(503).json({
             error: { code: "MFA_CONFIGURATION_UNAVAILABLE", message: "Administrator MFA is temporarily unavailable." },
