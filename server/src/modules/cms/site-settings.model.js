@@ -71,10 +71,19 @@ const homepageSeoSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const maintenanceSchema = new mongoose.Schema(
+  {
+    enabled: { type: Boolean, required: true, default: false },
+    message: { type: localizedTextSchema, required: true },
+  },
+  { _id: false },
+);
+
 const siteSettingsSchema = new mongoose.Schema(
   {
     key: { type: String, required: true, unique: true, immutable: true, default: "global" },
     platform: { defaultLanguage: { type: String, enum: ["en", "gu", "hi"], required: true, default: "en" } },
+    maintenance: { type: maintenanceSchema, required: true },
     announcement: { type: announcementSchema, required: true },
     navigation: { type: [navigationItemSchema], default: [], validate: (items) => items.length <= 8 },
     footer: { type: footerSchema, required: true },
