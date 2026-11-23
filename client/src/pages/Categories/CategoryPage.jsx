@@ -25,7 +25,27 @@ export default function CategoryPage() {
   const pageTitle = label ? `${label} | Rasbhav Books` : t.notFound;
   const localizedDescription = category?.descriptions?.[language]?.trim();
   const pageDescription = label ? localizedDescription || t.categoryPageMeta.replace("{category}", label) : t.notFound;
-  usePageMetadata({ title: pageTitle, description: pageDescription, type: "website" });
+  const schema = category ? {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: label,
+    description: pageDescription,
+    url: typeof window === "undefined" ? "" : window.location.href.split("?")[0],
+    inLanguage: { en: "en", gu: "gu-IN", hi: "hi-IN" }[language],
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: categoryBooks.slice(0, 50).map((book, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        item: {
+          "@type": "Book",
+          name: book.title?.[language] || book.title?.en,
+          url: typeof window === "undefined" ? "" : `${window.location.origin}/books/${encodeURIComponent(book.id)}`,
+        },
+      })),
+    },
+  } : null;
+  usePageMetadata({ title: pageTitle, description: pageDescription, type: "website", structuredData: schema });
 
   if (!category && !categoriesLoaded) {
     return <main className="category-page"><style>{styles}</style><p>{t.categoryPageLoading}</p></main>;
