@@ -21,6 +21,11 @@ export const defaultSiteContent = {
       { enabled: true, href: "/#categories", label: { en: "Novel", gu: "નવલકથા", hi: "उपन्यास" } },
       { enabled: true, href: "/#authors", label: { en: "For authors", gu: "લેખકો માટે", hi: "लेखकों के लिए" } },
     ],
+    communityTitle: { en: "Community", gu: "સમુદાય", hi: "समुदाय" },
+    communityLinks: [
+      { enabled: true, href: "/#about", label: { en: "Our story", gu: "અમારી વાત", hi: "हमारी कहानी" } },
+      { enabled: true, href: "/author/apply", label: { en: "Write with us", gu: "અમારી સાથે લખો", hi: "हमारे साथ लिखें" } },
+    ],
   },
   homepage: {
     sections: [

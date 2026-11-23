@@ -71,8 +71,10 @@ function normalizeSettings(body) {
   const navigation = normalizeLinks(body?.navigation);
   const tagline = localizedGroup(body?.footer?.tagline, 300);
   const browseLinks = normalizeLinks(body?.footer?.browseLinks);
+  const communityTitle = localizedGroup(body?.footer?.communityTitle, 120);
+  const communityLinks = normalizeLinks(body?.footer?.communityLinks);
   if (!announcement || typeof announcement.enabled !== "boolean" || !validHref(announcement.href)
-    || !navigation || !tagline || !browseLinks || !sections) return null;
+    || !navigation || !tagline || !browseLinks || !communityTitle || !communityLinks || !sections) return null;
   const cleanAnnouncement = {
     enabled: announcement.enabled,
     text: localizedGroup(announcement.text, 300, true),
@@ -91,7 +93,7 @@ function normalizeSettings(body) {
   return {
     announcement: cleanAnnouncement,
     navigation,
-    footer: { tagline, browseLinks },
+    footer: { tagline, browseLinks, communityTitle, communityLinks },
     homepage: { hero: cleanHero, sections },
   };
 }
@@ -111,6 +113,10 @@ function mergeDefaults(settings) {
       browseLinks: Array.isArray(settings?.footer?.browseLinks) && settings.footer.browseLinks.length
         ? settings.footer.browseLinks
         : DEFAULT_SETTINGS.footer.browseLinks,
+      communityTitle: { ...DEFAULT_SETTINGS.footer.communityTitle, ...settings?.footer?.communityTitle },
+      communityLinks: Array.isArray(settings?.footer?.communityLinks) && settings.footer.communityLinks.length
+        ? settings.footer.communityLinks
+        : DEFAULT_SETTINGS.footer.communityLinks,
     },
     homepage: {
       ...DEFAULT_SETTINGS.homepage,
