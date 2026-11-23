@@ -117,7 +117,7 @@ export default function HomePage() {
     structuredData: {
       "@context": "https://schema.org",
       "@type": "WebSite",
-      name: "Rasbhav Books",
+      name: settings.platform?.siteName || "Rasbhav Books",
       description: settings.homepage?.seo?.description?.[language] || "",
       url: typeof window === "undefined" ? "" : window.location.origin,
       inLanguage: { en: "en", gu: "gu-IN", hi: "hi-IN" }[language],
