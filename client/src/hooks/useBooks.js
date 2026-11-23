@@ -8,14 +8,28 @@ export function useBooks() {
   return books;
 }
 
-export function useFilteredBooks(books, { category, query, language }) {
+export function useFilteredBooks(books, { category, query, language, bookLanguage = "", sort = "featured" }) {
   return useMemo(() => {
-    const term = query.trim().toLocaleLowerCase();
-    return books.filter((book) => {
-      const title = book.title[language] || book.title.en;
+    const locale = { en: "en-IN", gu: "gu-IN", hi: "hi-IN" }[language] || "en-IN";
+    const term = query.trim().toLocaleLowerCase(locale);
+    const filtered = books.filter((book) => {
+      const searchableValues = [
+        ...Object.values(book.title || {}),
+        ...Object.values(book.description || {}),
+        book.author,
+        book.category,
+        book.language,
+      ];
+      const searchable = searchableValues.filter((value) => typeof value === "string").join(" ").toLocaleLowerCase(locale);
       const matchesCategory = category === "All" || book.category === category;
-      const searchable = [title, book.title.en, book.author, book.category, book.language].join(" ").toLocaleLowerCase();
-      return matchesCategory && searchable.includes(term);
+      const matchesLanguage = !bookLanguage || book.language === bookLanguage;
+      return matchesCategory && matchesLanguage && searchable.includes(term);
     });
-  }, [books, category, query, language]);
+    if (sort === "title" || sort === "author") {
+      const valueFor = (book) => sort === "author" ? book.author : (book.title?.[language] || book.title?.en || "");
+      return [...filtered].sort((a, b) => valueFor(a).localeCompare(valueFor(b), locale, { sensitivity: "base" })
+        || String(a.id).localeCompare(String(b.id)));
+    }
+    return filtered;
+  }, [books, bookLanguage, category, language, query, sort]);
 }
