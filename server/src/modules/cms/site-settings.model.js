@@ -74,6 +74,7 @@ const homepageSeoSchema = new mongoose.Schema(
 const siteSettingsSchema = new mongoose.Schema(
   {
     key: { type: String, required: true, unique: true, immutable: true, default: "global" },
+    platform: { defaultLanguage: { type: String, enum: ["en", "gu", "hi"], required: true, default: "en" } },
     announcement: { type: announcementSchema, required: true },
     navigation: { type: [navigationItemSchema], default: [], validate: (items) => items.length <= 8 },
     footer: { type: footerSchema, required: true },
