@@ -23,7 +23,8 @@ const styles = `
 .admin-readiness-action:disabled{opacity:.55;cursor:not-allowed}
 .admin-readiness-status{font-size:10px;font-weight:700}
 .admin-readiness-status[data-state="configured"],.admin-readiness-status[data-state="connected"]{color:#28724f}
-.admin-readiness-status[data-state="missing"]{color:#9b4c35}
+.admin-readiness-status[data-state="missing"],.admin-readiness-status[data-state="unavailable"]{color:#9b4c35}
+.admin-readiness-status[data-state="not-checked"]{color:#796747}
 .admin-readiness-status[data-state="disabled"]{color:#796747}
 .admin-home-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:28px}
 .admin-home-card{display:flex;min-height:150px;flex-direction:column;justify-content:space-between;padding:22px;border:1px solid #e4ddd1;background:#fffdfa;color:#30252c;text-decoration:none;transition:border-color .2s,transform .2s}
@@ -128,8 +129,9 @@ export default function AdminDashboardPage() {
             ["publishingEnabled", t.adminReadinessPublishing, t.adminReadinessPublishingHint, "configured"],
           ].map(([key, label, hint, configuredState]) => {
             const enabled = readiness[key];
-            const state = key === "publishingEnabled" && !enabled ? "disabled" : enabled === null ? "not-checked" : enabled ? configuredState : "missing";
-            const stateLabel = state === "disabled" ? t.adminReadinessDisabled : state === "not-checked" ? t.adminReadinessNotChecked : state === "missing" ? t.adminReadinessMissing : state === "connected" ? t.adminReadinessConnected : t.adminReadinessConfigured;
+            const connectionCheck = key === "clamavReachable" || key === "r2BucketReachable";
+            const state = key === "publishingEnabled" && !enabled ? "disabled" : enabled === null ? "not-checked" : connectionCheck ? enabled ? "connected" : "unavailable" : enabled ? configuredState : "missing";
+            const stateLabel = state === "disabled" ? t.adminReadinessDisabled : state === "not-checked" ? t.adminReadinessNotChecked : state === "unavailable" ? t.adminReadinessUnavailable : state === "missing" ? t.adminReadinessMissing : state === "connected" ? t.adminReadinessConnected : t.adminReadinessConfigured;
             return <article className="admin-readiness-card" key={key}>
               <strong>{label}</strong><span className="admin-readiness-status" data-state={state}>{stateLabel}</span><p>{hint}</p>
             </article>;
