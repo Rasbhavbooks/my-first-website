@@ -6,6 +6,7 @@ import { useLanguage } from "../../hooks/useLanguage.js";
 import { createCategory, getAdminCategories, updateCategory } from "../../services/categoryService.js";
 
 const emptyLabels = () => ({ en: "", gu: "", hi: "" });
+const emptyDescriptions = () => ({ en: "", gu: "", hi: "" });
 const styles = `
 .admin-categories{max-width:1050px;min-height:70vh;margin:auto;padding:54px 22px 90px}
 .admin-categories h1{font:500 clamp(34px,5vw,48px)/1.1 var(--serif);color:#30252c}
@@ -15,8 +16,8 @@ const styles = `
 .admin-category-card h2,.admin-category-create h2{margin:0 0 14px;font:500 22px var(--serif);color:#30252c}
 .admin-category-form{display:grid;grid-template-columns:minmax(130px,.6fr) minmax(0,2fr) 110px auto;align-items:end;gap:12px}
 .admin-category-field{display:grid;gap:5px;color:#77716a;font-size:11px}
-.admin-category-field input{width:100%;min-height:40px;padding:8px 10px;border:1px solid #d8d0c4;background:white;color:#30252c}
-.admin-category-labels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.admin-category-field input,.admin-category-field textarea{width:100%;min-height:40px;padding:8px 10px;border:1px solid #d8d0c4;background:white;color:#30252c}.admin-category-field textarea{min-height:86px;resize:vertical}
+.admin-category-labels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.admin-category-descriptions{grid-column:1/-1}.admin-category-descriptions>span{grid-column:1/-1;color:#514a44;font-size:11px;font-weight:600}
 .admin-category-usage{grid-column:1/-1;color:#77716a;font-size:10px}
 .admin-category-form button{min-height:40px;padding:0 14px;border:1px solid #30252c;background:#30252c;color:white;cursor:pointer}
 .admin-category-form button:disabled{opacity:.5;cursor:not-allowed}
@@ -31,7 +32,7 @@ export default function AdminCategoriesPage() {
   const { refreshCategories } = useCategories();
   const [categories, setCategories] = useState([]);
   const [edits, setEdits] = useState({});
-  const [form, setForm] = useState({ key: "", labels: emptyLabels(), sortOrder: 100 });
+  const [form, setForm] = useState({ key: "", labels: emptyLabels(), descriptions: emptyDescriptions(), sortOrder: 100 });
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -57,21 +58,21 @@ export default function AdminCategoriesPage() {
 
   function edit(category, field, value, language = "") {
     setEdits((current) => {
-      const draft = current[category.key] || { labels: category.labels, sortOrder: category.sortOrder, active: category.active };
+      const draft = current[category.key] || { labels: category.labels, descriptions: category.descriptions || emptyDescriptions(), sortOrder: category.sortOrder, active: category.active };
       return {
         ...current,
         [category.key]: language
-          ? { ...draft, labels: { ...draft.labels, [language]: value } }
+          ? { ...draft, [field]: { ...(draft[field] || emptyDescriptions()), [language]: value } }
           : { ...draft, [field]: value },
       };
     });
   }
 
   async function save(category) {
-    const draft = edits[category.key] || { labels: category.labels, sortOrder: category.sortOrder, active: category.active };
+    const draft = edits[category.key] || { labels: category.labels, descriptions: category.descriptions || emptyDescriptions(), sortOrder: category.sortOrder, active: category.active };
     setBusy(category.key); setError(""); setNotice("");
     try {
-      await updateCategory(category.key, { labels: draft.labels, sortOrder: Number(draft.sortOrder), active: draft.active });
+      await updateCategory(category.key, { labels: draft.labels, descriptions: draft.descriptions || emptyDescriptions(), sortOrder: Number(draft.sortOrder), active: draft.active });
       await refreshCategories();
       setNotice(t.adminCategorySaved);
       await load();
@@ -87,7 +88,7 @@ export default function AdminCategoriesPage() {
     setBusy("new"); setError(""); setNotice("");
     try {
       await createCategory({ ...form, sortOrder: Number(form.sortOrder) });
-      setForm({ key: "", labels: emptyLabels(), sortOrder: 100 });
+      setForm({ key: "", labels: emptyLabels(), descriptions: emptyDescriptions(), sortOrder: 100 });
       await refreshCategories();
       setNotice(t.adminCategoryCreated);
       await load();
@@ -112,6 +113,7 @@ export default function AdminCategoriesPage() {
         <div className="admin-category-form">
           <label className="admin-category-field">{t.adminCategoryKey}<input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={50} value={form.key} onChange={(event) => setForm((current) => ({ ...current, key: event.target.value }))} /></label>
           <div className="admin-category-labels">{["en", "gu", "hi"].map((language) => <label className="admin-category-field" key={language}>{language.toUpperCase()}<input required maxLength={80} value={form.labels[language]} onChange={(event) => setForm((current) => ({ ...current, labels: { ...current.labels, [language]: event.target.value } }))} /></label>)}</div>
+          <div className="admin-category-labels admin-category-descriptions"><span>{t.adminCategoryDescriptions}</span>{["en", "gu", "hi"].map((language) => <label className="admin-category-field" key={language}>{language.toUpperCase()}<textarea maxLength={500} value={form.descriptions[language]} onChange={(event) => setForm((current) => ({ ...current, descriptions: { ...current.descriptions, [language]: event.target.value } }))} /></label>)}</div>
           <label className="admin-category-field">{t.adminCategoryOrder}<input type="number" min="0" max="10000" value={form.sortOrder} onChange={(event) => setForm((current) => ({ ...current, sortOrder: event.target.value }))} /></label>
           <button type="submit" disabled={Boolean(busy)}>{busy === "new" ? t.savingChanges : t.adminCategoryAdd}</button>
         </div>
@@ -124,6 +126,7 @@ export default function AdminCategoriesPage() {
           <div className="admin-category-form">
             <label className="admin-category-field">{t.adminCategoryOrder}<input type="number" min="0" max="10000" value={draft.sortOrder} onChange={(event) => edit(category, "sortOrder", event.target.value)} /></label>
             <div className="admin-category-labels">{["en", "gu", "hi"].map((language) => <label className="admin-category-field" key={language}>{language.toUpperCase()}<input required maxLength={80} value={draft.labels[language]} onChange={(event) => edit(category, "labels", event.target.value, language)} /></label>)}</div>
+            <div className="admin-category-labels admin-category-descriptions"><span>{t.adminCategoryDescriptions}</span>{["en", "gu", "hi"].map((language) => <label className="admin-category-field" key={language}>{language.toUpperCase()}<textarea maxLength={500} value={(draft.descriptions || emptyDescriptions())[language]} onChange={(event) => edit(category, "descriptions", event.target.value, language)} /></label>)}</div>
             <label className="admin-category-field">{t.adminCategoryStatus}<select value={draft.active ? "active" : "inactive"} disabled={used > 0} onChange={(event) => edit(category, "active", event.target.value === "active")}><option value="active">{t.adminCategoryActive}</option><option value="inactive">{t.adminCategoryInactive}</option></select></label>
             <button type="submit" disabled={Boolean(busy)}>{busy === category.key ? t.savingChanges : t.saveChanges}</button>
             <span className="admin-category-usage">{t.adminCategoryUsage}: {category.usage.catalogueBooks} · {category.usage.authorBooks} {t.adminCategoryAuthorBooks}{used > 0 ? ` · ${t.adminCategoryInUse}` : ""}</span>
