@@ -28,7 +28,7 @@ function safeUser(user) {
     id: user.id,
     displayName: user.displayName,
     email: user.email,
-    avatarUrl: user.avatarUrl || "",
+    avatarUrl: user.avatarUrl || "",\n    avatarPhotoUrl: user.avatarAssetKey ? "/api/v1/auth/profile/photo" : "",
     bio: user.bio || "",
     hobbies: Array.isArray(user.hobbies) ? user.hobbies : [],
     role: user.role,
@@ -223,7 +223,7 @@ export async function loginReader(request, response) {
     });
   }
 
-  const user = await User.findOne({ email }).select("+passwordHash");
+  const user = await User.findOne({ email }).select("+passwordHash +avatarAssetKey +avatarAssetContentType +avatarAssetSize");
   const passwordMatches = user ? await user.verifyPassword(password) : false;
   if (!user || !passwordMatches) {
     return response.status(401).json({
@@ -310,7 +310,7 @@ export async function getReaderSession(request, response) {
   const session = await ReaderSession.findOne({
     tokenHash: hashToken(token),
     expiresAt: { $gt: new Date() },
-  }).populate("userId");
+  }).populate({ path: "userId", select: "+avatarAssetKey +avatarAssetContentType +avatarAssetSize" });
   if (!session || !session.userId || session.userId.accountStatus !== "active") {
     if (session) await ReaderSession.deleteOne({ _id: session._id });
     response.clearCookie(SESSION_COOKIE, sessionCookieOptions());
