@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { useCategories } from "../../hooks/useCategories.js";
+import { useSiteContent } from "../../hooks/useSiteContent.js";
 import { createAuthorBookChapter, createAuthorBookDraft, deleteAuthorBookChapter, getMyAuthorBookChapters, getMyAuthorBooks, saveAuthorBookDraft, submitAuthorBook, updateAuthorBookChapter, uploadAuthorBookAsset } from "../../services/authorBookService.js";
 
 const LANGUAGE_KEYS = { Gujarati: "gu", Hindi: "hi", English: "en" };
@@ -55,6 +56,9 @@ export default function AuthorBooksPage() {
   const { user, loading } = useAuth();
   const { t } = useLanguage();
   const { categories, getCategoryLabel } = useCategories();
+  const { settings: siteSettings } = useSiteContent();
+  const uploadLimits = siteSettings.uploads || { coverMaxMb: 5, manuscriptMaxMb: 25 };
+  const uploadSizeHint = t.assetSizeLimits.replace("{cover}", uploadLimits.coverMaxMb).replace("{manuscript}", uploadLimits.manuscriptMaxMb);
   const [books, setBooks] = useState([]);
   const [selectedId, setSelectedId] = useState("");
   const [form, setForm] = useState(blankBook);
@@ -184,6 +188,11 @@ export default function AuthorBooksPage() {
 
   async function uploadFile(assetType, file) {
     if (!file || !selectedId) return;
+    const maximumMb = assetType === "cover" ? uploadLimits.coverMaxMb : uploadLimits.manuscriptMaxMb;
+    if (file.size > maximumMb * 1024 * 1024) {
+      setError(t.assetInvalidSize);
+      return;
+    }
     setUploadingAsset(assetType); setError(""); setNotice("");
     try {
       const result = await uploadAuthorBookAsset(selectedId, assetType, file);
@@ -284,11 +293,11 @@ export default function AuthorBooksPage() {
                 <p className="author-book-hint">{t.bookSummaryHelp}</p>
                 <label className="author-book-field">{t.coverFile}
                   <input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" disabled={!editable || Boolean(uploadingAsset)} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; uploadFile("cover", file); }} />
-                  <span className="author-book-hint">{form.assets?.cover ? `${form.assets.cover.fileName} · ${t.assetScanClean}` : t.assetSizeLimits}</span>
+                  <span className="author-book-hint">{form.assets?.cover ? `${form.assets.cover.fileName} · ${t.assetScanClean}` : uploadSizeHint}</span>
                 </label>
                 <label className="author-book-field">{t.manuscriptFile}
                   <input type="file" accept=".pdf,application/pdf" disabled={!editable || Boolean(uploadingAsset)} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; uploadFile("manuscript", file); }} />
-                  <span className="author-book-hint">{form.assets?.manuscript ? `${form.assets.manuscript.fileName} · ${t.assetScanClean}` : t.assetSizeLimits}</span>
+                  <span className="author-book-hint">{form.assets?.manuscript ? `${form.assets.manuscript.fileName} · ${t.assetScanClean}` : uploadSizeHint}</span>
                 </label>
                 <label className="author-book-field">{t.bookPriceInr}
                   <input type="number" min="0" max="100000" step="0.01" value={form.price} disabled={!editable} onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))} />
