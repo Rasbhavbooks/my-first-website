@@ -7,6 +7,7 @@ import AuthorFollowButton from "../../components/books/AuthorFollowButton.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { useCategories } from "../../hooks/useCategories.js";
 import { getBookById } from "../../services/bookService.js";
+import { usePageMetadata } from "../../hooks/usePageMetadata.js";
 
 export default function BookDetailsPage() {
   const { bookId } = useParams();
@@ -27,10 +28,16 @@ export default function BookDetailsPage() {
     return () => { active = false; };
   }, [bookId]);
 
+  const title = book ? getBookTitle(book, language) : "";
+  usePageMetadata({
+    title: book ? `${title} — ${book.author} | Rasbhav Books` : "",
+    description: book?.description?.[language] || book?.description?.en || "",
+    type: "book",
+  });
+
   if (loading) return <main className="detail-state" aria-live="polite">{t.loading}</main>;
   if (!book) return <main className="detail-state"><h1>{t.notFound}</h1><Link className="button button-dark" to="/">{t.backHome}</Link></main>;
 
-  const title = getBookTitle(book, language);
   return (
     <main className="detail-page">
       <Link to="/#discover" className="back-link"><ArrowLeft size={16} />{t.backToCatalogue}</Link>
