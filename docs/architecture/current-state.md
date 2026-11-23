@@ -4,7 +4,7 @@ This file records implementation status; the complete requirements remain in the
 
 ## Implemented
 
-- React/Vite frontend with responsive home, book catalogue, multilingual search across localized titles and descriptions, author, category, and book language, category and language filters, and title/author sorting. Search, filters, and sorting work across the sample catalogue in the browser; search history, trend analytics, ISBN lookup, and large-catalogue server pagination remain pending. Admins can write localized descriptions for book categories; public, localized category pages show those descriptions and list active-category books, link from the homepage filters, and set client-side canonical/social metadata.
+- React/Vite frontend with responsive home, book catalogue, multilingual search across localized titles and descriptions, author, category, and book language, category and language filters, and title/author sorting. Search, filters, and sorting work across the sample catalogue in the browser; ISBN-10/13 values are checksum-validated on author drafts and admin catalogue edits, shown on public book details and Book structured data, and included in catalogue search. Search history, trend analytics, and large-catalogue server pagination remain pending. Admins can write localized descriptions for book categories; public, localized category pages show those descriptions and list active-category books, link from the homepage filters, and set client-side canonical/social metadata.
 - Gujarati, Hindi, and English interface translations.
 - Express/Mongoose API with MongoDB Atlas configuration, health endpoint, book catalogue endpoints, and repeatable sample-book seed command.
 - Reader registration, email verification, login, logout, seven-day server-side sessions, profile editing, and password changes. Passwords use Argon2id; sessions use random HttpOnly cookies.
@@ -40,7 +40,7 @@ This file records implementation status; the complete requirements remain in the
 
 ## Not implemented
 
-Broader platform settings, server-rendered SEO metadata and root-level sitemap/robots routing, book publication to the public catalogue, account deletion, passkeys/WebAuthn and hardware keys, verified-purchase review labels, helpful-review voting, production email deliverability monitoring, paid reader access and reading, purchases/payments, subscriptions, royalty ledger, broader CMS features, affiliates, institutions, audiobooks, AI tools, and mobile apps.
+Broader platform settings, server-rendered SEO metadata and root-level sitemap/robots routing, book publication to the public catalogue, account deletion, passkeys/WebAuthn and hardware keys, verified-purchase review labels, production email deliverability monitoring, paid reader access and reading, purchases/payments, subscriptions, royalty ledger, broader CMS features, affiliates, institutions, audiobooks, AI tools, and mobile apps.
 
 ## Next phase
 
