@@ -26,7 +26,7 @@ export async function requireReader(request, response, next) {
   const session = await ReaderSession.findOne({
     tokenHash: hashToken(token),
     expiresAt: { $gt: new Date() },
-  }).populate("userId");
+  }).populate({ path: "userId", select: "+avatarAssetKey +avatarAssetContentType +avatarAssetSize" });
 
   if (!session || !session.userId || session.userId.accountStatus !== "active") {
     if (session) await ReaderSession.deleteOne({ _id: session._id });
