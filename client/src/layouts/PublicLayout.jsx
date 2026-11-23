@@ -22,7 +22,7 @@ export default function PublicLayout() {
   if (settings.maintenance?.enabled && !isAdminPath) {
     const message = settings.maintenance.message?.[language] || settings.maintenance.message?.en;
     return <main className="maintenance-page"><style>{maintenanceStyles}</style><section className="maintenance-page__card" role="status">
-      <span className="maintenance-page__brand">Rasbhav Books</span>
+      <span className="maintenance-page__brand">{settings.platform?.siteName || "Rasbhav Books"}</span>
       <h1>{t.maintenancePageTitle}</h1>
       <p>{message}</p>
     </section></main>;
