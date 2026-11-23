@@ -33,10 +33,12 @@ export const defaultSiteContent = {
       { id: "hero", enabled: true },
       { id: "trust", enabled: true },
       { id: "discovery", enabled: true },
+      { id: "featured", enabled: false },
       { id: "languages", enabled: true },
       { id: "authors", enabled: true },
       { id: "community", enabled: true },
     ],
+    featuredBookIds: [],
     hero: {
       eyebrow: {
         en: "Stories rooted in India, shared with the world",
