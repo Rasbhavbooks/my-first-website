@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import mongoose from "mongoose";
 import MediaAsset from "./media-asset.model.js";
+import SiteSettings from "./site-settings.model.js";
 import { scanBuffer } from "../../services/clamav.service.js";
 import { deletePrivateObject, getPrivateObject, storePrivateObject } from "../../services/r2-storage.service.js";
 
@@ -34,7 +35,7 @@ function safeFileName(value, contentType) {
 function localizedAlt(request) {
   const altText = {};
   for (const language of LANGUAGES) {
-    const value = request.get(`x-alt-${language}`);
+    const value = request.query?.[`alt${language.toUpperCase()}`];
     if (typeof value !== "string" || value.trim().length < 2 || value.trim().length > 300) return null;
     altText[language] = value.trim();
   }
@@ -49,7 +50,7 @@ function assetDto(asset) {
     size: asset.size,
     altText: asset.altText,
     published: asset.published,
-    url: asset.published ? `/api/v1/media/${asset.id}` : "",
+    url: asset.published ? `/api/v1/media/${String(asset._id)}` : "",
     createdAt: asset.createdAt,
     updatedAt: asset.updatedAt,
   };
@@ -96,6 +97,10 @@ export async function updateAdminMedia(request, response) {
   if (!asset) return errorResponse(response, 404, "MEDIA_NOT_FOUND", "Image not found.");
   const { published, altText } = request.body || {};
   if (published !== undefined && typeof published !== "boolean") return errorResponse(response, 400, "INVALID_MEDIA", "Choose a valid publication status.");
+  const mediaUrl = `/api/v1/media/${String(asset._id)}`;
+  if (published === false && await SiteSettings.exists({ "homepage.sections.imageUrl": mediaUrl })) {
+    return errorResponse(response, 409, "MEDIA_IN_USE", "Remove this image from homepage sections before making it private.");
+  }
   if (altText !== undefined) {
     if (!altText || typeof altText !== "object" || Array.isArray(altText)
       || LANGUAGES.some((language) => typeof altText[language] !== "string" || altText[language].trim().length < 2 || altText[language].trim().length > 300)) {
@@ -113,6 +118,10 @@ export async function deleteAdminMedia(request, response) {
   if (!mongoose.isValidObjectId(request.params.assetId)) return errorResponse(response, 404, "MEDIA_NOT_FOUND", "Image not found.");
   const asset = await MediaAsset.findById(request.params.assetId).select("+key");
   if (!asset) return errorResponse(response, 404, "MEDIA_NOT_FOUND", "Image not found.");
+  const mediaUrl = `/api/v1/media/${String(asset._id)}`;
+  if (await SiteSettings.exists({ "homepage.sections.imageUrl": mediaUrl })) {
+    return errorResponse(response, 409, "MEDIA_IN_USE", "Remove this image from homepage sections before deleting it.");
+  }
   await deletePrivateObject(asset.key);
   await asset.deleteOne();
   response.setHeader("Cache-Control", "no-store");
