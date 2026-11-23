@@ -1,12 +1,12 @@
+import { resolveAuthorUploadLimits } from "../../../../shared/author-upload-limits.js";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import mongoose from "mongoose";
 import AuthorBook from "./author-book.model.js";
+import SiteSettings from "../cms/site-settings.model.js";
 import { scanBuffer } from "../../services/clamav.service.js";
 import { deletePrivateObject, getPrivateObject, storePrivateObject } from "../../services/r2-storage.service.js";
 
-const MAX_MANUSCRIPT_BYTES = 25 * 1024 * 1024;
-const MAX_COVER_BYTES = 5 * 1024 * 1024;
 const ASSET_TYPES = new Set(["cover", "manuscript"]);
 const ALLOWED_TYPES = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
 
@@ -87,7 +87,10 @@ export async function uploadAuthorBookAsset(request, response) {
 
   const buffer = request.body;
   const contentType = (request.get("content-type") || "").split(";")[0].trim().toLowerCase();
-  const maximum = assetType === "cover" ? MAX_COVER_BYTES : MAX_MANUSCRIPT_BYTES;
+  const savedSettings = await SiteSettings.findOne({ key: "global" }).select("uploads -_id").lean();
+  const uploadLimits = resolveAuthorUploadLimits(savedSettings?.uploads);
+  const maximumMb = assetType === "cover" ? uploadLimits.coverMaxMb : uploadLimits.manuscriptMaxMb;
+  const maximum = maximumMb * 1024 * 1024;
   if (!Buffer.isBuffer(buffer) || buffer.length === 0 || buffer.length > maximum) {
     return errorResponse(response, 413, "INVALID_FILE_SIZE", "Choose a non-empty file within the size limit.");
   }
