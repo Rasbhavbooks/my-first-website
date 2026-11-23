@@ -132,7 +132,7 @@ button { color: inherit; }
 .footer-links { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; font-size: 10px; }
 .footer-links strong { margin-bottom: 4px; color: #d6ae68; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
 .footer-links a { display: inline-flex; gap: 7px; align-items: center; color: #e4dbd5; }
-.footer-bottom { padding-top: 18px; border-top: 1px solid #594a51; display: flex; justify-content: space-between; color: #b9aca7; font-size: 8px; }
+.footer-bottom { padding-top: 18px; border-top: 1px solid #594a51; display: flex; flex-wrap: wrap; justify-content: space-between; color: #b9aca7; font-size: 8px; }
 .footer-legal-links { display: flex; flex-wrap: wrap; gap: 12px; }
 .footer-legal-links a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
