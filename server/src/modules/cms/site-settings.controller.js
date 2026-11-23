@@ -194,7 +194,7 @@ export async function getPublicSiteContent(_request, response) {
   const settings = await SiteSettings.findOne({ key: "global" }).select("platform uploads maintenance announcement navigation footer homepage -_id").lean();
   const { platform, uploads, maintenance, announcement, navigation, footer, homepage } = mergeDefaults(settings);
   response.setHeader("Cache-Control", "public, max-age=60");
-  return response.json({ data: { settings: { platform, maintenance, announcement, navigation, footer, homepage } } });
+  return response.json({ data: { settings: { platform, uploads, maintenance, announcement, navigation, footer, homepage } } });
 }
 
 export async function getAdminSiteContent(_request, response) {
