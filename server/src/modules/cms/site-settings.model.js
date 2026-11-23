@@ -66,7 +66,7 @@ const siteSettingsSchema = new mongoose.Schema(
     navigation: { type: [navigationItemSchema], default: [], validate: (items) => items.length <= 8 },
     footer: { type: footerSchema, required: true },
     homepage: {
-      sections: { type: [homepageSectionSchema], default: [], validate: (sections) => sections.length === 6 },
+      sections: { type: [homepageSectionSchema], default: [], validate: (sections) => sections.length >= 6 && sections.length <= 10 },
       hero: { type: heroSchema, required: true },
     },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
