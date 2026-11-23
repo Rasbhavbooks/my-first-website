@@ -58,7 +58,12 @@ export default function AccountPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [exportBusy, setExportBusy] = useState(false);
-  const [passwordChanged, setPasswordChanged] = useState(false);\n  const [sessions, setSessions] = useState([]);\n  const [sessionsHasMore, setSessionsHasMore] = useState(false);\n  const [sessionsLoading, setSessionsLoading] = useState(true);\n  const [sessionsBusyId, setSessionsBusyId] = useState("");\n  const [sessionsError, setSessionsError] = useState("");
+  const [passwordChanged, setPasswordChanged] = useState(false);
+  const [sessions, setSessions] = useState([]);
+  const [sessionsHasMore, setSessionsHasMore] = useState(false);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [sessionsBusyId, setSessionsBusyId] = useState("");
+  const [sessionsError, setSessionsError] = useState("");
 
   useEffect(() => {
     if (!user) return;
