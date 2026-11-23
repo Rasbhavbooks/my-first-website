@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import User from "../users/user.model.js";
 import { deletePrivateObject, getPrivateObject, storePrivateObject } from "../../services/r2-storage.service.js";
 import { scanBuffer } from "../../services/clamav.service.js";
 
@@ -29,19 +30,29 @@ export async function uploadReaderAvatar(request, response) {
   await scanBuffer(buffer);
   const key = `private/readers/${request.reader.id}/avatar-${randomUUID()}`;
   await storePrivateObject({ key, body: buffer, contentType });
-  const oldKey = request.reader.avatarAssetKey;
-  request.reader.avatarAssetKey = key;
-  request.reader.avatarAssetContentType = contentType;
-  request.reader.avatarAssetSize = buffer.length;
-  request.reader.avatarUploadedAt = new Date();
-
+  let previousUser;
   try {
-    await request.reader.save();
+    previousUser = await User.findOneAndUpdate(
+      { _id: request.reader._id },
+      { $set: {
+        avatarAssetKey: key,
+        avatarAssetContentType: contentType,
+        avatarAssetSize: buffer.length,
+        avatarUploadedAt: new Date(),
+      } },
+      { new: false, runValidators: true },
+    ).select("+avatarAssetKey");
   } catch (error) {
     await deletePrivateObject(key).catch(() => {});
     throw error;
   }
-  if (oldKey && oldKey !== key) await deletePrivateObject(oldKey).catch(() => {});
+  if (!previousUser) {
+    await deletePrivateObject(key).catch(() => {});
+    return sendError(response, 404, "ACCOUNT_NOT_FOUND", "This account is no longer available.");
+  }
+  if (previousUser.avatarAssetKey && previousUser.avatarAssetKey !== key) {
+    await deletePrivateObject(previousUser.avatarAssetKey).catch(() => {});
+  }
 
   response.setHeader("Cache-Control", "no-store");
   return response.json({ data: { avatarPhotoUrl: "/api/v1/auth/profile/photo" } });
@@ -63,14 +74,17 @@ export async function getReaderAvatar(request, response) {
 }
 
 export async function deleteReaderAvatar(request, response) {
-  const user = request.reader;
-  const oldKey = user.avatarAssetKey;
-  user.avatarAssetKey = undefined;
-  user.avatarAssetContentType = undefined;
-  user.avatarAssetSize = undefined;
-  user.avatarUploadedAt = undefined;
-  await user.save();
-  if (oldKey) await deletePrivateObject(oldKey).catch(() => {});
+  const user = await User.findOneAndUpdate(
+    { _id: request.reader._id },
+    { $unset: {
+      avatarAssetKey: 1,
+      avatarAssetContentType: 1,
+      avatarAssetSize: 1,
+      avatarUploadedAt: 1,
+    } },
+    { new: false },
+  ).select("+avatarAssetKey");
+  if (user?.avatarAssetKey) await deletePrivateObject(user.avatarAssetKey).catch(() => {});
   response.setHeader("Cache-Control", "no-store");
   return response.json({ data: { avatarPhotoUrl: "" } });
 }
