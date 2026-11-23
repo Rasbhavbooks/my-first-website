@@ -43,6 +43,8 @@ const footerSchema = new mongoose.Schema(
   {
     tagline: { type: localizedTextSchema, required: true },
     browseLinks: { type: [navigationItemSchema], required: true, validate: (items) => items.length >= 1 && items.length <= 8 },
+    communityTitle: { type: localizedTextSchema, required: true },
+    communityLinks: { type: [navigationItemSchema], required: true, validate: (items) => items.length >= 1 && items.length <= 8 },
   },
   { _id: false },
 );
