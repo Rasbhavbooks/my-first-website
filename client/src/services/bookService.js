@@ -66,7 +66,7 @@ export async function getBooksPage(filters) {
     locale: filters.language || "en",
   });
   try {
-    const result = await requestCatalogue(\`/api/v1/books?\${params.toString()}\`);
+    const result = await requestCatalogue("/api/v1/books?" + params.toString());
     if (result && Array.isArray(result.items)) return result;
   } catch {
     // Fall back to the sample catalogue when the API is unavailable in development.
