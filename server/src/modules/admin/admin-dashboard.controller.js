@@ -6,6 +6,7 @@ import AuthorBook from "../books/author-book.model.js";
 import ReviewReport from "../books/review-report.model.js";
 import { env } from "../../config/env.js";
 import { isDatabaseConnected } from "../../config/database.js";
+import { isClamavReachable } from "../../services/clamav.service.js";
 
 export async function getAdminDashboardStats(_request, response) {
   const [
@@ -43,7 +44,8 @@ export async function getAdminDashboardStats(_request, response) {
 }
 
 
-export function getAdminPlatformReadiness(_request, response) {
+export async function getAdminPlatformReadiness(_request, response) {
+  const clamavReachable = await isClamavReachable();
   response.setHeader("Cache-Control", "no-store");
   return response.json({
     data: {
@@ -53,6 +55,7 @@ export function getAdminPlatformReadiness(_request, response) {
         adminMfaKeyConfigured: env.adminMfaConfigured,
         r2CredentialsConfigured: env.r2Configured,
         clamavHostConfigured: env.clamavConfigured,
+        clamavReachable,
         publishingEnabled: false,
       },
     },
