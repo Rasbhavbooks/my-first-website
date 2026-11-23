@@ -8,6 +8,35 @@ function scannerError(code, message, statusCode = 503) {
   return error;
 }
 
+export async function isClamavReachable() {
+  if (!env.clamavConfigured) return false;
+
+  return new Promise((resolve) => {
+    const socket = net.createConnection({ host: env.clamavHost, port: env.clamavPort });
+    let response = "";
+    let finished = false;
+    const timeout = setTimeout(() => finish(false), 2000);
+
+    function finish(reachable) {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timeout);
+      socket.destroy();
+      resolve(reachable);
+    }
+
+    socket.once("connect", () => socket.write(Buffer.from("zPING\0")));
+    socket.on("data", (chunk) => {
+      response += chunk.toString("utf8");
+      if (response.length > 64) return finish(false);
+      if (!response.includes("\0")) return;
+      finish(response.slice(0, -1) === "PONG");
+    });
+    socket.once("error", () => finish(false));
+    socket.once("close", () => finish(false));
+  });
+}
+
 export async function scanBuffer(buffer) {
   if (!env.clamavConfigured) {
     throw scannerError("FILE_SCANNER_NOT_CONFIGURED", "File scanning is not configured. Uploads are disabled until the scanner is available.");

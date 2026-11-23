@@ -106,7 +106,8 @@ export default function AdminDashboardPage() {
             ["emailConfigured", t.adminReadinessEmail, t.adminReadinessEmailHint, "configured"],
             ["adminMfaKeyConfigured", t.adminReadinessMfa, t.adminReadinessMfaHint, "configured"],
             ["r2CredentialsConfigured", t.adminReadinessStorage, t.adminReadinessStorageHint, "configured"],
-            ["clamavHostConfigured", t.adminReadinessScanner, t.adminReadinessScannerHint, "configured"],
+            ["clamavHostConfigured", t.adminReadinessScannerConfig, t.adminReadinessScannerConfigHint, "configured"],
+            ["clamavReachable", t.adminReadinessScanner, t.adminReadinessScannerHint, "connected"],
             ["publishingEnabled", t.adminReadinessPublishing, t.adminReadinessPublishingHint, "configured"],
           ].map(([key, label, hint, configuredState]) => {
             const enabled = readiness[key];
