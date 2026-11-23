@@ -34,13 +34,11 @@ function parsePositiveInteger(value, fallback, maximum) {
 }
 
 function escapeRegex(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\export async function listBooks(_request, response) {
-  if (!isDatabaseConnected()) return databaseUnavailable(response);
-  const records = await Book.find().sort({ catalogueId: 1 }).lean();
-  response.json({ data: records.map(serializeBook) });
-}");
+  const specialCharacters = "\\^$.*+?()[]{}|";
+  return [...value].map((character) => (
+    specialCharacters.includes(character) ? "\\" + character : character
+  )).join("");
 }
-
 export async function listBooks(request, response) {
   if (!isDatabaseConnected()) return databaseUnavailable(response);
   const hasPaging = ["page", "limit", "q", "category", "bookLanguage", "sort", "locale"]
