@@ -32,10 +32,22 @@ function normalizeLabels(value) {
   return labels;
 }
 
+function normalizeDescriptions(value) {
+  if (value === undefined) return { en: "", gu: "", hi: "" };
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const descriptions = {};
+  for (const language of ["en", "gu", "hi"]) {
+    if (typeof value[language] !== "string" || value[language].trim().length > 500) return null;
+    descriptions[language] = value[language].trim();
+  }
+  return descriptions;
+}
+
 function categoryDto(category, catalogueCounts, draftCounts) {
   return {
     key: category.key,
     labels: category.labels,
+    descriptions: category.descriptions || { en: "", gu: "", hi: "" },
     active: category.active,
     sortOrder: category.sortOrder,
     usage: {
@@ -49,9 +61,10 @@ function categoryDto(category, catalogueCounts, draftCounts) {
 export async function listCategories(_request, response) {
   if (!isDatabaseConnected()) return errorResponse(response, 503, "DATABASE_UNAVAILABLE", "Categories are temporarily unavailable.");
   await ensureDefaultCategories();
-  const categories = await Category.find({ active: true }).sort({ sortOrder: 1, key: 1 }).select("key labels sortOrder").lean();
+  const categories = await Category.find({ active: true }).sort({ sortOrder: 1, key: 1 }).select("key labels descriptions sortOrder").lean();
+  const publicCategories = categories.map((category) => ({ ...category, descriptions: category.descriptions || { en: "", gu: "", hi: "" } }));
   response.setHeader("Cache-Control", "public, max-age=60");
-  return response.json({ data: { categories } });
+  return response.json({ data: { categories: publicCategories } });
 }
 
 export async function listAdminCategories(_request, response) {
@@ -70,14 +83,15 @@ export async function listAdminCategories(_request, response) {
 export async function createCategory(request, response) {
   const key = typeof request.body?.key === "string" ? request.body.key.trim() : "";
   const labels = normalizeLabels(request.body?.labels);
+  const descriptions = normalizeDescriptions(request.body?.descriptions);
   const sortOrder = request.body?.sortOrder === undefined ? 100 : Number(request.body.sortOrder);
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(key) || key.length > 50 || key.toLowerCase() === "all"
-    || !labels || !Number.isInteger(sortOrder) || sortOrder < 0 || sortOrder > 10000) {
+    || !labels || !descriptions || !Number.isInteger(sortOrder) || sortOrder < 0 || sortOrder > 10000) {
     return errorResponse(response, 400, "INVALID_CATEGORY", "Check the category key, all three labels, and display order.");
   }
 
   try {
-    const category = await Category.create({ key, labels, sortOrder, active: true });
+    const category = await Category.create({ key, labels, descriptions, sortOrder, active: true });
     response.setHeader("Cache-Control", "no-store");
     return response.status(201).json({ data: { category: categoryDto(category.toObject(), new Map(), new Map()) } });
   } catch (error) {
@@ -90,6 +104,11 @@ export async function createCategory(request, response) {
 export async function updateCategory(request, response) {
   const key = typeof request.params.key === "string" ? request.params.key : "";
   const update = {};
+  if (request.body?.descriptions !== undefined) {
+    const descriptions = normalizeDescriptions(request.body.descriptions);
+    if (!descriptions) return errorResponse(response, 400, "INVALID_CATEGORY_DESCRIPTIONS", "Enter category descriptions up to 500 characters in all three languages.");
+    update.descriptions = descriptions;
+  }
   if (request.body?.labels !== undefined) {
     const labels = normalizeLabels(request.body.labels);
     if (!labels) return errorResponse(response, 400, "INVALID_CATEGORY_LABELS", "Enter a label in English, Gujarati, and Hindi.");
