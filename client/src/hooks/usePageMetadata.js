@@ -13,7 +13,7 @@ function publicImageUrl(value) {
 
 export function usePageMetadata({ title = "", description = "", type = "website", imageUrl = "", structuredData = null }) {
   const pathname = typeof window === "undefined" ? "/" : window.location.pathname;
-  const structuredDataJson = structuredData ? JSON.stringify(structuredData).replace(/</g, "\\\\u003c") : "";
+  const structuredDataJson = structuredData ? JSON.stringify(structuredData).replace(/</g, "\\u003c") : "";
   useEffect(() => {
     const previousTitle = document.title;
     const canonical = new URL(pathname, window.location.origin).href;
