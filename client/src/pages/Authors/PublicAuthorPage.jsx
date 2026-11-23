@@ -5,6 +5,7 @@ import AuthorFollowButton from "../../components/books/AuthorFollowButton.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { useCategories } from "../../hooks/useCategories.js";
 import { getPublicAuthorProfile } from "../../services/authorService.js";
+import { usePageMetadata } from "../../hooks/usePageMetadata.js";
 
 const styles = `
 .public-author{max-width:1000px;min-height:70vh;margin:auto;padding:62px 22px 90px}
@@ -40,6 +41,14 @@ export default function PublicAuthorPage() {
       .catch(() => { if (active) { setData(null); setMissing(true); } });
     return () => { active = false; };
   }, [slug]);
+
+  const currentAuthor = data?.author;
+  usePageMetadata({
+    title: currentAuthor ? `${currentAuthor.authorName} | Rasbhav Books` : "",
+    description: currentAuthor?.biography || "",
+    type: "profile",
+    imageUrl: currentAuthor?.coverImageUrl || currentAuthor?.profilePhotoUrl || "",
+  });
 
   if (missing) return <main className="public-author"><style>{styles}</style><div className="public-author-error"><h1>{t.authorNotFound}</h1><Link to="/">{t.backHome}</Link></div></main>;
   if (!data) return <main className="public-author"><p>{t.loading}</p></main>;
