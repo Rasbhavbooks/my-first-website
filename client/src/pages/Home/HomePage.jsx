@@ -38,7 +38,7 @@ export default function HomePage() {
     try {
       const saved = JSON.parse(window.localStorage.getItem("rasbhav.books.searchHistory.v1") || "[]");
       if (Array.isArray(saved)) {
-        setSearchHistory(saved.filter((item) => typeof item === "string" && item.trim()).slice(0, 8));
+        setSearchHistory(saved.filter((item) => typeof item === "string" && item.trim() && item.trim().length <= 100).map((item) => item.trim()).slice(0, 8));
       }
     } catch {
       setSearchHistory([]);
