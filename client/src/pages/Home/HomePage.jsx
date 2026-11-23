@@ -182,7 +182,7 @@ export default function HomePage() {
                 if (event.key === "Escape") setShowSearchSuggestions(false);
               }}
               onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder={t.search} /></label>
-            {showSearchSuggestions && (searchSuggestions.length > 0 || bookSuggestions.length > 0 || popularSearchTrends.length > 0 || searchAnalyticsConsent === null) && <div className="search-suggestions" role="region" aria-label={t.searchBookSuggestions}>
+            {showSearchSuggestions && <div className="search-suggestions" role="region" aria-label={t.searchBookSuggestions}>
               {bookSuggestions.length > 0 && <>
                 <div className="search-suggestions-head"><strong>{t.searchBookSuggestions}</strong></div>
                 {bookSuggestions.map((book) => <Link className="search-suggestion" key={book.id} to={`/books/${encodeURIComponent(book.id)}`}
