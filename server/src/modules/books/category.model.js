@@ -9,10 +9,20 @@ const localizedLabelSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const localizedDescriptionSchema = new mongoose.Schema(
+  {
+    en: { type: String, trim: true, maxlength: 500, default: "" },
+    gu: { type: String, trim: true, maxlength: 500, default: "" },
+    hi: { type: String, trim: true, maxlength: 500, default: "" },
+  },
+  { _id: false },
+);
+
 const categorySchema = new mongoose.Schema(
   {
     key: { type: String, required: true, unique: true, trim: true, maxlength: 50, immutable: true },
     labels: { type: localizedLabelSchema, required: true },
+    descriptions: { type: localizedDescriptionSchema, default: () => ({}) },
     active: { type: Boolean, required: true, default: true, index: true },
     sortOrder: { type: Number, required: true, min: 0, max: 10000, default: 100 },
   },
