@@ -63,6 +63,14 @@ const homepageSectionSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const homepageSeoSchema = new mongoose.Schema(
+  {
+    title: { type: localizedTextSchema, required: true },
+    description: { type: localizedTextSchema, required: true },
+  },
+  { _id: false },
+);
+
 const siteSettingsSchema = new mongoose.Schema(
   {
     key: { type: String, required: true, unique: true, immutable: true, default: "global" },
@@ -72,6 +80,7 @@ const siteSettingsSchema = new mongoose.Schema(
     homepage: {
       sections: { type: [homepageSectionSchema], default: [], validate: (sections) => sections.length >= 7 && sections.length <= 11 },
       featuredBookIds: { type: [{ type: String, trim: true, maxlength: 100 }], default: [], validate: (ids) => ids.length <= 4 && new Set(ids).size === ids.length },
+      seo: { type: homepageSeoSchema, required: true },
       hero: { type: heroSchema, required: true },
     },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
