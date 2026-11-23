@@ -1,3 +1,4 @@
+import { isValidAuthorUploadLimits } from "../../../../shared/author-upload-limits.js";
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router";
 import { defaultSiteContent } from "../../../../shared/site-content.js";
@@ -196,6 +197,10 @@ export default function AdminSiteSettingsPage() {
   }
 
   async function save() {
+    if (!isValidAuthorUploadLimits(settings.uploads)) {
+      setError(t.uploadLimitsInvalid);
+      return;
+    }
     setBusy(true); setError(""); setNotice("");
     try {
       const result = await updateAdminSiteContent(settings);
