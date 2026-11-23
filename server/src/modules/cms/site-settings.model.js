@@ -51,7 +51,7 @@ const footerSchema = new mongoose.Schema(
 
 const homepageSectionSchema = new mongoose.Schema(
   {
-    id: { type: String, required: true, match: /^(hero|trust|discovery|languages|authors|community|custom-[a-z0-9-]{1,48})$/ },
+    id: { type: String, required: true, match: /^(hero|trust|discovery|featured|languages|authors|community|custom-[a-z0-9-]{1,48})$/ },
     title: { type: localizedTextSchema, default: undefined },
     description: { type: localizedTextSchema, default: undefined },
     linkLabel: { type: localizedTextSchema, default: undefined },
@@ -70,7 +70,8 @@ const siteSettingsSchema = new mongoose.Schema(
     navigation: { type: [navigationItemSchema], default: [], validate: (items) => items.length <= 8 },
     footer: { type: footerSchema, required: true },
     homepage: {
-      sections: { type: [homepageSectionSchema], default: [], validate: (sections) => sections.length >= 6 && sections.length <= 10 },
+      sections: { type: [homepageSectionSchema], default: [], validate: (sections) => sections.length >= 7 && sections.length <= 11 },
+      featuredBookIds: { type: [{ type: String, trim: true, maxlength: 100 }], default: [], validate: (ids) => ids.length <= 4 && new Set(ids).size === ids.length },
       hero: { type: heroSchema, required: true },
     },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
