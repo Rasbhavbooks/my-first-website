@@ -18,6 +18,7 @@ import AdminAuthorsPage from "../pages/Admin/AdminAuthorsPage.jsx";
 import AdminCataloguePage from "../pages/Admin/AdminCataloguePage.jsx";
 import AdminCategoriesPage from "../pages/Admin/AdminCategoriesPage.jsx";
 import AdminMfaSetupPage from "../pages/Admin/AdminMfaSetupPage.jsx";
+import AdminMediaLibraryPage from "../pages/Admin/AdminMediaLibraryPage.jsx";
 import AdminCmsPagesPage from "../pages/Cms/AdminCmsPagesPage.jsx";
 import AdminBlogPostsPage from "../pages/Cms/AdminBlogPostsPage.jsx";
 import BlogPage from "../pages/Cms/BlogPage.jsx";
@@ -62,6 +63,7 @@ export default function AppRoutes() {
           <Route path="admin/categories" element={<AdminCategoriesPage />} />
           <Route path="admin/cms-pages" element={<AdminCmsPagesPage />} />
           <Route path="admin/blog" element={<AdminBlogPostsPage />} />
+          <Route path="admin/media" element={<AdminMediaLibraryPage />} />
           <Route path="admin/site-settings" element={<AdminSiteSettingsPage />} />
           <Route path="admin/review-moderation" element={<ReviewModerationPage />} />
           <Route path="admin/author-books" element={<AuthorBooksAdminPage />} />

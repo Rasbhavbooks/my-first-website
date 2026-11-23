@@ -56,6 +56,8 @@ const homepageSectionSchema = new mongoose.Schema(
     description: { type: localizedTextSchema, default: undefined },
     linkLabel: { type: localizedTextSchema, default: undefined },
     href: { type: String, trim: true, maxlength: 300, default: "" },
+    imageUrl: { type: String, trim: true, maxlength: 60, default: "" },
+    imageAlt: { type: localizedTextSchema, default: undefined },
     enabled: { type: Boolean, required: true, default: true },
   },
   { _id: false },

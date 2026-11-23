@@ -174,7 +174,7 @@ export default function AdminSiteSettingsPage() {
     const id = `custom-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     setSettings((current) => ({ ...current, homepage: { ...current.homepage, sections: [...current.homepage.sections, {
       id, enabled: true, title: { en: "", gu: "", hi: "" }, description: { en: "", gu: "", hi: "" },
-      linkLabel: { en: "", gu: "", hi: "" }, href: "",
+      linkLabel: { en: "", gu: "", hi: "" }, href: "", imageUrl: "", imageAlt: { en: "", gu: "", hi: "" },
     }] } }));
   }
 
@@ -290,6 +290,8 @@ export default function AdminSiteSettingsPage() {
             <p className="admin-site-hint">{t.customHomepageTitle}</p>
             {localizedFields(section.description, (language, value) => updateCustomHomeSection(section.id, (item) => ({ ...item, description: { ...item.description, [language]: value } })), true, 500)}
             <p className="admin-site-hint">{t.customHomepageBody}</p>
+            <label className="admin-site-field">{t.customHomepageImageUrl}<input maxLength={60} placeholder="/api/v1/media/..." value={section.imageUrl || ""} onChange={(event) => updateCustomHomeSection(section.id, (item) => ({ ...item, imageUrl: event.target.value }))} /></label>
+            {section.imageUrl && <>{localizedFields(section.imageAlt || { en: "", gu: "", hi: "" }, (language, value) => updateCustomHomeSection(section.id, (item) => ({ ...item, imageAlt: { ...(item.imageAlt || { en: "", gu: "", hi: "" }), [language]: value } })), false, 300)}<p className="admin-site-hint">{t.customHomepageImageAlt}</p></>}
             {localizedFields(section.linkLabel, (language, value) => updateCustomHomeSection(section.id, (item) => ({ ...item, linkLabel: { ...item.linkLabel, [language]: value } })), false, 80)}
             <label className="admin-site-field">{t.customHomepageCta}<input maxLength={300} placeholder="/pages/about or #discover" value={section.href || ""} onChange={(event) => updateCustomHomeSection(section.id, (item) => ({ ...item, href: event.target.value }))} /></label>
             <p className="admin-site-hint">{t.siteAnnouncementHrefHint}</p>
