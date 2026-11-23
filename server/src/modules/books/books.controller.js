@@ -21,10 +21,87 @@ function databaseUnavailable(response) {
   });
 }
 
-export async function listBooks(_request, response) {
+const PAGE_SIZE = 24;
+const MAX_PAGE_SIZE = 48;
+const BOOK_LANGUAGES = new Set(["Gujarati", "Hindi", "English"]);
+const LOCALES = new Set(["en", "gu", "hi"]);
+
+function parsePositiveInteger(value, fallback, maximum) {
+  if (value === undefined) return fallback;
+  if (typeof value !== "string" || !/^\d+$/.test(value)) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed >= 1 && parsed <= maximum ? parsed : null;
+}
+
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\export async function listBooks(_request, response) {
   if (!isDatabaseConnected()) return databaseUnavailable(response);
   const records = await Book.find().sort({ catalogueId: 1 }).lean();
   response.json({ data: records.map(serializeBook) });
+}");
+}
+
+export async function listBooks(request, response) {
+  if (!isDatabaseConnected()) return databaseUnavailable(response);
+  const hasPaging = ["page", "limit", "q", "category", "bookLanguage", "sort", "locale"]
+    .some((key) => Object.hasOwn(request.query, key));
+  if (!hasPaging) {
+    const records = await Book.find().sort({ catalogueId: 1 }).lean();
+    return response.json({ data: records.map(serializeBook) });
+  }
+
+  const page = parsePositiveInteger(request.query.page, 1, 100000);
+  const limit = parsePositiveInteger(request.query.limit, PAGE_SIZE, MAX_PAGE_SIZE);
+  const query = request.query.q === undefined ? "" : request.query.q;
+  const category = request.query.category === undefined ? "" : request.query.category;
+  const bookLanguage = request.query.bookLanguage === undefined ? "" : request.query.bookLanguage;
+  const sortBy = request.query.sort === undefined ? "featured" : request.query.sort;
+  const locale = request.query.locale === undefined ? "en" : request.query.locale;
+  if (page === null || limit === null
+    || typeof query !== "string" || query.length > 100
+    || typeof category !== "string" || category.length > 50
+    || typeof bookLanguage !== "string" || (bookLanguage && !BOOK_LANGUAGES.has(bookLanguage))
+    || !["featured", "title", "author"].includes(sortBy)
+    || typeof locale !== "string" || !LOCALES.has(locale)) {
+    return response.status(400).json({
+      error: { code: "INVALID_CATALOGUE_QUERY", message: "Check the catalogue search and pagination filters." },
+    });
+  }
+
+  const filters = {};
+  if (category && category !== "All") filters.category = category;
+  if (bookLanguage) filters.language = bookLanguage;
+  if (query.trim()) {
+    const pattern = new RegExp(escapeRegex(query.trim()), "i");
+    filters.$or = [
+      ...["en", "gu", "hi"].flatMap((language) => [
+        { [`title.${language}`]: pattern },
+        { [`description.${language}`]: pattern },
+      ]),
+      { author: pattern },
+      { category: pattern },
+      { language: pattern },
+      { isbn: pattern },
+    ];
+  }
+  const sort = sortBy === "author"
+    ? { author: 1, catalogueId: 1 }
+    : sortBy === "title"
+      ? { [`title.${locale}`]: 1, catalogueId: 1 }
+      : { catalogueId: 1 };
+  const [records, total] = await Promise.all([
+    Book.find(filters).sort(sort).skip((page - 1) * limit).limit(limit).lean(),
+    Book.countDocuments(filters),
+  ]);
+  return response.json({
+    data: {
+      items: records.map(serializeBook),
+      page,
+      limit,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    },
+  });
 }
 
 export async function getBook(request, response) {
