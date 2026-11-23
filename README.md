@@ -29,11 +29,18 @@ npm install
 Set these Codespaces secrets, then restart the Codespace:
 
 - `MONGODB_URI` — MongoDB Atlas connection string.
+- `ADMIN_MFA_ENCRYPTION_KEY` — a private 32-byte encryption key, generated with the command below.
 - `RESEND_API_KEY` — private API key from Resend.
 - `EMAIL_FROM` — sender address verified with Resend, for example `Rasbhav Books <noreply@your-domain.example>`.
 - `APP_BASE_URL` — public HTTPS URL for the frontend on port 5173, without a path.
 - `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `R2_BUCKET_NAME` — credentials and private bucket name from Cloudflare R2.
 - `CLAMAV_HOST` and `CLAMAV_PORT` — private network address and port of the ClamAV daemon reachable by the API. Do not expose the daemon publicly.
+
+Generate the admin MFA key once in the Codespaces terminal:
+```sh
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+Save the 64-character output as the Codespaces secret `ADMIN_MFA_ENCRYPTION_KEY`, then restart the Codespace. Keep a secure backup of this key: administrator authenticator secrets are encrypted with it, so losing it prevents admin sign-ins until the MFA credentials are reset through a recovery procedure. Never commit the generated value or paste it into chat.
 
 The upload API fails closed until both R2 and ClamAV are reachable. Create the R2 bucket as private and create a scoped R2 API token for that bucket. Never put R2 credentials in frontend variables or commit them. `server/.env.example` lists all server settings.
 
