@@ -152,6 +152,22 @@ export default function AdminSiteSettingsPage() {
     }));
   }
 
+  function updateCustomHomeSection(sectionId, update) {
+    setSettings((current) => ({ ...current, homepage: { ...current.homepage, sections: current.homepage.sections.map((section) => section.id === sectionId ? update(section) : section) } }));
+  }
+
+  function addCustomHomeSection() {
+    const id = `custom-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    setSettings((current) => ({ ...current, homepage: { ...current.homepage, sections: [...current.homepage.sections, {
+      id, enabled: true, title: { en: "", gu: "", hi: "" }, description: { en: "", gu: "", hi: "" },
+      linkLabel: { en: "", gu: "", hi: "" }, href: "",
+    }] } }));
+  }
+
+  function removeCustomHomeSection(sectionId) {
+    setSettings((current) => ({ ...current, homepage: { ...current.homepage, sections: current.homepage.sections.filter((section) => section.id !== sectionId) } }));
+  }
+
   async function save() {
     setBusy(true); setError(""); setNotice("");
     try {
@@ -231,17 +247,25 @@ export default function AdminSiteSettingsPage() {
         <h2>{t.homepageSections}</h2>
         <p className="admin-site-hint">{t.homepageSectionsHint}</p>
         {settings.homepage.sections.map((section, index) => <div className="admin-site-menu-item" key={section.id}>
-          <label className="admin-site-check"><input
-            type="checkbox"
-            checked={section.enabled}
-            disabled={section.id === "discovery"}
-            onChange={(event) => toggleHomeSection(index, event.target.checked)}
-          />{t[`homeSection_${section.id}`]}</label>
+          <label className="admin-site-check"><input type="checkbox" checked={section.enabled} disabled={section.id === "discovery"} onChange={(event) => toggleHomeSection(index, event.target.checked)} />
+            {section.id.startsWith("custom-") ? t.homeSectionCustom : t[`homeSection_${section.id}`]}</label>
           <div className="admin-site-item-actions">
             <button type="button" disabled={index === 0} onClick={() => moveHomeSection(index, -1)}>{t.moveNavigationUp}</button>
             <button type="button" disabled={index === settings.homepage.sections.length - 1} onClick={() => moveHomeSection(index, 1)}>{t.moveNavigationDown}</button>
+            {section.id.startsWith("custom-") && <button type="button" onClick={() => removeCustomHomeSection(section.id)}>{t.removeCustomHomepageSection}</button>}
           </div>
+          {section.id.startsWith("custom-") && <>
+            <h3>{t.customHomepageSection}</h3>
+            {localizedFields(section.title, (language, value) => updateCustomHomeSection(section.id, (item) => ({ ...item, title: { ...item.title, [language]: value } })), false, 120)}
+            <p className="admin-site-hint">{t.customHomepageTitle}</p>
+            {localizedFields(section.description, (language, value) => updateCustomHomeSection(section.id, (item) => ({ ...item, description: { ...item.description, [language]: value } })), true, 500)}
+            <p className="admin-site-hint">{t.customHomepageBody}</p>
+            {localizedFields(section.linkLabel, (language, value) => updateCustomHomeSection(section.id, (item) => ({ ...item, linkLabel: { ...item.linkLabel, [language]: value } })), false, 80)}
+            <label className="admin-site-field">{t.customHomepageCta}<input maxLength={300} placeholder="/pages/about or #discover" value={section.href || ""} onChange={(event) => updateCustomHomeSection(section.id, (item) => ({ ...item, href: event.target.value }))} /></label>
+            <p className="admin-site-hint">{t.siteAnnouncementHrefHint}</p>
+          </>}
         </div>)}
+        <button className="admin-site-add" type="button" disabled={settings.homepage.sections.filter((section) => section.id.startsWith("custom-")).length >= 4} onClick={addCustomHomeSection}>{t.addCustomHomepageSection}</button>
         <h2>{t.siteHomepageHero}</h2>
         {[
           ["eyebrow", t.siteHeroEyebrow, 150, false],
