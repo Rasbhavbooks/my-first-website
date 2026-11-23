@@ -20,7 +20,11 @@ Phase 6 — admin and CMS: Phase 5's author workflow is implemented, and initial
 
 ## Run in GitHub Codespaces
 
-Node.js is required in the Codespace environment, not on your personal computer. In a Codespaces terminal:
+Node.js is installed in the Codespace; it is not required on your personal computer. The repository dev container starts the Node workspace and a private ClamAV service on an internal Docker network. ClamAV port 3310 is not forwarded or published to the internet. The first start may take a few minutes while ClamAV initializes its virus definitions.
+
+After this devcontainer configuration is merged, rebuild/reopen an existing Codespace once to apply it. The devcontainer sets `CLAMAV_HOST` and `CLAMAV_PORT` for the API; do not add them as Codespaces secrets.
+
+In a Codespaces terminal, install the project dependencies:
 
 ```sh
 npm install
@@ -34,7 +38,6 @@ Set these Codespaces secrets, then restart the Codespace:
 - `EMAIL_FROM` — sender address verified with Resend, for example `Rasbhav Books <noreply@your-domain.example>`.
 - `APP_BASE_URL` — public HTTPS URL for the frontend on port 5173, without a path.
 - `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `R2_BUCKET_NAME` — credentials and private bucket name from Cloudflare R2.
-- `CLAMAV_HOST` and `CLAMAV_PORT` — private network address and port of the ClamAV daemon reachable by the API. Do not expose the daemon publicly.
 
 Generate the admin MFA key once in the Codespaces terminal:
 ```sh
@@ -42,7 +45,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 Save the 64-character output as the Codespaces secret `ADMIN_MFA_ENCRYPTION_KEY`, then restart the Codespace. Keep a secure backup of this key: administrator authenticator secrets are encrypted with it, so losing it prevents admin sign-ins until the MFA credentials are reset through a recovery procedure. Never commit the generated value or paste it into chat.
 
-The upload API fails closed until both R2 and ClamAV are reachable. Create the R2 bucket as private and create a scoped R2 API token for that bucket. Never put R2 credentials in frontend variables or commit them. `server/.env.example` lists all server settings.
+The upload API fails closed until R2 is configured and ClamAV is reachable. Create the R2 bucket as private and create a scoped R2 API token for that bucket. Never put R2 credentials in frontend variables or commit them. For local development outside Codespaces or production, configure a private reachable ClamAV daemon in the server environment; never expose its TCP port publicly. `server/.env.example` lists all server settings.
 
 Set `CLIENT_ORIGIN` to that same frontend origin so the API accepts browser requests. Keep all keys private; never commit them. Without email settings, development returns a manual one-time token. Production will not create accounts or reset passwords until email is configured. Before the first API start, load the sample books once:
 
