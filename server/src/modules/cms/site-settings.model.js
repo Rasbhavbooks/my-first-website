@@ -106,7 +106,7 @@ const siteSettingsSchema = new mongoose.Schema(
   {
     key: { type: String, required: true, unique: true, immutable: true, default: "global" },
     platform: { defaultLanguage: { type: String, enum: ["en", "gu", "hi"], required: true, default: "en" } },
-    uploads: { type: authorUploadLimitsSchema, required: true, default: () => ({ ...DEFAULT_AUTHOR_UPLOAD_LIMITS_MB }) },
+    uploads: { type: authorUploadLimitsSchema, required: true, default: () => ({ coverMaxMb: DEFAULT_AUTHOR_UPLOAD_LIMITS_MB.cover, manuscriptMaxMb: DEFAULT_AUTHOR_UPLOAD_LIMITS_MB.manuscript }) },
     maintenance: { type: maintenanceSchema, required: true },
     announcement: { type: announcementSchema, required: true },
     navigation: { type: [navigationItemSchema], default: [], validate: (items) => items.length <= 8 },
