@@ -43,7 +43,7 @@ function localizedAlt(request) {
 
 function assetDto(asset) {
   return {
-    id: asset.id,
+    id: String(asset._id),
     fileName: asset.fileName,
     contentType: asset.contentType,
     size: asset.size,
