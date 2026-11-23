@@ -1,5 +1,5 @@
-async function adminDashboardRequest() {
-  const response = await fetch("/api/v1/admin/dashboard", { credentials: "include" });
+async function adminDashboardRequest(path = "") {
+  const response = await fetch(`/api/v1/admin/dashboard${path}`, { credentials: "include" });
   const result = await response.json().catch(() => ({}));
   if (!response.ok) {
     const error = new Error(result.error?.message || "Admin dashboard could not be loaded.");
@@ -7,9 +7,15 @@ async function adminDashboardRequest() {
     error.status = response.status;
     throw error;
   }
-  return result.data.stats;
+  return result.data;
 }
 
-export function getAdminDashboardStats() {
-  return adminDashboardRequest();
+export async function getAdminDashboardStats() {
+  const result = await adminDashboardRequest();
+  return result.stats;
+}
+
+export async function getAdminPlatformReadiness() {
+  const result = await adminDashboardRequest("/readiness");
+  return result.readiness;
 }
