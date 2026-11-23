@@ -4,7 +4,7 @@ This file records implementation status; the complete requirements remain in the
 
 ## Implemented
 
-- React/Vite frontend with responsive home, book catalogue, search, category filters, and sample book details. Admins can write localized descriptions for book categories; public, localized category pages show those descriptions and list active-category books, link from the homepage filters, and set client-side canonical/social metadata.
+- React/Vite frontend with responsive home, book catalogue, multilingual search across localized titles and descriptions, author, category, and book language, category and language filters, and title/author sorting. Search, filters, and sorting work across the sample catalogue in the browser; search history, trend analytics, ISBN lookup, and large-catalogue server pagination remain pending. Admins can write localized descriptions for book categories; public, localized category pages show those descriptions and list active-category books, link from the homepage filters, and set client-side canonical/social metadata.
 - Gujarati, Hindi, and English interface translations.
 - Express/Mongoose API with MongoDB Atlas configuration, health endpoint, book catalogue endpoints, and repeatable sample-book seed command.
 - Reader registration, email verification, login, logout, seven-day server-side sessions, profile editing, and password changes. Passwords use Argon2id; sessions use random HttpOnly cookies.
