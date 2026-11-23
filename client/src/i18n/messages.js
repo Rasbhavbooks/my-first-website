@@ -243,7 +243,7 @@ export const messages = {
     uploadLimitsInvalid: "पूर्ण संख्या चुनें: कवर 1–10 MB और पांडुलिपि 1–25 MB.",
     coverUploadLimitLabel: "कवर का अधिकतम आकार (MB)",
     manuscriptUploadLimitLabel: "PDF पांडुलिपि का अधिकतम आकार (MB)",
-    uploadLimitsHint: "सीमाएँ केवल नई फ़ाइलों पर लागू होती हैं। कवर 1–10 MB और पांडुलिपि 1–25 MB हो सकती है। फ़ाइल की सुरक्षा जाँच साफ़ होनी चाहिए और उसे निजी स्टोरेज में ही रखा जाएगा।,
+    uploadLimitsHint: "सीमाएँ केवल नई फ़ाइलों पर लागू होती हैं। कवर 1–10 MB और पांडुलिपि 1–25 MB हो सकती है। फ़ाइल की सुरक्षा जाँच साफ़ होनी चाहिए और उसे निजी स्टोरेज में ही रखा जाएगा।",
     bookIsbn: "ISBN",
     bookIsbnOptional: "ISBN (वैकल्पिक)",
     bookIsbnHint: "वैकल्पिक। मान्य ISBN-10 या ISBN-13 दर्ज करें।",
