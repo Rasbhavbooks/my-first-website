@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import AuthorProfile from "../auth/author-profile.model.js";
 import AuthorBook from "./author-book.model.js";
 import Category from "./category.model.js";
+import { normalizeIsbn } from "../../../../shared/isbn.js";
 
 const LANGUAGES = new Set(["Gujarati", "Hindi", "English"]);
 const LANGUAGE_KEYS = { Gujarati: "gu", Hindi: "hi", English: "en" };
@@ -27,15 +28,16 @@ async function validFields(body, requireDescription = false) {
   const category = body?.category;
   const title = localizedValues(body?.title, 160);
   const description = localizedValues(body?.description, 4000);
+  const isbn = normalizeIsbn(body?.isbn ?? "");
   const price = Number(body?.price);
   const activeCategory = typeof category === "string" ? await Category.exists({ key: category, active: true }) : null;
-  if (!LANGUAGES.has(language) || !activeCategory || !title || !description
+  if (isbn === null || !LANGUAGES.has(language) || !activeCategory || !title || !description
     || !Number.isFinite(price) || price < 0 || price > 100000 || Math.abs(price * 100 - Math.round(price * 100)) > 1e-7) {
     return null;
   }
   const key = LANGUAGE_KEYS[language];
   if ((title[key].length > 0 && title[key].length < 2) || (requireDescription && (title[key].length < 2 || description[key].length < 40))) return null;
-  return { title, description, language, category, price };
+  return { title, description, isbn, language, category, price };
 }
 
 function assetDto(asset) {
@@ -49,6 +51,7 @@ function authorBookDto(book) {
     authorName: book.authorName,
     title: book.title,
     description: book.description,
+    isbn: book.isbn || "",
     language: book.language,
     category: book.category,
     price: book.price,
@@ -86,6 +89,9 @@ export async function createAuthorBookDraft(request, response) {
 export async function updateAuthorBookDraft(request, response) {
   if (!mongoose.isValidObjectId(request.params.bookId)) {
     return errorResponse(response, 404, "AUTHOR_BOOK_NOT_FOUND", "Book draft not found.");
+  }
+  if (normalizeIsbn(request.body?.isbn ?? "") === null) {
+    return errorResponse(response, 400, "INVALID_BOOK_ISBN", "Enter a valid ISBN-10 or ISBN-13, or leave it blank.");
   }
   const fields = await validFields(request.body);
   if (!fields) return errorResponse(response, 400, "INVALID_AUTHOR_BOOK", "Check the title, description, language, category, and price.");
