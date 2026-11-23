@@ -1,4 +1,5 @@
 export const defaultSiteContent = {
+  platform: { defaultLanguage: "en" },
   announcement: {
     enabled: false,
     text: { en: "", gu: "", hi: "" },

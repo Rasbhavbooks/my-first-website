@@ -6,13 +6,15 @@ const SiteContentContext = createContext(null);
 
 export function SiteContentProvider({ children }) {
   const [settings, setSettings] = useState(defaultSiteContent);
+  const [loaded, setLoaded] = useState(false);
   const refreshSiteContent = useCallback(async () => {
     const next = await getPublicSiteContent();
     setSettings(next);
+    setLoaded(true);
     return next;
   }, []);
   useEffect(() => { refreshSiteContent(); }, [refreshSiteContent]);
-  const value = useMemo(() => ({ settings, refreshSiteContent }), [settings, refreshSiteContent]);
+  const value = useMemo(() => ({ settings, loaded, refreshSiteContent }), [settings, refreshSiteContent]);
   return createElement(SiteContentContext.Provider, { value }, children);
 }
 

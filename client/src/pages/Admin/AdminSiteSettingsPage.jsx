@@ -16,7 +16,7 @@ const styles = `
 .admin-site-panel h2{margin:0 0 14px;font:500 23px var(--serif);color:#30252c}
 .admin-site-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .admin-site-field{display:grid;gap:6px;color:#77716a;font-size:11px}
-.admin-site-field input,.admin-site-field textarea{width:100%;min-height:40px;padding:9px 11px;border:1px solid #d8d0c4;background:white;color:#30252c;font:12px/1.6 var(--sans)}
+.admin-site-field input,.admin-site-field textarea,.admin-site-field select{width:100%;min-height:40px;padding:9px 11px;border:1px solid #d8d0c4;background:white;color:#30252c;font:12px/1.6 var(--sans)}
 .admin-site-field textarea{min-height:115px;resize:vertical}
 .admin-site-check{display:flex;align-items:center;gap:8px;margin:12px 0;color:#514a44;font-size:12px}
 .admin-site-actions button{min-height:42px;padding:0 16px;border:1px solid #30252c;background:#30252c;color:white;cursor:pointer}
@@ -226,6 +226,17 @@ export default function AdminSiteSettingsPage() {
       <p><Link to="/admin">{t.adminDashboardTitle}</Link></p>
       {error && <p className="admin-site-error" role="alert">{error}</p>}
       {notice && <p className="admin-site-success" role="status">{notice}</p>}
+      <section className="admin-site-panel">
+        <h2>{t.platformSettingsTitle}</h2>
+        <p className="admin-site-hint">{t.defaultLanguageHint}</p>
+        <label className="admin-site-field">{t.defaultLanguageLabel}
+          <select value={settings.platform.defaultLanguage} onChange={(event) => setSettings((current) => ({ ...current, platform: { ...current.platform, defaultLanguage: event.target.value } }))}>
+            <option value="en">English</option>
+            <option value="gu">ગુજરાતી</option>
+            <option value="hi">हिन्दी</option>
+          </select>
+        </label>
+      </section>
       <section className="admin-site-panel">
         <h2>{t.siteAnnouncement}</h2>
         <label className="admin-site-check"><input type="checkbox" checked={settings.announcement.enabled} onChange={(event) => change("announcement", "enabled", "", event.target.checked)} />{t.siteAnnouncementEnabled}</label>

@@ -7,16 +7,16 @@ import AppRoutes from "./routes/AppRoutes.jsx";
 
 export default function App() {
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <WishlistProvider>
-          <CategoryProvider>
-            <SiteContentProvider>
+    <SiteContentProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <WishlistProvider>
+            <CategoryProvider>
               <AppRoutes />
-            </SiteContentProvider>
-          </CategoryProvider>
-        </WishlistProvider>
-      </AuthProvider>
-    </LanguageProvider>
+            </CategoryProvider>
+          </WishlistProvider>
+        </AuthProvider>
+      </LanguageProvider>
+    </SiteContentProvider>
   );
 }

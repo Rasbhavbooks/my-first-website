@@ -80,6 +80,7 @@ function normalizeHomeSections(value) {
   return sections;
 }
 function normalizeSettings(body) {
+  const platform = body?.platform;
   const announcement = body?.announcement;
   const hero = body?.homepage?.hero;
   const seo = body?.homepage?.seo;
@@ -95,7 +96,8 @@ function normalizeSettings(body) {
   const browseLinks = normalizeLinks(body?.footer?.browseLinks);
   const communityTitle = localizedGroup(body?.footer?.communityTitle, 120);
   const communityLinks = normalizeLinks(body?.footer?.communityLinks);
-  if (!announcement || typeof announcement.enabled !== "boolean" || !validHref(announcement.href)
+  if (!platform || !["en", "gu", "hi"].includes(platform.defaultLanguage)
+    || !announcement || typeof announcement.enabled !== "boolean" || !validHref(announcement.href)
     || !navigation || !tagline || !browseLinks || !communityTitle || !communityLinks || !sections || !validFeaturedBookIds) return null;
   const cleanAnnouncement = {
     enabled: announcement.enabled,
@@ -118,6 +120,7 @@ function normalizeSettings(body) {
     || Object.values(cleanSeo).some((value) => value === null)
     || Object.values(cleanHero).some((value) => value === null)) return null;
   return {
+    platform: { defaultLanguage: platform.defaultLanguage },
     announcement: cleanAnnouncement,
     navigation,
     footer: { tagline, browseLinks, communityTitle, communityLinks },
@@ -129,6 +132,7 @@ function mergeDefaults(settings) {
   return {
     ...DEFAULT_SETTINGS,
     ...settings,
+    platform: { ...DEFAULT_SETTINGS.platform, ...settings?.platform },
     announcement: { ...DEFAULT_SETTINGS.announcement, ...settings?.announcement },
     navigation: Array.isArray(settings?.navigation) && settings.navigation.length
       ? settings.navigation
@@ -165,13 +169,13 @@ function mergeDefaults(settings) {
 
 export async function getPublicSiteContent(_request, response) {
   if (!isDatabaseConnected()) {
-    const { announcement, navigation, footer, homepage } = mergeDefaults(null);
-    return response.json({ data: { settings: { announcement, navigation, footer, homepage } } });
+    const { platform, announcement, navigation, footer, homepage } = mergeDefaults(null);
+    return response.json({ data: { settings: { platform, announcement, navigation, footer, homepage } } });
   }
-  const settings = await SiteSettings.findOne({ key: "global" }).select("announcement navigation footer homepage -_id").lean();
-  const { announcement, navigation, footer, homepage } = mergeDefaults(settings);
+  const settings = await SiteSettings.findOne({ key: "global" }).select("platform announcement navigation footer homepage -_id").lean();
+  const { platform, announcement, navigation, footer, homepage } = mergeDefaults(settings);
   response.setHeader("Cache-Control", "public, max-age=60");
-  return response.json({ data: { settings: { announcement, navigation, footer, homepage } } });
+  return response.json({ data: { settings: { platform, announcement, navigation, footer, homepage } } });
 }
 
 export async function getAdminSiteContent(_request, response) {
