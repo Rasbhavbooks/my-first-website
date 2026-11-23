@@ -1,3 +1,4 @@
+import { DEFAULT_AUTHOR_UPLOAD_LIMITS_MB, MAX_AUTHOR_UPLOAD_LIMITS_MB } from "../../../../shared/author-upload-limits.js";
 import mongoose from "mongoose";
 
 const localizedTextSchema = new mongoose.Schema(
@@ -79,10 +80,33 @@ const maintenanceSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const authorUploadLimitsSchema = new mongoose.Schema(
+  {
+    coverMaxMb: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: MAX_AUTHOR_UPLOAD_LIMITS_MB.cover,
+      validate: Number.isInteger,
+      default: DEFAULT_AUTHOR_UPLOAD_LIMITS_MB.cover,
+    },
+    manuscriptMaxMb: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: MAX_AUTHOR_UPLOAD_LIMITS_MB.manuscript,
+      validate: Number.isInteger,
+      default: DEFAULT_AUTHOR_UPLOAD_LIMITS_MB.manuscript,
+    },
+  },
+  { _id: false },
+);
+
 const siteSettingsSchema = new mongoose.Schema(
   {
     key: { type: String, required: true, unique: true, immutable: true, default: "global" },
     platform: { defaultLanguage: { type: String, enum: ["en", "gu", "hi"], required: true, default: "en" } },
+    uploads: { type: authorUploadLimitsSchema, required: true, default: () => ({ ...DEFAULT_AUTHOR_UPLOAD_LIMITS_MB }) },
     maintenance: { type: maintenanceSchema, required: true },
     announcement: { type: announcementSchema, required: true },
     navigation: { type: [navigationItemSchema], default: [], validate: (items) => items.length <= 8 },
