@@ -127,8 +127,8 @@ export default function AuthorBooksPage() {
       setForm({ ...book, title: { ...book.title }, description: { ...book.description } });
       setBooks((current) => current.map((item) => item.id === book.id ? book : item));
       setNotice(t.bookDraftSaved);
-    } catch {
-      setError(t.authorBookError);
+    } catch (requestError) {
+      setError(requestError.code === "INVALID_BOOK_ISBN" ? t.bookIsbnInvalid : t.authorBookError);
     } finally {
       setBusy(false);
     }
@@ -216,7 +216,10 @@ export default function AuthorBooksPage() {
       await reload();
       setNotice(t.bookSubmitted);
     } catch (requestError) {
-      setError(requestError.code === "AUTHOR_BOOK_ASSETS_REQUIRED" ? t.bookFilesRequired : requestError.code === "AUTHOR_BOOK_INCOMPLETE" || requestError.code === "INVALID_AUTHOR_BOOK" ? t.bookSubmissionIncomplete : t.authorBookError);
+      setError(requestError.code === "INVALID_BOOK_ISBN" ? t.bookIsbnInvalid
+        : requestError.code === "AUTHOR_BOOK_ASSETS_REQUIRED" ? t.bookFilesRequired
+        : requestError.code === "AUTHOR_BOOK_INCOMPLETE" || requestError.code === "INVALID_AUTHOR_BOOK" ? t.bookSubmissionIncomplete
+        : t.authorBookError);
     } finally {
       setBusy(false);
     }
@@ -268,6 +271,9 @@ export default function AuthorBooksPage() {
                     </select>
                   </label>
                 </div>
+                <label className="author-book-field">{t.bookIsbnOptional}
+                  <input value={form.isbn || ""} disabled={!editable} maxLength={32} autoComplete="off" placeholder={t.bookIsbnHint} onChange={(event) => setForm((current) => ({ ...current, isbn: event.target.value }))} />
+                </label>
                 <label className="author-book-field">{t.bookTitle} · {LOCALE_NAMES[contentKey]}
                   <input value={form.title?.[contentKey] || ""} disabled={!editable} minLength={2} maxLength={160} onChange={(event) => setForm((current) => ({ ...current, title: { ...current.title, [contentKey]: event.target.value } }))} />
                 </label>
