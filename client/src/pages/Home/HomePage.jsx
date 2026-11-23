@@ -95,7 +95,7 @@ export default function HomePage() {
           <a href="#discover" className="text-link">{t.viewAll}<ArrowUpRight size={16} /></a>
         </div>
         <div className="catalog-tools">
-          <label className="search"><Search size={17} /><span className="sr-only">{t.search}</span><input value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder={t.search} /></label>
+          <label className="search"><Search size={17} /><span className="sr-only">{t.search}</span><input maxLength={100} value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder={t.search} /></label>
           <div className="catalog-refinements">
             <label className="catalog-refinement"><span>{t.bookLanguageFilter}</span><select value={bookLanguage} onChange={(event) => { setBookLanguage(event.target.value); setPage(1); }}>
               <option value="">{t.allLanguages}</option>
