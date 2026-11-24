@@ -60,7 +60,7 @@ test("returns the existing posting for an identical retry without creating anoth
   assert.equal(store.createCount, 1);
 });
 
-test("rejects reuse of a verified event with different ledger amounts", async () => {
+test("rejects reuse of a verified event with different ledger accounts", async () => {
   const store = makeStore();
   const writer = createLedgerWriter({ createRecord: store.create, findBySourceKeyHash: store.find });
   await writer({ paymentEvent, entries });
@@ -69,11 +69,11 @@ test("rejects reuse of a verified event with different ledger amounts", async ()
     writer({
       paymentEvent,
       entries: [
-        { accountCode: "gateway.clearing", direction: "debit", amountPaise: 12000 },
-        { accountCode: "sales.receivable", direction: "credit", amountPaise: 12000 },
+        { accountCode: "gateway.other", direction: "debit", amountPaise: 12500 },
+        { accountCode: "sales.receivable", direction: "credit", amountPaise: 12500 },
       ],
     }),
-    { code: "INVALID_LEDGER_INPUT" },
+    { code: "IDEMPOTENCY_KEY_REUSED" },
   );
   assert.equal(store.createCount, 1);
 });
