@@ -79,6 +79,7 @@ export default function AdminDashboardPage() {
     [t.adminMfaSetupTitle, "/admin/security/mfa"],
     [t.adminAuditLogTitle, "/admin/audit-log"],
     [t.adminLedgerTitle, "/admin/ledger"],
+    ["Payment reconciliation", "/admin/payment-reconciliation"],
     [t.adminSecuritySessionsTitle, "/admin/security/sessions"],
     [t.adminAuthorsTitle, "/admin/authors"],
     [t.adminCatalogueTitle, "/admin/catalogue"],
