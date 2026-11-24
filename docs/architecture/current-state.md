@@ -44,6 +44,11 @@ This file records implementation status; the complete requirements remain in the
 
 Broader platform settings, server-rendered SEO metadata and root-level sitemap/robots routing, book publication to the public catalogue, account deletion, passkeys/WebAuthn and hardware keys, verified-purchase review labels, production email deliverability monitoring, paid reader access and reading, purchases/payments, subscriptions, royalty ledger, broader CMS features, affiliates, institutions, audiobooks, AI tools, and mobile apps.
 
+## Phase 7 launch decisions
+
+- The owner selected digital eBooks only for the initial sales format; print-on-demand is outside the first-release scope.
+- Checkout and paid access stay disabled until the payment gateway, one-time purchase versus membership model, prices, platform/author revenue split, tax and refund policies, and author-rights wording are approved. No payment provider or financial terms are assumed.
+
 ## Next phase
 
-Continue Phase 7: Commerce & Membership. Book prices are already stored in catalogue entries and author drafts, but orders, payments, refunds, subscriptions, coupons, and invoices are not implemented. Keep checkout and sales disabled until the sales model and payment approach are settled; keep public publishing of author drafts disabled until the author-rights wording is approved. Phase 5 file uploads remain unavailable until a private Cloudflare R2 bucket and reachable ClamAV daemon are configured. Configure `ADMIN_MFA_ENCRYPTION_KEY` before administrator access, and configure email secrets plus the public frontend URL before enabling production registration or password reset. Follow the phases and Definition of Done in the master architecture.
+Continue Phase 7: Commerce & Membership. Book prices are already stored in catalogue entries and author drafts, but orders, payments, refunds, subscriptions, coupons, and invoices are not implemented. The initial format is digital eBooks only. Keep checkout and paid access disabled until the remaining payment and financial terms listed above are approved; keep public publishing of author drafts disabled until the author-rights wording is approved. Phase 5 file uploads remain unavailable until a private Cloudflare R2 bucket and reachable ClamAV daemon are configured. Configure `ADMIN_MFA_ENCRYPTION_KEY` before administrator access, and configure email secrets plus the public frontend URL before enabling production registration or password reset. Follow the phases and Definition of Done in the master architecture.
