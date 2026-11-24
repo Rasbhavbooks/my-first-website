@@ -86,7 +86,12 @@ paymentAttemptSchema.post("init", function rememberPersistedStatus() {
 
 paymentAttemptSchema.pre("validate", function validateStatusTransition() {
   if (this.isNew) {
-    if (this.status !== "created") this.invalidate("status", "New payment attempts must start as created.");
+    const validInitialTransition = this.$locals.transitionAuthorized === true
+      && this.$locals.transitionFrom === "created"
+      && transitions.created.includes(this.status);
+    if (this.status !== "created" && !validInitialTransition) {
+      this.invalidate("status", "New payment attempts must start as created or use transitionTo() once before saving.");
+    }
     return;
   }
   if (!this.isModified("status")) return;
