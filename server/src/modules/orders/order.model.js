@@ -51,7 +51,8 @@ const orderSchema = new mongoose.Schema(
     paymentProvider: { type: String, trim: true, lowercase: true, maxlength: 40, default: "" },
     paymentReference: { type: String, trim: true, maxlength: 160, default: "", select: false },
     paidAt: { type: Date, default: null },
-    cancelledAt: { type: Date, default: null },\n    refundedAt: { type: Date, default: null },
+    cancelledAt: { type: Date, default: null },
+    refundedAt: { type: Date, default: null },
   },
   { timestamps: true, versionKey: false },
 );
@@ -73,9 +74,31 @@ orderSchema.pre("validate", function validateOrderTransition() {
     }
     return;
   }
-  if (!this.isModified("status")) return;
-
   const originalStatus = this.$locals.persistedStatus;
+  const authorized = this.$locals.transitionAuthorized === true;
+  const transitionFrom = this.$locals.transitionFrom;
+  const validPaymentMetadataChange = authorized
+    && transitionFrom === "pending_payment"
+    && this.status === "paid";
+  const validPaidTimestampChange = authorized
+    && ["pending_payment", "refund_pending"].includes(transitionFrom)
+    && this.status === "paid";
+  const validCancelTimestampChange = authorized
+    && transitionFrom === "pending_payment"
+    && this.status === "cancelled";
+  const validRefundTimestampChange = authorized
+    && transitionFrom === "refund_pending"
+    && this.status === "refunded";
+  if (
+    (this.isModified("paymentProvider") || this.isModified("paymentReference"))
+      && !validPaymentMetadataChange
+    || this.isModified("paidAt") && !validPaidTimestampChange
+    || this.isModified("cancelledAt") && !validCancelTimestampChange
+    || this.isModified("refundedAt") && !validRefundTimestampChange
+  ) {
+    this.invalidate("status", "Order payment metadata and lifecycle timestamps must change through a valid transition.");
+  }
+  if (!this.isModified("status")) return;
   if (
     this.$locals.transitionAuthorized !== true
     || this.$locals.transitionFrom !== originalStatus
