@@ -57,3 +57,9 @@ test("author drafts accept at most two decimal places in rupee prices", async ()
   await validAuthorBook(10.29).validate();
   await assert.rejects(validAuthorBook(10.291).validate(), /two decimal places/);
 });
+
+test("catalogue sale eligibility is private and defaults to unavailable", () => {
+  const book = new Book({});
+  assert.equal(book.availableForSale, false);
+  assert.equal(Book.schema.path("availableForSale").options.select, false);
+});
