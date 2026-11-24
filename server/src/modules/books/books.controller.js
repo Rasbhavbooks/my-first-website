@@ -102,6 +102,47 @@ export async function listBooks(request, response) {
   });
 }
 
+export async function getRelatedBooks(request, response) {
+  if (!isDatabaseConnected()) return databaseUnavailable(response);
+  const limit = parsePositiveInteger(request.query.limit, 4, 12);
+  if (limit === null) {
+    return response.status(400).json({
+      error: { code: "INVALID_RECOMMENDATION_LIMIT", message: "Choose a limit from 1 to 12." },
+    });
+  }
+
+  const book = await Book.findOne({ catalogueId: request.params.bookId }).lean();
+  if (!book) {
+    return response.status(404).json({
+      error: { code: "BOOK_NOT_FOUND", message: "Book not found." },
+    });
+  }
+
+  const candidates = await Book.find({
+    catalogueId: { $ne: book.catalogueId },
+    $or: [
+      { category: book.category },
+      { language: book.language },
+      { author: book.author },
+    ],
+  }).sort({ catalogueId: 1 }).limit(Math.min(limit * 8, 96)).lean();
+
+  const recommendations = candidates
+    .map((candidate) => ({
+      candidate,
+      score: (candidate.category === book.category ? 4 : 0)
+        + (candidate.language === book.language ? 2 : 0)
+        + (candidate.author === book.author ? 3 : 0),
+    }))
+    .filter(({ score }) => score > 0)
+    .sort((left, right) => right.score - left.score
+      || left.candidate.catalogueId.localeCompare(right.candidate.catalogueId))
+    .slice(0, limit)
+    .map(({ candidate }) => serializeBook(candidate));
+
+  return response.json({ data: recommendations });
+}
+
 export async function getBook(request, response) {
   if (!isDatabaseConnected()) return databaseUnavailable(response);
   const record = await Book.findOne({ catalogueId: request.params.bookId }).lean();

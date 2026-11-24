@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { Link, useParams } from "react-router";
 import { getBookTitle } from "../../data/books.js";
 import BookReviews from "../../components/books/BookReviews.jsx";
+import RelatedBooks from "../../components/books/RelatedBooks.jsx";
 import AuthorFollowButton from "../../components/books/AuthorFollowButton.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { useCategories } from "../../hooks/useCategories.js";
@@ -71,6 +72,7 @@ export default function BookDetailsPage() {
         </article>
       </div>
       <BookReviews bookId={book.id} />
+      <RelatedBooks book={book} language={language} t={t} />
     </main>
   );
 }

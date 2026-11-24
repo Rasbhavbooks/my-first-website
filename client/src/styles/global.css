@@ -260,3 +260,8 @@ button { color: inherit; }
  .auth-page { min-height: 68vh; padding: 40px 18px; }
  .auth-card { padding: 28px 22px; }
 }
+
+.related-books { margin-top: 64px; }
+.related-books-heading { margin-bottom: 24px; }
+.related-books-heading h2 { margin: 12px 0 0; font: 500 clamp(25px, 3vw, 36px)/1.15 var(--serif); }
+.related-books-heading .eyebrow { color: #77716a; }
