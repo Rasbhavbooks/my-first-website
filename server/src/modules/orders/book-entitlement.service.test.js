@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 import { createPaidBookEntitlementService } from "./book-entitlement.service.js";
 
@@ -15,11 +16,23 @@ const order = {
   amountPaise: 12900,
   currency: "INR",
 };
+const paymentSourceId = "test-gateway:evt_1";
+const paymentEvent = {
+  provider: "test-gateway",
+  eventId: "evt_1",
+  orderId: ids.order,
+  outcome: "applied",
+  amountPaise: 12900,
+  currency: "INR",
+  signatureVerifiedAt: new Date("2026-01-01T00:00:00.000Z"),
+};
 const ledger = {
   _id: ids.ledger,
   orderId: ids.order,
   eventType: "order_payment",
   sourceType: "payment_event",
+  sourceId: paymentSourceId,
+  sourceKeyHash: createHash("sha256").update(paymentSourceId).digest("hex"),
   currency: "INR",
   entries: [
     { direction: "debit", amountPaise: 12900 },
@@ -29,10 +42,11 @@ const ledger = {
 
 function makeService(overrides = {}) {
   const writes = [];
-  const records = { order, ledger, byOrder: null, byReaderBook: null };
+  const records = { order, ledger, paymentEvent, byOrder: null, byReaderBook: null };
   const service = createPaidBookEntitlementService({
     findOrderById: async () => records.order,
     findPaymentLedgerByOrderId: async () => records.ledger,
+    findVerifiedPaymentEvent: async () => records.paymentEvent,
     findEntitlementByOrderId: async () => records.byOrder,
     findEntitlementByReaderAndBook: async () => records.byReaderBook,
     createEntitlement: async (record) => { writes.push(record); return { _id: "entitlement-1", ...record }; },
@@ -59,6 +73,13 @@ test("does not grant book access until a matching payment ledger entry exists", 
   const { service, records, writes } = makeService();
   records.ledger = null;
   await assert.rejects(service(ids.order), { code: "PAYMENT_LEDGER_REQUIRED" });
+  assert.equal(writes.length, 0);
+});
+
+test("requires the persisted signature-verified event referenced by the ledger", async () => {
+  const { service, records, writes } = makeService();
+  records.paymentEvent = null;
+  await assert.rejects(service(ids.order), { code: "VERIFIED_PAYMENT_REQUIRED" });
   assert.equal(writes.length, 0);
 });
 
