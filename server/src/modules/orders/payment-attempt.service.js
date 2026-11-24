@@ -48,10 +48,6 @@ export function createPaymentAttemptService({
     if (!order || String(order.buyerId) !== String(buyerId)) {
       throw fail("The order was not found for this reader.", "ORDER_NOT_FOUND");
     }
-    if (order.status !== "pending_payment") {
-      throw fail("A payment attempt can only be created for an unpaid order.", "ORDER_NOT_PAYABLE");
-    }
-
     const idempotencyKeyHash = createHash("sha256").update(idempotencyKey).digest("hex");
     const existing = await findAttemptByIdempotency(orderId, idempotencyKeyHash, { session });
     if (existing) {
@@ -59,6 +55,13 @@ export function createPaymentAttemptService({
         throw fail("This idempotency key was already used with another provider.", "IDEMPOTENCY_KEY_REUSED");
       }
       return { attempt: existing, replayed: true };
+    }
+
+    if (order.status !== "pending_payment") {
+      throw fail("A payment attempt can only be created for an unpaid order.", "ORDER_NOT_PAYABLE");
+    }
+    if (!Number.isSafeInteger(order.amountPaise) || order.amountPaise < 1 || order.currency !== "INR") {
+      throw fail("The order must have a valid whole-paise INR amount.", "INVALID_ORDER_AMOUNT");
     }
 
     const latest = await findLatestAttempt(orderId, { session });
