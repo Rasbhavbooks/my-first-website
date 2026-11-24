@@ -61,21 +61,21 @@ test("posts a persisted verified event with a hashed source key", async () => {
   assert.equal(store.createCount, 1);
 });
 
-test("ignores caller-supplied payment fields and loads the stored payment event", async () => {
+test("ignores caller-supplied payment fields and uses the stored amount and order", async () => {
   const store = makeStore();
-  const writer = makeWriter(store);
-  await assert.rejects(
-    writer({
-      ...postInput,
-      paymentEvent: {
-        ...paymentEvent,
-        amountPaise: 1,
-        signatureVerifiedAt: new Date(),
-      },
-    }),
-    /equal the verified payment amount/,
-  );
-  assert.equal(store.createCount, 0);
+  const result = await makeWriter(store)({
+    ...postInput,
+    paymentEvent: {
+      ...paymentEvent,
+      amountPaise: 1,
+      orderId: "64c0ffee0000000000000003",
+      signatureVerifiedAt: new Date(),
+    },
+  });
+
+  assert.equal(result.transaction.entries[0].amountPaise, 12500);
+  assert.equal(String(result.transaction.orderId), paymentEvent.orderId);
+  assert.equal(store.createCount, 1);
 });
 
 test("returns the existing posting for an identical retry without creating another", async () => {
@@ -139,9 +139,8 @@ test("rejects balanced entries that do not equal the stored payment amount", asy
 
 test("handles a concurrent duplicate-key insert as an idempotent replay", async () => {
   let existing;
-  const payloads = [];
   const createRecord = async (payload) => {
-    payloads.push(payload);
+    existing = { ...payload };
     const duplicate = new Error("duplicate key");
     duplicate.code = 11000;
     throw duplicate;
@@ -149,10 +148,7 @@ test("handles a concurrent duplicate-key insert as an idempotent replay", async 
   const findBySourceKeyHash = async () => existing;
   const findPaymentEventById = async () => paymentEvent;
   const writer = createLedgerWriter({ createRecord, findBySourceKeyHash, findPaymentEventById });
-  const pending = writer(postInput);
-  await Promise.resolve();
-  existing = { ...payloads[0] };
-  const result = await pending;
+  const result = await writer(postInput);
 
   assert.equal(result.replayed, true);
   assert.equal(result.transaction, existing);
