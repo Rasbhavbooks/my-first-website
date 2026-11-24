@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import DigitalBookOrder from "./order.model.js";
 import DigitalBookPaymentAttempt from "./payment-attempt.model.js";
 import DigitalBookPaymentEvent from "./payment-event.model.js";
