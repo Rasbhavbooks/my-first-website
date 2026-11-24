@@ -80,6 +80,7 @@ export default function AdminDashboardPage() {
     [t.adminAuditLogTitle, "/admin/audit-log"],
     [t.adminLedgerTitle, "/admin/ledger"],
     [t.adminPaymentReconciliationTitle, "/admin/payment-reconciliation"],
+    [t.adminOrdersTitle, "/admin/orders"],
     [t.adminSecuritySessionsTitle, "/admin/security/sessions"],
     [t.adminAuthorsTitle, "/admin/authors"],
     [t.adminCatalogueTitle, "/admin/catalogue"],
