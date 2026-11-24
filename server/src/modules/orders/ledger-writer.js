@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import DigitalBookPaymentEvent from "./payment-event.model.js";
 import LedgerTransaction from "./ledger-transaction.model.js";
 
 const allowedEventTypes = new Set([
@@ -53,19 +54,28 @@ function ledgerTotal(entries, direction) {
     .reduce((total, entry) => total + BigInt(entry.amountPaise), 0n);
 }
 
-export function createLedgerWriter({ createRecord, findBySourceKeyHash }) {
-  if (typeof createRecord !== "function" || typeof findBySourceKeyHash !== "function") {
-    throw new TypeError("Ledger writer requires createRecord and findBySourceKeyHash functions.");
+export function createLedgerWriter({ createRecord, findBySourceKeyHash, findPaymentEventById }) {
+  if (
+    typeof createRecord !== "function"
+    || typeof findBySourceKeyHash !== "function"
+    || typeof findPaymentEventById !== "function"
+  ) {
+    throw new TypeError("Ledger writer requires createRecord, findBySourceKeyHash, and findPaymentEventById functions.");
   }
 
-  return async function postVerifiedPaymentLedger({ paymentEvent, entries, eventType = "order_payment" }, { session } = {}) {
-    if (!paymentEvent || paymentEvent.sourceType === "payment_event") {
-      // Payment events are supplied as persisted records below; this guard keeps accidental
-      // non-event inputs from being treated as verified payment records.
+  return async function postVerifiedPaymentLedger({ paymentEventId, entries, eventType = "order_payment" }, { session } = {}) {
+    if (typeof paymentEventId !== "string" || !/^[a-f0-9]{24}$/i.test(paymentEventId)) {
+      throw fail("A persisted payment event ID is required.");
     }
-    const provider = String(paymentEvent?.provider ?? "").trim().toLowerCase();
-    const eventId = String(paymentEvent?.eventId ?? "").trim();
-    const verifiedAt = paymentEvent?.signatureVerifiedAt;
+
+    // Always load the authoritative record; a caller cannot supply its own verification flag,
+    // amount, provider, or order ID.
+    const paymentEvent = await findPaymentEventById(paymentEventId, { session });
+    if (!paymentEvent) throw fail("The payment event was not found.", "PAYMENT_EVENT_NOT_FOUND");
+
+    const provider = String(paymentEvent.provider ?? "").trim().toLowerCase();
+    const eventId = String(paymentEvent.eventId ?? "").trim();
+    const verifiedAt = paymentEvent.signatureVerifiedAt;
     if (!provider || !eventId || !verifiedAt || Number.isNaN(new Date(verifiedAt).getTime())) {
       throw fail("A signature-verified payment event is required.");
     }
@@ -77,6 +87,7 @@ export function createLedgerWriter({ createRecord, findBySourceKeyHash }) {
       throw fail("The verified payment amount must be a positive whole-paise value.");
     }
     if (!allowedEventTypes.has(eventType)) throw fail("Unsupported ledger event type.");
+
     const normalizedEntries = canonicalEntries(entries);
     const totalDebits = ledgerTotal(normalizedEntries, "debit");
     const totalCredits = ledgerTotal(normalizedEntries, "credit");
@@ -123,6 +134,11 @@ const defaultWriter = createLedgerWriter({
   createRecord: (payload, { session } = {}) => new LedgerTransaction(payload).save({ session }),
   findBySourceKeyHash: (sourceKeyHash, { session } = {}) => {
     let query = LedgerTransaction.findOne({ sourceKeyHash }).select("+sourceKeyHash");
+    if (session) query = query.session(session);
+    return query.lean();
+  },
+  findPaymentEventById: (paymentEventId, { session } = {}) => {
+    let query = DigitalBookPaymentEvent.findById(paymentEventId);
     if (session) query = query.session(session);
     return query.lean();
   },
