@@ -11,7 +11,7 @@ function databaseUnavailable(response) {
 
 function parsePositiveInteger(value, fallback, maximum) {
   if (value === undefined) return fallback;
-  if (typeof value !== "string" || !/^\\d+$/.test(value)) return null;
+  if (typeof value !== "string" || !/^\d+$/.test(value)) return null;
   const parsed = Number(value);
   return Number.isSafeInteger(parsed) && parsed >= 1 && parsed <= maximum ? parsed : null;
 }
