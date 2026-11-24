@@ -18,7 +18,10 @@ const entries = [
   { accountCode: "sales.receivable", direction: "credit", amountPaise: 12500 },
 ];
 
-function makeStore(event = paymentEvent) {
+function makeStore(
+  event = paymentEvent,
+  order = { _id: paymentEvent.orderId, status: "paid", amountPaise: 12500, currency: "INR" },
+) {
   const records = new Map();
   let createCount = 0;
   return {
@@ -37,6 +40,7 @@ function makeStore(event = paymentEvent) {
     },
     find: async (hash) => records.get(hash) ?? null,
     findEvent: async (id) => id === event?._id ? event : null,
+    findOrder: async (id) => String(id) === String(order?._id) ? order : null,
   };
 }
 
@@ -45,6 +49,7 @@ function makeWriter(store) {
     createRecord: store.create,
     findBySourceKeyHash: store.find,
     findPaymentEventById: store.findEvent,
+    findOrderById: store.findOrder,
   });
 }
 
@@ -137,6 +142,18 @@ test("rejects balanced entries that do not equal the stored payment amount", asy
   assert.equal(store.createCount, 0);
 });
 
+
+test("requires a paid matching INR order before posting", async () => {
+  const unpaid = makeStore(paymentEvent, { _id: paymentEvent.orderId, status: "pending_payment", amountPaise: 12500, currency: "INR" });
+  await assert.rejects(makeWriter(unpaid)(postInput), /Only paid orders/);
+
+  const mismatched = makeStore(paymentEvent, { _id: paymentEvent.orderId, status: "paid", amountPaise: 12000, currency: "INR" });
+  await assert.rejects(makeWriter(mismatched)(postInput), /must match the paid order/);
+
+  const wrongCurrency = makeStore(paymentEvent, { _id: paymentEvent.orderId, status: "paid", amountPaise: 12500, currency: "USD" });
+  await assert.rejects(makeWriter(wrongCurrency)(postInput), /must match the paid order/);
+});
+
 test("handles a concurrent duplicate-key insert as an idempotent replay", async () => {
   let existing;
   const createRecord = async (payload) => {
@@ -147,7 +164,8 @@ test("handles a concurrent duplicate-key insert as an idempotent replay", async 
   };
   const findBySourceKeyHash = async () => existing;
   const findPaymentEventById = async () => paymentEvent;
-  const writer = createLedgerWriter({ createRecord, findBySourceKeyHash, findPaymentEventById });
+  const findOrderById = async () => ({ _id: paymentEvent.orderId, status: "paid", amountPaise: 12500, currency: "INR" });
+  const writer = createLedgerWriter({ createRecord, findBySourceKeyHash, findPaymentEventById, findOrderById });
   const result = await writer(postInput);
 
   assert.equal(result.replayed, true);
