@@ -55,6 +55,13 @@ test("requires a matching balanced payment ledger entry", async () => {
   assert.equal(writes.length, 0);
 });
 
+test("does not grant book access until a matching payment ledger entry exists", async () => {
+  const { service, records, writes } = makeService();
+  records.ledger = null;
+  await assert.rejects(service(ids.order), { code: "PAYMENT_LEDGER_REQUIRED" });
+  assert.equal(writes.length, 0);
+});
+
 test("grants a single-book entitlement only after a paid balanced order", async () => {
   const { service, writes } = makeService();
   const result = await service(ids.order);
