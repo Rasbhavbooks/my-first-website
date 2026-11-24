@@ -15,6 +15,7 @@ import ReviewModerationPage from "../pages/Admin/ReviewModerationPage.jsx";
 import AuthorApplicationsPage from "../pages/Admin/AuthorApplicationsPage.jsx";
 import AdminDashboardPage from "../pages/Admin/AdminDashboardPage.jsx";
 import AdminAuditLogPage from "../pages/Admin/AdminAuditLogPage.jsx";
+import AdminLedgerPage from "../pages/Admin/AdminLedgerPage.jsx";
 import AdminSecuritySessionsPage from "../pages/Admin/AdminSecuritySessionsPage.jsx";
 import AdminUsersPage from "../pages/Admin/AdminUsersPage.jsx";
 import AdminAuthorsPage from "../pages/Admin/AdminAuthorsPage.jsx";
@@ -63,6 +64,7 @@ export default function AppRoutes() {
           <Route path="admin" element={<AdminDashboardPage />} />
           <Route path="admin/users" element={<AdminUsersPage />} />
           <Route path="admin/audit-log" element={<AdminAuditLogPage />} />
+          <Route path="admin/ledger" element={<AdminLedgerPage />} />
           <Route path="admin/security/sessions" element={<AdminSecuritySessionsPage />} />
           <Route path="admin/authors" element={<AdminAuthorsPage />} />
           <Route path="admin/catalogue" element={<AdminCataloguePage />} />
