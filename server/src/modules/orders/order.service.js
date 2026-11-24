@@ -86,7 +86,6 @@ export function createPendingOrderService({ findAvailableBook, findExistingOrder
 const defaultService = createPendingOrderService({
   findAvailableBook: (catalogueId, { session } = {}) => {
     let query = Book.findOne({ catalogueId, availableForSale: true })
-      .select("+availableForSale")
       .select("catalogueId title author price");
     if (session) query = query.session(session);
     return query.lean();
