@@ -27,6 +27,32 @@ export async function getBookById(bookId) {
 }
 
 
+export async function getRelatedBooks(bookId, currentBook, limit = 4) {
+  try {
+    const result = await requestCatalogue(
+      `/api/v1/books/${encodeURIComponent(bookId)}/related?limit=${limit}`,
+    );
+    if (Array.isArray(result)) return result;
+  } catch {
+    // Use the bundled sample catalogue when the API is unavailable in development.
+  }
+
+  const catalogue = await getBooks();
+  return catalogue
+    .filter((book) => book.id !== currentBook.id)
+    .map((book) => ({
+      book,
+      score: (book.category === currentBook.category ? 4 : 0)
+        + (book.language === currentBook.language ? 2 : 0)
+        + (book.author === currentBook.author ? 3 : 0),
+    }))
+    .filter(({ score }) => score > 0)
+    .sort((left, right) => right.score - left.score
+      || String(left.book.id).localeCompare(String(right.book.id)))
+    .slice(0, limit)
+    .map(({ book }) => book);
+}
+
 const CATALOGUE_PAGE_SIZE = 24;
 
 function filterFallbackBooks(allBooks, { category, query, bookLanguage, sort, language }) {
