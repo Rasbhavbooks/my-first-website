@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { inrPriceFromPaise, inrPriceToPaise } from "../../../shared/money.js";
+import { inrPriceFromPaise, inrPriceToPaise } from "../../../../shared/money.js";
 import Book from "./book.model.js";
 import AuthorBook from "./author-book.model.js";
 import mongoose from "mongoose";
