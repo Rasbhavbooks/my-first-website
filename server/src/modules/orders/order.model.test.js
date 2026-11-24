@@ -76,3 +76,21 @@ test("payment events reject fractional amounts and invalid provider names", asyn
   });
   await assert.rejects(event.validate());
 });
+
+test("verified payment facts are immutable and provider references stay private", () => {
+  for (const path of [
+    "orderId",
+    "provider",
+    "eventId",
+    "eventType",
+    "providerPaymentId",
+    "amountPaise",
+    "currency",
+    "signatureVerifiedAt",
+  ]) {
+    assert.equal(DigitalBookPaymentEvent.schema.path(path).options.immutable, true, path);
+  }
+  assert.equal(DigitalBookPaymentEvent.schema.path("providerPaymentId").options.select, false);
+  assert.notEqual(DigitalBookPaymentEvent.schema.path("outcome").options.immutable, true);
+  assert.notEqual(DigitalBookPaymentEvent.schema.path("processedAt").options.immutable, true);
+});
