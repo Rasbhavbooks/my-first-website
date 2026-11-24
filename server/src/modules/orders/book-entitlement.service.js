@@ -173,7 +173,11 @@ const defaultService = createPaidBookEntitlementService({
       .select("_id orderId eventType sourceType sourceId +sourceKeyHash currency entries"),
     session,
   ).lean(),
-  findVerifiedPaymentEvent: (provider, eventId, { session } = {}) => withSession(\n    DigitalBookPaymentEvent.findOne({ provider, eventId }).select("_id orderId provider eventId amountPaise currency outcome signatureVerifiedAt"),\n    session,\n  ).lean(),\n  findEntitlementByOrderId: (orderId, { session } = {}) => withSession(
+  findVerifiedPaymentEvent: (provider, eventId, { session } = {}) => withSession(
+    DigitalBookPaymentEvent.findOne({ provider, eventId }).select("_id orderId provider eventId amountPaise currency outcome signatureVerifiedAt"),
+    session,
+  ).lean(),
+  findEntitlementByOrderId: (orderId, { session } = {}) => withSession(
     DigitalBookEntitlement.findOne({ orderId }).select("+sourceLedgerId"),
     session,
   ).lean(),
