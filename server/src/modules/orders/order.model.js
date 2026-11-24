@@ -69,8 +69,15 @@ orderSchema.post("init", function rememberPersistedStatus() {
 
 orderSchema.pre("validate", function validateOrderTransition() {
   if (this.isNew) {
-    if (this.status !== "pending_payment") {
-      this.invalidate("status", "New orders must start as pending payment.");
+    if (
+      this.status !== "pending_payment"
+      || this.paymentProvider
+      || this.paymentReference
+      || this.paidAt
+      || this.cancelledAt
+      || this.refundedAt
+    ) {
+      this.invalidate("status", "New orders must start as pending payment without payment or lifecycle metadata.");
     }
     return;
   }
