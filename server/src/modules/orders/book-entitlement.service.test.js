@@ -83,6 +83,13 @@ test("requires the persisted signature-verified event referenced by the ledger",
   assert.equal(writes.length, 0);
 });
 
+test("rejects a verified event whose amount differs from the order", async () => {
+  const { service, records, writes } = makeService();
+  records.paymentEvent = { ...paymentEvent, amountPaise: 12800 };
+  await assert.rejects(service(ids.order), { code: "VERIFIED_PAYMENT_REQUIRED" });
+  assert.equal(writes.length, 0);
+});
+
 test("grants a single-book entitlement only after a paid balanced order", async () => {
   const { service, writes } = makeService();
   const result = await service(ids.order);
