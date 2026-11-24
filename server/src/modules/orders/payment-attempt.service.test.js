@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { createHash } from "node:crypto";
 import mongoose from "mongoose";
 import { createPaymentAttemptService } from "./payment-attempt.service.js";
 
@@ -63,7 +64,7 @@ test("creates a pending-order attempt from the server order snapshot inside a tr
   assert.equal(result.attempt.amountPaise, 4900);
   assert.equal(result.attempt.currency, "INR");
   assert.match(data.calls.find(([name]) => name === "create")[1].idempotencyKeyHash, /^[a-f0-9]{64}$/);
-  assert.equal(data.calls.find(([name]) => name === "create")[1].idempotencyKeyHash, undefined === key ? key : data.calls.find(([name]) => name === "create")[1].idempotencyKeyHash);
+  assert.equal(data.calls.find(([name]) => name === "create")[1].idempotencyKeyHash, createHash("sha256").update(key).digest("hex"));
   assert.equal(data.calls.find(([name]) => name === "create")[2].session, session);
 });
 
