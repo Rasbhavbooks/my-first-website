@@ -82,6 +82,7 @@ function matchesOrder(entitlement, order, ledger) {
 export function createPaidBookEntitlementService({
   findOrderById,
   findPaymentLedgerByOrderId,
+  findVerifiedPaymentEvent,
   findEntitlementByOrderId,
   findEntitlementByReaderAndBook,
   createEntitlement,
@@ -89,6 +90,7 @@ export function createPaidBookEntitlementService({
   for (const dependency of [
     findOrderById,
     findPaymentLedgerByOrderId,
+    findVerifiedPaymentEvent,
     findEntitlementByOrderId,
     findEntitlementByReaderAndBook,
     createEntitlement,
