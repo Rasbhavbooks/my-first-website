@@ -137,7 +137,7 @@ test("rejects balanced entries that do not equal the stored payment amount", asy
         { accountCode: "sales.receivable", direction: "credit", amountPaise: 10000 },
       ],
     }),
-    /equal the verified payment amount/,
+    /equal the paid order amount/,
   );
   assert.equal(store.createCount, 0);
 });
