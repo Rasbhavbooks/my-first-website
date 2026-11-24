@@ -14,37 +14,75 @@ function validAttempt(overrides = {}) {
   });
 }
 
-test("payment attempt starts as created and follows a valid capture path", async () => {
+function persistedAttempt(status) {
+  const data = validAttempt().toObject();
+  return DigitalBookPaymentAttempt.hydrate({ ...data, status });
+}
+
+test("payment attempt follows valid state transitions one persisted step at a time", async () => {
   const attempt = validAttempt();
   await attempt.validate();
   assert.equal(attempt.status, "created");
 
-  const capturedAt = new Date("2026-11-24T12:00:00.000Z");
-  attempt.transitionTo("pending");
-  attempt.transitionTo("authorized");
-  attempt.transitionTo("captured", capturedAt);
+  const pending = new Date("2026-11-24T12:00:00.000Z");
+  attempt.transitionTo("pending", pending);
   await attempt.validate();
+  assert.equal(attempt.status, "pending");
 
-  assert.equal(attempt.status, "captured");
-  assert.equal(attempt.capturedAt.toISOString(), capturedAt.toISOString());
+  const authorized = persistedAttempt("pending");
+  authorized.transitionTo("authorized");
+  await authorized.validate();
+
+  const captured = persistedAttempt("authorized");
+  const capturedAt = new Date("2026-11-24T12:01:00.000Z");
+  captured.transitionTo("captured", capturedAt);
+  await captured.validate();
+  assert.equal(captured.status, "captured");
+  assert.equal(captured.capturedAt.toISOString(), capturedAt.toISOString());
 });
 
-test("payment attempt records valid refund and retry path", () => {
-  const attempt = validAttempt({ status: "captured" });
-  attempt.transitionTo("refund_pending");
-  attempt.transitionTo("captured");
-  attempt.transitionTo("refund_pending");
-  attempt.transitionTo("refunded");
+test("payment attempt follows refund transitions only after each prior state is persisted", () => {
+  const refundPending = persistedAttempt("captured");
+  refundPending.transitionTo("refund_pending");
+  assert.equal(refundPending.status, "refund_pending");
 
-  assert.equal(attempt.status, "refunded");
-  assert.ok(attempt.refundedAt instanceof Date);
+  const capturedAgain = persistedAttempt("refund_pending");
+  capturedAgain.transitionTo("captured");
+  assert.equal(capturedAgain.status, "captured");
+
+  const retryRefund = persistedAttempt("captured");
+  retryRefund.transitionTo("refund_pending");
+  const refunded = persistedAttempt("refund_pending");
+  refunded.transitionTo("refunded");
+  assert.equal(refunded.status, "refunded");
+  assert.ok(refunded.refundedAt instanceof Date);
 });
 
-test("payment attempt rejects skipped transitions and terminal-state changes", () => {
+test("payment attempt rejects skipped transitions, direct status edits, and unsaved chained transitions", async () => {
   const attempt = validAttempt();
   assert.throws(() => attempt.transitionTo("refunded"), { code: "INVALID_PAYMENT_TRANSITION" });
-  attempt.transitionTo("failed");
-  assert.throws(() => attempt.transitionTo("pending"), { code: "INVALID_PAYMENT_TRANSITION" });
+
+  const edited = persistedAttempt("created");
+  edited.status = "captured";
+  await assert.rejects(edited.validate(), /Use transitionTo\(\)/);
+
+  const chained = validAttempt();
+  chained.transitionTo("pending");
+  assert.throws(() => chained.transitionTo("captured"), { code: "INVALID_PAYMENT_TRANSITION" });
+
+  await assert.rejects(validAttempt({ status: "captured" }).validate(), /New payment attempts must start as created/);
+});
+
+test("payment attempt refuses query-based updates that bypass transition validation", async () => {
+  const id = new mongoose.Types.ObjectId();
+  await assert.rejects(
+    DigitalBookPaymentAttempt.updateOne({ _id: id }, { $set: { status: "captured" } }).exec(),
+    { code: "INVALID_PAYMENT_TRANSITION" },
+  );
+  await assert.rejects(
+    DigitalBookPaymentAttempt.findOneAndUpdate({ _id: id }, { status: "refunded" }).exec(),
+    { code: "INVALID_PAYMENT_TRANSITION" },
+  );
 });
 
 test("payment attempt validates whole-paise amounts and provider identifiers", async () => {
