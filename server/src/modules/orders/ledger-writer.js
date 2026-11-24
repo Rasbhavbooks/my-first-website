@@ -1,18 +1,7 @@
 import { createHash } from "node:crypto";
+import DigitalBookOrder from "./order.model.js";
 import DigitalBookPaymentEvent from "./payment-event.model.js";
 import LedgerTransaction from "./ledger-transaction.model.js";
-
-const allowedEventTypes = new Set([
-  "order_payment",
-  "book_sale",
-  "platform_commission",
-  "author_royalty",
-  "gateway_fee",
-  "refund",
-  "tax",
-  "payout",
-  "adjustment",
-]);
 
 function fail(message, code = "INVALID_LEDGER_INPUT") {
   const error = new Error(message);
@@ -54,22 +43,22 @@ function ledgerTotal(entries, direction) {
     .reduce((total, entry) => total + BigInt(entry.amountPaise), 0n);
 }
 
-export function createLedgerWriter({ createRecord, findBySourceKeyHash, findPaymentEventById }) {
+export function createLedgerWriter({ createRecord, findBySourceKeyHash, findPaymentEventById, findOrderById }) {
   if (
     typeof createRecord !== "function"
     || typeof findBySourceKeyHash !== "function"
     || typeof findPaymentEventById !== "function"
+    || typeof findOrderById !== "function"
   ) {
-    throw new TypeError("Ledger writer requires createRecord, findBySourceKeyHash, and findPaymentEventById functions.");
+    throw new TypeError("Ledger writer requires record creation and authoritative payment-event, order, and source-key lookups.");
   }
 
-  return async function postVerifiedPaymentLedger({ paymentEventId, entries, eventType = "order_payment" }, { session } = {}) {
+  return async function postVerifiedPaymentLedger({ paymentEventId, entries }, { session } = {}) {
     if (typeof paymentEventId !== "string" || !/^[a-f0-9]{24}$/i.test(paymentEventId)) {
       throw fail("A persisted payment event ID is required.");
     }
 
-    // Always load the authoritative record; a caller cannot supply its own verification flag,
-    // amount, provider, or order ID.
+    // Always load authoritative records; callers cannot supply verification, amount, or order fields.
     const paymentEvent = await findPaymentEventById(paymentEventId, { session });
     if (!paymentEvent) throw fail("The payment event was not found.", "PAYMENT_EVENT_NOT_FOUND");
 
@@ -86,24 +75,34 @@ export function createLedgerWriter({ createRecord, findBySourceKeyHash, findPaym
     if (!Number.isSafeInteger(paymentEvent.amountPaise) || paymentEvent.amountPaise < 1) {
       throw fail("The verified payment amount must be a positive whole-paise value.");
     }
-    if (!allowedEventTypes.has(eventType)) throw fail("Unsupported ledger event type.");
+
+    const order = await findOrderById(paymentEvent.orderId, { session });
+    if (!order) throw fail("The payment event order was not found.", "PAYMENT_ORDER_NOT_FOUND");
+    if (order.status !== "paid") throw fail("Only paid orders can be posted to the ledger.");
+    if (
+      order.amountPaise !== paymentEvent.amountPaise
+      || order.currency !== paymentEvent.currency
+      || paymentEvent.currency !== "INR"
+    ) {
+      throw fail("The verified payment amount and currency must match the paid order.");
+    }
 
     const normalizedEntries = canonicalEntries(entries);
     const totalDebits = ledgerTotal(normalizedEntries, "debit");
     const totalCredits = ledgerTotal(normalizedEntries, "credit");
-    if (totalDebits !== BigInt(paymentEvent.amountPaise) || totalCredits !== BigInt(paymentEvent.amountPaise)) {
-      throw fail("Ledger debit and credit totals must equal the verified payment amount.");
+    if (totalDebits !== BigInt(order.amountPaise) || totalCredits !== BigInt(order.amountPaise)) {
+      throw fail("Ledger debit and credit totals must equal the paid order amount.");
     }
 
     const sourceId = `${provider}:${eventId}`;
     const sourceKeyHash = createHash("sha256").update(sourceId).digest("hex");
     const payload = {
-      eventType,
+      eventType: "order_payment",
       sourceType: "payment_event",
       sourceId,
       sourceKeyHash,
-      orderId: paymentEvent.orderId,
-      currency: paymentEvent.currency ?? "INR",
+      orderId: order._id ?? order.id,
+      currency: order.currency,
       entries: normalizedEntries,
     };
 
@@ -139,6 +138,11 @@ const defaultWriter = createLedgerWriter({
   },
   findPaymentEventById: (paymentEventId, { session } = {}) => {
     let query = DigitalBookPaymentEvent.findById(paymentEventId);
+    if (session) query = query.session(session);
+    return query.lean();
+  },
+  findOrderById: (orderId, { session } = {}) => {
+    let query = DigitalBookOrder.findById(orderId);
     if (session) query = query.session(session);
     return query.lean();
   },
