@@ -3,9 +3,10 @@ import test from "node:test";
 import { createLedgerWriter } from "./ledger-writer.js";
 
 const paymentEvent = {
+  _id: "64c0ffee0000000000000001",
   provider: "example-pay",
   eventId: "evt_123",
-  orderId: "order-123",
+  orderId: "64c0ffee0000000000000002",
   amountPaise: 12500,
   currency: "INR",
   signatureVerifiedAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -17,7 +18,7 @@ const entries = [
   { accountCode: "sales.receivable", direction: "credit", amountPaise: 12500 },
 ];
 
-function makeStore() {
+function makeStore(event = paymentEvent) {
   const records = new Map();
   let createCount = 0;
   return {
@@ -35,25 +36,53 @@ function makeStore() {
       return record;
     },
     find: async (hash) => records.get(hash) ?? null,
+    findEvent: async (id) => id === event?._id ? event : null,
   };
 }
 
-test("posts a verified event with a hashed source key", async () => {
+function makeWriter(store) {
+  return createLedgerWriter({
+    createRecord: store.create,
+    findBySourceKeyHash: store.find,
+    findPaymentEventById: store.findEvent,
+  });
+}
+
+const postInput = { paymentEventId: paymentEvent._id, entries };
+
+test("posts a persisted verified event with a hashed source key", async () => {
   const store = makeStore();
-  const writer = createLedgerWriter({ createRecord: store.create, findBySourceKeyHash: store.find });
-  const result = await writer({ paymentEvent, entries });
+  const result = await makeWriter(store)(postInput);
 
   assert.equal(result.replayed, false);
   assert.match(result.transaction.sourceKeyHash, /^[a-f0-9]{64}$/);
   assert.equal(result.transaction.sourceId, "example-pay:evt_123");
+  assert.equal(String(result.transaction.orderId), paymentEvent.orderId);
   assert.equal(store.createCount, 1);
+});
+
+test("ignores caller-supplied payment fields and loads the stored payment event", async () => {
+  const store = makeStore();
+  const writer = makeWriter(store);
+  await assert.rejects(
+    writer({
+      ...postInput,
+      paymentEvent: {
+        ...paymentEvent,
+        amountPaise: 1,
+        signatureVerifiedAt: new Date(),
+      },
+    }),
+    /equal the verified payment amount/,
+  );
+  assert.equal(store.createCount, 0);
 });
 
 test("returns the existing posting for an identical retry without creating another", async () => {
   const store = makeStore();
-  const writer = createLedgerWriter({ createRecord: store.create, findBySourceKeyHash: store.find });
-  const first = await writer({ paymentEvent, entries });
-  const retry = await writer({ paymentEvent, entries: [...entries].reverse() });
+  const writer = makeWriter(store);
+  const first = await writer(postInput);
+  const retry = await writer({ ...postInput, entries: [...entries].reverse() });
 
   assert.equal(retry.replayed, true);
   assert.equal(retry.transaction, first.transaction);
@@ -62,12 +91,12 @@ test("returns the existing posting for an identical retry without creating anoth
 
 test("rejects reuse of a verified event with different ledger accounts", async () => {
   const store = makeStore();
-  const writer = createLedgerWriter({ createRecord: store.create, findBySourceKeyHash: store.find });
-  await writer({ paymentEvent, entries });
+  const writer = makeWriter(store);
+  await writer(postInput);
 
   await assert.rejects(
     writer({
-      paymentEvent,
+      ...postInput,
       entries: [
         { accountCode: "gateway.other", direction: "debit", amountPaise: 12500 },
         { accountCode: "sales.receivable", direction: "credit", amountPaise: 12500 },
@@ -78,20 +107,26 @@ test("rejects reuse of a verified event with different ledger accounts", async (
   assert.equal(store.createCount, 1);
 });
 
-test("fails closed for unverified or ignored events", async () => {
+test("fails closed for missing, unverified, or ignored persisted events", async () => {
   const store = makeStore();
-  const writer = createLedgerWriter({ createRecord: store.create, findBySourceKeyHash: store.find });
-  await assert.rejects(writer({ paymentEvent: { ...paymentEvent, signatureVerifiedAt: null }, entries }), /signature-verified/);
-  await assert.rejects(writer({ paymentEvent: { ...paymentEvent, outcome: "ignored" }, entries }), /Only applied/);
+  const writer = makeWriter(store);
+  await assert.rejects(writer({ ...postInput, paymentEventId: "000000000000000000000099" }), { code: "PAYMENT_EVENT_NOT_FOUND" });
+  await assert.rejects(
+    makeWriter(makeStore({ ...paymentEvent, signatureVerifiedAt: null }))(postInput),
+    /signature-verified/,
+  );
+  await assert.rejects(
+    makeWriter(makeStore({ ...paymentEvent, outcome: "ignored" }))(postInput),
+    /Only applied/,
+  );
   assert.equal(store.createCount, 0);
 });
 
-test("rejects balanced entries that do not equal the verified payment amount", async () => {
+test("rejects balanced entries that do not equal the stored payment amount", async () => {
   const store = makeStore();
-  const writer = createLedgerWriter({ createRecord: store.create, findBySourceKeyHash: store.find });
   await assert.rejects(
-    writer({
-      paymentEvent,
+    makeWriter(store)({
+      ...postInput,
       entries: [
         { accountCode: "gateway.clearing", direction: "debit", amountPaise: 10000 },
         { accountCode: "sales.receivable", direction: "credit", amountPaise: 10000 },
@@ -112,12 +147,11 @@ test("handles a concurrent duplicate-key insert as an idempotent replay", async 
     throw duplicate;
   };
   const findBySourceKeyHash = async () => existing;
-  const writer = createLedgerWriter({ createRecord, findBySourceKeyHash });
-  const pending = writer({ paymentEvent, entries });
+  const findPaymentEventById = async () => paymentEvent;
+  const writer = createLedgerWriter({ createRecord, findBySourceKeyHash, findPaymentEventById });
+  const pending = writer(postInput);
   await Promise.resolve();
-  existing = {
-    ...payloads[0],
-  };
+  existing = { ...payloads[0] };
   const result = await pending;
 
   assert.equal(result.replayed, true);
