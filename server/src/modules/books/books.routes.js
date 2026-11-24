@@ -1,7 +1,7 @@
 import { rateLimit } from "express-rate-limit";
 import { Router } from "express";
 import { requireReader } from "../auth/auth.middleware.js";
-import { getBook, listBooks } from "./books.controller.js";
+import { getBook, getRelatedBooks, listBooks } from "./books.controller.js";
 import {
   addHelpfulVote,
   createBookReview,
@@ -35,6 +35,7 @@ const reportLimiter = rateLimit({
 });
 
 router.get("/", listBooks);
+router.get("/:bookId/related", getRelatedBooks);
 router.get("/:bookId/reviews", listBookReviews);
 router.get("/:bookId/reviews/mine", requireReader, getMyBookReview);
 router.get("/:bookId/reviews/helpful", requireReader, listMyHelpfulVotes);
