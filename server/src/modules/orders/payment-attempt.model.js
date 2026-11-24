@@ -74,13 +74,57 @@ paymentAttemptSchema.index(
   { unique: true, partialFilterExpression: { providerPaymentId: { $type: "string" } } },
 );
 
+function transitionError(message = "Payment attempt changes must use a valid status transition.") {
+  const error = new Error(message);
+  error.code = "INVALID_PAYMENT_TRANSITION";
+  return error;
+}
+
+paymentAttemptSchema.post("init", function rememberPersistedStatus() {
+  this.$locals.persistedStatus = this.status;
+});
+
+paymentAttemptSchema.pre("validate", function validateStatusTransition() {
+  if (this.isNew) {
+    if (this.status !== "created") this.invalidate("status", "New payment attempts must start as created.");
+    return;
+  }
+  if (!this.isModified("status")) return;
+
+  const originalStatus = this.$locals.persistedStatus;
+  const authorized = this.$locals.transitionAuthorized === true;
+  if (
+    !authorized
+    || this.$locals.transitionFrom !== originalStatus
+    || !transitions[originalStatus]?.includes(this.status)
+  ) {
+    this.invalidate("status", "Use transitionTo() for a valid payment status change.");
+  }
+});
+
+function rejectQueryMutation() {
+  throw transitionError("Payment attempts must be changed through a validated document transition.");
+}
+
+for (const operation of ["updateOne", "updateMany", "findOneAndUpdate", "replaceOne", "findOneAndReplace"]) {
+  paymentAttemptSchema.pre(operation, rejectQueryMutation);
+}
+
 paymentAttemptSchema.methods.transitionTo = function transitionTo(nextStatus, now = new Date()) {
-  if (!transitions[this.status]?.includes(nextStatus)) {
-    const error = new Error(`Payment cannot move from ${this.status} to ${nextStatus}.`);
-    error.code = "INVALID_PAYMENT_TRANSITION";
-    throw error;
+  if (this.$locals.transitionAuthorized) {
+    throw transitionError("Save this payment transition before changing its status again.");
+  }
+  const currentStatus = this.isNew ? this.status : this.$locals.persistedStatus;
+  if (
+    !currentStatus
+    || this.status !== currentStatus
+    || !transitions[currentStatus]?.includes(nextStatus)
+  ) {
+    throw transitionError(`Payment cannot move from ${currentStatus || this.status} to ${nextStatus}.`);
   }
 
+  this.$locals.transitionFrom = currentStatus;
+  this.$locals.transitionAuthorized = true;
   this.status = nextStatus;
   if (nextStatus === "captured") this.capturedAt = now;
   if (nextStatus === "failed") this.failedAt = now;
@@ -88,6 +132,12 @@ paymentAttemptSchema.methods.transitionTo = function transitionTo(nextStatus, no
   if (nextStatus === "refunded") this.refundedAt = now;
   return this;
 };
+
+paymentAttemptSchema.post("save", function rememberSavedStatus(document) {
+  document.$locals.persistedStatus = document.status;
+  document.$locals.transitionFrom = undefined;
+  document.$locals.transitionAuthorized = false;
+});
 
 const DigitalBookPaymentAttempt = mongoose.models.DigitalBookPaymentAttempt
   || mongoose.model("DigitalBookPaymentAttempt", paymentAttemptSchema);
