@@ -25,6 +25,7 @@ const orderSchema = new mongoose.Schema(
       required: true,
       match: /^[a-f0-9]{64}$/,
       select: false,
+      immutable: true,
     },
     bookId: { type: String, required: true, trim: true, maxlength: 64, immutable: true },
     bookTitle: { type: localizedTitleSchema, required: true, immutable: true },
@@ -37,6 +38,7 @@ const orderSchema = new mongoose.Schema(
         validator: Number.isSafeInteger,
         message: "Order amounts must be whole paise values.",
       },
+      immutable: true,
     },
     currency: { type: String, enum: ["INR"], required: true, default: "INR", immutable: true },
     status: {
