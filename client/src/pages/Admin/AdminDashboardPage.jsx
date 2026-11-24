@@ -78,6 +78,7 @@ export default function AdminDashboardPage() {
     [t.adminUsersTitle, "/admin/users"],
     [t.adminMfaSetupTitle, "/admin/security/mfa"],
     [t.adminAuditLogTitle, "/admin/audit-log"],
+    [t.adminLedgerTitle, "/admin/ledger"],
     [t.adminSecuritySessionsTitle, "/admin/security/sessions"],
     [t.adminAuthorsTitle, "/admin/authors"],
     [t.adminCatalogueTitle, "/admin/catalogue"],
