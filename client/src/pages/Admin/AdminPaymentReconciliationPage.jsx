@@ -7,6 +7,7 @@ import { formatInr } from "../../utils/formatCurrency.js";
 
 const copy = {
   en: {
+    admin: "Admin", dashboard: "Admin dashboard", ledger: "Financial ledger", backHome: "Go home", previous: "Previous", next: "Next",
     title: "Payment reconciliation",
     intro: "Compare verified payment events with the financial ledger. This page is read-only and never posts or changes a payment.",
     note: "Unposted means an applied event has no matching ledger entry yet. Review it through the approved payment workflow; this page cannot repair or post records.",
@@ -17,6 +18,7 @@ const copy = {
     posted: "Posted", unposted: "Needs review", ignored: "Ignored",
   },
   gu: {
+    admin: "એડમિન", dashboard: "એડમિન ડેશબોર્ડ", ledger: "નાણાકીય લેજર", backHome: "મુખ્ય પાનાં પર જાઓ", previous: "પહેલાં", next: "આગળ",
     title: "ચુકવણી મેળવણી",
     intro: "ચકાસેલી ચુકવણી ઘટનાઓ અને નાણાકીય ledger સરખાવો. આ પાનું ફક્ત જોવા માટે છે; તે ચુકવણીમાં ફેરફાર કે પોસ્ટિંગ કરતું નથી.",
     note: "“સમીક્ષા જરૂરી”નો અર્થ: મંજૂર થયેલી event માટે ledger નોંધ મળી નથી. મંજૂર પ્રક્રિયા દ્વારા તપાસો; આ પાનું રેકોર્ડ સુધારતું કે પોસ્ટ કરતું નથી.",
@@ -27,6 +29,7 @@ const copy = {
     posted: "પોસ્ટ થયું", unposted: "સમીક્ષા જરૂરી", ignored: "અવગણ્યું",
   },
   hi: {
+    admin: "एडमिन", dashboard: "एडमिन डैशबोर्ड", ledger: "वित्तीय लेजर", backHome: "मुखपृष्ठ पर जाएँ", previous: "पिछला", next: "अगला",
     title: "भुगतान मिलान",
     intro: "सत्यापित भुगतान घटनाओं की वित्तीय ledger से तुलना करें। यह पेज केवल पढ़ने के लिए है; यह भुगतान पोस्ट या बदलता नहीं है।",
     note: "“समीक्षा आवश्यक” का अर्थ है कि लागू event के लिए ledger प्रविष्टि नहीं मिली। स्वीकृत प्रक्रिया से जाँचें; यह पेज रिकॉर्ड ठीक या पोस्ट नहीं करता।",
@@ -69,7 +72,7 @@ function formatTimestamp(value, language) {
 
 export default function AdminPaymentReconciliationPage() {
   const { user, loading } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const text = copy[language] || copy.en;
   const [result, setResult] = useState(null);
   const [page, setPage] = useState(1);
@@ -89,18 +92,18 @@ export default function AdminPaymentReconciliationPage() {
 
   if (loading) return <main className="admin-recon"><p>{text.loading}</p></main>;
   if (!user) return <Navigate to="/admin/login" replace />;
-  if (user.role !== "admin") return <main className="admin-recon"><h1>{text.title}</h1><Link to="/">{copy.en.title}</Link></main>;
+  if (user.role !== "admin") return <main className="admin-recon"><h1>{text.title}</h1><Link to="/">{text.backHome}</Link></main>;
 
   const events = result?.events || [];
   const totalPages = result?.totalPages || 1;
   return (
     <main className="admin-recon">
       <style>{styles}</style>
-      <div className="eyebrow"><i />Admin</div>
+      <div className="eyebrow"><i />{t.adminPortal}</div>
       <h1>{text.title}</h1>
       <p className="admin-recon-intro">{text.intro}</p>
       <p className="admin-recon-note">{text.note}</p>
-      <p><Link to="/admin">Admin dashboard</Link> · <Link to="/admin/ledger">Financial ledger</Link></p>
+      <p><Link to="/admin">{text.dashboard}</Link> · <Link to="/admin/ledger">{text.ledger}</Link></p>
       {error && <p className="admin-recon-error" role="alert">{error}</p>}
       {loadingRows && <p role="status">{text.loading}</p>}
       {!loadingRows && !error && events.length === 0 && <p className="admin-recon-empty">{text.empty}</p>}
@@ -119,9 +122,9 @@ export default function AdminPaymentReconciliationPage() {
         </table>
       </div>}
       {result && totalPages > 1 && <div className="admin-recon-actions">
-        <button type="button" disabled={page <= 1 || loadingRows} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button>
+        <button type="button" disabled={page <= 1 || loadingRows} onClick={() => setPage((value) => Math.max(1, value - 1))}>{text.previous}</button>
         <span>{page} / {totalPages} · {result.total}</span>
-        <button type="button" disabled={page >= totalPages || loadingRows} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>Next</button>
+        <button type="button" disabled={page >= totalPages || loadingRows} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>{text.next}</button>
       </div>}
     </main>
   );
