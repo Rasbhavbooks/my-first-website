@@ -118,11 +118,11 @@ export function createPaidBookEntitlementService({
       return { entitlement, replayed: false, alreadyOwned: false };
     } catch (error) {
       if (error?.code !== 11000) throw error;
-      const racedOrder = await findEntitlementByOrderId(order._id ?? order.id, { session });
+      const racedOrder = await findEntitlementByOrderId(order._id ?? order.id);
       if (racedOrder && matchesOrder(racedOrder, order, ledger)) {
         return { entitlement: racedOrder, replayed: true, alreadyOwned: false };
       }
-      const racedBook = await findEntitlementByReaderAndBook(order.buyerId, order.bookId, { session });
+      const racedBook = await findEntitlementByReaderAndBook(order.buyerId, order.bookId);
       if (racedBook && sameId(racedBook.readerId, order.buyerId) && racedBook.bookId === order.bookId) {
         return { entitlement: racedBook, replayed: true, alreadyOwned: true };
       }
