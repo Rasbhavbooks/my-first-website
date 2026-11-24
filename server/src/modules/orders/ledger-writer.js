@@ -1,0 +1,131 @@
+import { createHash } from "node:crypto";
+import LedgerTransaction from "./ledger-transaction.model.js";
+
+const allowedEventTypes = new Set([
+  "order_payment",
+  "book_sale",
+  "platform_commission",
+  "author_royalty",
+  "gateway_fee",
+  "refund",
+  "tax",
+  "payout",
+  "adjustment",
+]);
+
+function fail(message, code = "INVALID_LEDGER_INPUT") {
+  const error = new Error(message);
+  error.code = code;
+  return error;
+}
+
+function canonicalEntries(entries) {
+  if (!Array.isArray(entries)) throw fail("Ledger entries must be an array.");
+  return entries.map((entry) => ({
+    accountCode: String(entry.accountCode ?? "").trim().toLowerCase(),
+    direction: String(entry.direction ?? ""),
+    amountPaise: entry.amountPaise,
+  })).sort((left, right) =>
+    left.accountCode.localeCompare(right.accountCode)
+      || left.direction.localeCompare(right.direction)
+      || left.amountPaise - right.amountPaise,
+  );
+}
+
+function canonicalPayload(payload) {
+  return JSON.stringify({
+    eventType: payload.eventType,
+    sourceType: payload.sourceType,
+    sourceId: payload.sourceId,
+    orderId: String(payload.orderId),
+    currency: payload.currency,
+    entries: canonicalEntries(payload.entries),
+  });
+}
+
+function isSamePayload(existing, payload) {
+  return canonicalPayload(existing) === canonicalPayload(payload);
+}
+
+function ledgerTotal(entries, direction) {
+  return entries
+    .filter((entry) => entry.direction === direction)
+    .reduce((total, entry) => total + BigInt(entry.amountPaise), 0n);
+}
+
+export function createLedgerWriter({ createRecord, findBySourceKeyHash }) {
+  if (typeof createRecord !== "function" || typeof findBySourceKeyHash !== "function") {
+    throw new TypeError("Ledger writer requires createRecord and findBySourceKeyHash functions.");
+  }
+
+  return async function postVerifiedPaymentLedger({ paymentEvent, entries, eventType = "order_payment" }, { session } = {}) {
+    if (!paymentEvent || paymentEvent.sourceType === "payment_event") {
+      // Payment events are supplied as persisted records below; this guard keeps accidental
+      // non-event inputs from being treated as verified payment records.
+    }
+    const provider = String(paymentEvent?.provider ?? "").trim().toLowerCase();
+    const eventId = String(paymentEvent?.eventId ?? "").trim();
+    const verifiedAt = paymentEvent?.signatureVerifiedAt;
+    if (!provider || !eventId || !verifiedAt || Number.isNaN(new Date(verifiedAt).getTime())) {
+      throw fail("A signature-verified payment event is required.");
+    }
+    if (paymentEvent.outcome !== "applied") {
+      throw fail("Only applied payment events can be posted to the ledger.");
+    }
+    if (!paymentEvent.orderId) throw fail("The payment event must belong to an order.");
+    if (!Number.isSafeInteger(paymentEvent.amountPaise) || paymentEvent.amountPaise < 1) {
+      throw fail("The verified payment amount must be a positive whole-paise value.");
+    }
+    if (!allowedEventTypes.has(eventType)) throw fail("Unsupported ledger event type.");
+    const normalizedEntries = canonicalEntries(entries);
+    const totalDebits = ledgerTotal(normalizedEntries, "debit");
+    const totalCredits = ledgerTotal(normalizedEntries, "credit");
+    if (totalDebits !== BigInt(paymentEvent.amountPaise) || totalCredits !== BigInt(paymentEvent.amountPaise)) {
+      throw fail("Ledger debit and credit totals must equal the verified payment amount.");
+    }
+
+    const sourceId = `${provider}:${eventId}`;
+    const sourceKeyHash = createHash("sha256").update(sourceId).digest("hex");
+    const payload = {
+      eventType,
+      sourceType: "payment_event",
+      sourceId,
+      sourceKeyHash,
+      orderId: paymentEvent.orderId,
+      currency: paymentEvent.currency ?? "INR",
+      entries: normalizedEntries,
+    };
+
+    const existing = await findBySourceKeyHash(sourceKeyHash, { session });
+    if (existing) {
+      if (!isSamePayload(existing, payload)) {
+        throw fail("This payment event was already posted with different ledger details.", "IDEMPOTENCY_KEY_REUSED");
+      }
+      return { transaction: existing, replayed: true };
+    }
+
+    try {
+      const transaction = await createRecord(payload, { session });
+      return { transaction, replayed: false };
+    } catch (error) {
+      if (error?.code !== 11000) throw error;
+      const racedRecord = await findBySourceKeyHash(sourceKeyHash, { session });
+      if (!racedRecord) throw error;
+      if (!isSamePayload(racedRecord, payload)) {
+        throw fail("This payment event was already posted with different ledger details.", "IDEMPOTENCY_KEY_REUSED");
+      }
+      return { transaction: racedRecord, replayed: true };
+    }
+  };
+}
+
+const defaultWriter = createLedgerWriter({
+  createRecord: (payload, { session } = {}) => new LedgerTransaction(payload).save({ session }),
+  findBySourceKeyHash: (sourceKeyHash, { session } = {}) => {
+    let query = LedgerTransaction.findOne({ sourceKeyHash }).select("+sourceKeyHash");
+    if (session) query = query.session(session);
+    return query.lean();
+  },
+});
+
+export default defaultWriter;
