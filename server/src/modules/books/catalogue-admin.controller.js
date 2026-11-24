@@ -1,4 +1,5 @@
 import { normalizeIsbn } from "../../../../shared/isbn.js";
+import { inrPriceFromPaise, inrPriceToPaise } from "../../../../shared/money.js";
 import Book from "./book.model.js";
 import Category from "./category.model.js";
 
@@ -77,15 +78,15 @@ export async function updateAdminCatalogueBook(request, response) {
   const tone = typeof body.tone === "string" ? body.tone.trim() : "";
   const badge = typeof body.badge === "string" ? body.badge.trim() : "";
   const priceValue = body.price;
-  const price = Number(priceValue);
+  const pricePaise = inrPriceToPaise(priceValue);
+  const price = pricePaise === null ? null : inrPriceFromPaise(pricePaise);
   const validCategory = typeof body.category === "string" && await Category.exists({ key: body.category, active: true });
   if (
     !validLocalizedText(body.title, 200)
     || !validLocalizedText(body.description, 4000)
     || !LANGUAGES.has(body.language)
     || !validCategory
-    || (typeof priceValue !== "number" && (typeof priceValue !== "string" || !priceValue.trim()))
-    || !Number.isFinite(price) || price < 0 || price > 100000
+    || pricePaise === null
     || !tone || tone.length > 40
     || !badge || badge.length > 40
   ) {

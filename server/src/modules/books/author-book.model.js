@@ -1,4 +1,5 @@
 import { normalizeIsbn } from "../../../../shared/isbn.js";
+import { inrPriceToPaise } from "../../../../shared/money.js";
 import mongoose from "mongoose";
 
 const localizedTextSchema = new mongoose.Schema(
@@ -38,7 +39,17 @@ const authorBookSchema = new mongoose.Schema(
     description: { type: localizedTextSchema, required: true },
     language: { type: String, enum: ["Gujarati", "Hindi", "English"], required: true, default: "English" },
     category: { type: String, required: true, trim: true, maxlength: 50, default: "Novel" },
-    price: { type: Number, min: 0, max: 100000, required: true, default: 0 },
+    price: {
+      type: Number,
+      min: 0,
+      max: 100000,
+      required: true,
+      default: 0,
+      validate: {
+        validator: (value) => inrPriceToPaise(value) !== null,
+        message: "Book prices must be INR values with no more than two decimal places.",
+      },
+    },
     status: {
       type: String,
       enum: ["draft", "submitted", "approved", "rejected"],
