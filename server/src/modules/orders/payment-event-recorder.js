@@ -77,7 +77,7 @@ export function createPaymentEventRecorder({
     throw new TypeError("Payment event recorder requires a signature verifier and persistence adapters.");
   }
 
-  return async function recordPaymentEvent({ rawBody, headers }, { session } = {}) {
+  return async function recordPaymentEvent({ rawBody, headers }) {
     if (!Buffer.isBuffer(rawBody) || rawBody.length === 0 || rawBody.length > 256 * 1024) {
       throw fail("The original webhook body must be a non-empty buffer up to 256 KB.");
     }
@@ -92,7 +92,7 @@ export function createPaymentEventRecorder({
       throw fail("The provider webhook signature could not be verified.", "SIGNATURE_VERIFICATION_FAILED");
     }
     const facts = normalizeVerifiedFacts(verified);
-    const existing = await findByProviderEventId(facts.provider, facts.eventId, { session });
+    const existing = await findByProviderEventId(facts.provider, facts.eventId);
     if (existing) {
       if (!eventFactsMatch(existing, facts)) {
         throw fail("This provider event ID was already recorded with different signed facts.", "EVENT_ID_REUSED");
@@ -101,7 +101,7 @@ export function createPaymentEventRecorder({
     }
 
     try {
-      const event = await createRecord(facts, { session });
+      const event = await createRecord(facts);
       return { event, replayed: false };
     } catch (error) {
       if (error?.code !== 11000) throw error;
@@ -119,12 +119,9 @@ const defaultRecorder = createPaymentEventRecorder({
   verifyAndNormalize: async () => {
     throw fail("No payment provider signature verifier is configured.", "PAYMENT_PROVIDER_NOT_CONFIGURED");
   },
-  findByProviderEventId: (provider, eventId, { session } = {}) => {
-    let query = DigitalBookPaymentEvent.findOne({ provider, eventId }).select("+providerPaymentId");
-    if (session) query = query.session(session);
-    return query;
-  },
-  createRecord: (facts, { session } = {}) => new DigitalBookPaymentEvent(facts).save({ session }),
+  findByProviderEventId: (provider, eventId) =>
+    DigitalBookPaymentEvent.findOne({ provider, eventId }).select("+providerPaymentId"),
+  createRecord: (facts) => new DigitalBookPaymentEvent(facts).save(),
 });
 
 export default defaultRecorder;
