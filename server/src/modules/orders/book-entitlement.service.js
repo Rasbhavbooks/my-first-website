@@ -118,6 +118,12 @@ export function createPaidBookEntitlementService({
 
     const ledger = await findPaymentLedgerByOrderId(order._id ?? order.id, { session });
     validatePaidLedger(order, ledger);
+    const sourceId = String(ledger.sourceId || "");
+    const separator = sourceId.indexOf(":");
+    const paymentEvent = separator > 0
+      ? await findVerifiedPaymentEvent(sourceId.slice(0, separator), sourceId.slice(separator + 1), { session })
+      : null;
+    validateVerifiedPaymentSource(order, ledger, paymentEvent);
 
     const byOrder = await findEntitlementByOrderId(order._id ?? order.id, { session });
     if (byOrder) {
