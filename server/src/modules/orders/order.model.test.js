@@ -76,6 +76,32 @@ test("orders reject query updates that bypass lifecycle validation", async () =>
   );
 });
 
+test("orders cancel and refund only through permitted lifecycle transitions", async () => {
+  const cancelled = persistedOrder("pending_payment");
+  const cancelledAt = new Date("2026-11-24T12:30:00.000Z");
+  cancelled.transitionTo("cancelled", { now: cancelledAt });
+  await cancelled.validate();
+  assert.equal(cancelled.status, "cancelled");
+  assert.equal(cancelled.cancelledAt.toISOString(), cancelledAt.toISOString());
+  assert.throws(() => cancelled.transitionTo("pending_payment"), { code: "INVALID_ORDER_TRANSITION" });
+
+  const refundPending = persistedOrder("paid");
+  refundPending.transitionTo("refund_pending");
+  await refundPending.validate();
+
+  const refunded = persistedOrder("refund_pending");
+  const refundedAt = new Date("2026-11-24T13:00:00.000Z");
+  refunded.transitionTo("refunded", { now: refundedAt });
+  await refunded.validate();
+  assert.equal(refunded.status, "refunded");
+  assert.equal(refunded.refundedAt.toISOString(), refundedAt.toISOString());
+});
+
+test("new orders cannot start with a paid or cancelled status", async () => {
+  await assert.rejects(validOrder({ status: "paid" }).validate(), /New orders must start as pending payment/);
+  await assert.rejects(validOrder({ paymentProvider: "example-gateway" }).validate(), /without payment or lifecycle metadata/);
+});
+
 test("immutable order snapshots cannot be changed after creation", async () => {
   const order = persistedOrder("pending_payment");
   order.amountPaise = 1;
