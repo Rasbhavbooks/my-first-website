@@ -4,6 +4,8 @@ import { useLanguage } from "../../hooks/useLanguage.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { changeReaderPassword, downloadReaderAccountData, getReaderSessions, removeReaderAvatar, revokeReaderSession, updateReaderProfile, uploadReaderAvatar } from "../../services/authService.js";
 import FollowedAuthorsPanel from "../../components/account/FollowedAuthorsPanel.jsx";
+import { formatInr } from "../../utils/formatCurrency.js";
+import { getReaderOrders } from "../../services/orderService.js";
 
 const accountStyles = `
 .account-page{max-width:900px;min-height:70vh;margin:auto;padding:65px 24px 90px}
@@ -36,6 +38,13 @@ const accountStyles = `
 .account-session-current{color:#316342!important}
 .account-session-revoke{min-height:36px;padding:0 12px;border:1px solid #d7cec0;background:#fff;color:#30252c;font-size:10px;cursor:pointer}
 .account-session-revoke:disabled{opacity:.55;cursor:wait}
+.account-order-list{display:grid;gap:10px;margin:18px 0 0;padding:0;list-style:none}
+.account-order-row{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:14px;border:1px solid var(--line);background:#fff}
+.account-order-details{display:grid;gap:6px;min-width:0;font-size:11px;color:#77716a}
+.account-order-details strong{color:#30252c;font:500 17px var(--serif)}
+.account-order-amount{white-space:nowrap;color:#30252c;font:500 18px var(--serif)}
+@media(max-width:500px){.account-order-row{align-items:flex-start;flex-direction:column}}
+
 @media(max-width:500px){.account-session-row{align-items:flex-start;flex-direction:column}}
 @media(max-width:700px){.account-page{padding:45px 19px 70px}.account-grid{grid-template-columns:1fr}.account-panel{padding:22px}}
 `;
@@ -47,7 +56,7 @@ function formatSessionDate(value, language) {
 }
 
 export default function AccountPage() {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const { user, loading, refreshSession, signOut } = useAuth();
   const [displayName, setDisplayName] = useState(user?.displayName || "");
   const [bio, setBio] = useState(user?.bio || "");
@@ -67,6 +76,11 @@ export default function AccountPage() {
   const [sessionsLoading, setSessionsLoading] = useState(true);
   const [sessionsBusyId, setSessionsBusyId] = useState("");
   const [sessionsError, setSessionsError] = useState("");
+  const [orders, setOrders] = useState([]);
+  const [ordersCursor, setOrdersCursor] = useState(null);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersLoadingMore, setOrdersLoadingMore] = useState(false);
+  const [ordersError, setOrdersError] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -97,6 +111,42 @@ export default function AccountPage() {
       .finally(() => { if (active) setSessionsLoading(false); });
     return () => { active = false; };
   }, [user?.id, t.sessionsError]);
+
+  useEffect(() => {
+    let active = true;
+    if (!user?.id) {
+      setOrders([]);
+      setOrdersCursor(null);
+      setOrdersLoading(false);
+      return () => { active = false; };
+    }
+    setOrdersLoading(true);
+    getReaderOrders()
+      .then((result) => {
+        if (!active) return;
+        setOrders(result.orders || []);
+        setOrdersCursor(result.nextCursor || null);
+        setOrdersError("");
+      })
+      .catch(() => { if (active) setOrdersError(t.ordersError); })
+      .finally(() => { if (active) setOrdersLoading(false); });
+    return () => { active = false; };
+  }, [user?.id, t.ordersError]);
+
+  async function handleLoadMoreOrders() {
+    if (!ordersCursor || ordersLoadingMore) return;
+    setOrdersLoadingMore(true);
+    setOrdersError("");
+    try {
+      const result = await getReaderOrders(ordersCursor);
+      setOrders((current) => [...current, ...(result.orders || [])]);
+      setOrdersCursor(result.nextCursor || null);
+    } catch {
+      setOrdersError(t.ordersError);
+    } finally {
+      setOrdersLoadingMore(false);
+    }
+  }
 
   if (loading) return <main className="account-page"><p>{t.loadingAccount}</p></main>;
   if (!user && !passwordChanged) return <Navigate to="/reader/login" replace />;
@@ -290,6 +340,42 @@ export default function AccountPage() {
           </form>
         </section>
       </div>
+      <section className="account-panel" style={{ marginTop: 20 }}>
+        <h2>{t.ordersTitle}</h2>
+        {ordersLoading && <p role="status">{t.ordersLoading}</p>}
+        {ordersError && <p className="account-error" role="alert">{ordersError}</p>}
+        {!ordersLoading && !ordersError && orders.length === 0 && (
+          <p>{t.ordersEmpty} <Link to="/#discover">{t.ordersBrowse}</Link></p>
+        )}
+        {!ordersLoading && orders.length > 0 && <ul className="account-order-list" aria-label={t.ordersTitle}>
+          {orders.map((order) => {
+            const title = order.bookTitle?.[language] || order.bookTitle?.en || order.bookId;
+            const statusLabels = {
+              pending_payment: t.orderPendingPayment,
+              paid: t.orderPaid,
+              cancelled: t.orderCancelled,
+              refund_pending: t.orderRefundPending,
+              refunded: t.orderRefunded,
+            };
+            return (
+              <li className="account-order-row" key={order.id}>
+                <div className="account-order-details">
+                  <strong>{title}</strong>
+                  <span>{t.by} {order.authorName}</span>
+                  <span>{t.ordersDate}: {formatSessionDate(order.createdAt, language)}</span>
+                  <span>{t.ordersStatus}: {statusLabels[order.status] || order.status}</span>
+                </div>
+                <span className="account-order-amount">{formatInr(order.amountPaise / 100, language)}</span>
+              </li>
+            );
+          })}
+        </ul>}
+        {ordersCursor && !ordersError && (
+          <button className="account-session-revoke" type="button" disabled={ordersLoadingMore} onClick={handleLoadMoreOrders}>
+            {ordersLoadingMore ? t.orderMoreLoading : t.orderMore}
+          </button>
+        )}
+      </section>
       <section className="account-panel" style={{ marginTop: 20 }}>
         <h2>{t.sessionsTitle}</h2>
         <p className="account-intro">{t.sessionsIntro}</p>
