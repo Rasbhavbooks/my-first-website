@@ -11,16 +11,6 @@ const key = "reader-request-key-12345";
 
 function fixture({ order = {}, existing = null, latest = null } = {}) {
   const calls = [];
-  const record = {
-    _id: "attempt-1",
-    orderId,
-    attemptNumber: 1,
-    provider: "cashfree",
-    amountPaise: 4900,
-    currency: "INR",
-    status: "created",
-    ...existing,
-  };
   const service = createPaymentAttemptService({
     findOrderById: async (id, options) => {
       calls.push(["order", id, options]);
@@ -46,7 +36,7 @@ function fixture({ order = {}, existing = null, latest = null } = {}) {
       return { _id: "attempt-new", ...data };
     },
   });
-  return { calls, service, record };
+  return { calls, service };
 }
 
 test("creates a pending-order attempt from the server order snapshot inside a transaction", async () => {
@@ -83,6 +73,15 @@ test("rejects reusing an idempotency key with another provider", async () => {
     data.service({ buyerId, orderId, provider: "razorpay", idempotencyKey: key }, { session }),
     { code: "IDEMPOTENCY_KEY_REUSED" },
   );
+});
+
+test("keeps the same idempotent attempt replayable after its order is paid", async () => {
+  const existing = { _id: "attempt-existing", provider: "cashfree", status: "captured" };
+  const data = fixture({ existing, order: { status: "paid" } });
+  const result = await data.service({ buyerId, orderId, provider: "cashfree", idempotencyKey: key }, { session });
+  assert.equal(result.replayed, true);
+  assert.equal(result.attempt.status, "captured");
+  assert.equal(data.calls.some(([name]) => name === "create"), false);
 });
 
 test("permits a new attempt only after a failed or cancelled attempt", async (t) => {
