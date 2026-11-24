@@ -54,10 +54,13 @@ test("paid order transition requires a private provider reference and saves a ti
 test("order status and payment lifecycle fields cannot be edited directly", async () => {
   const order = persistedOrder("pending_payment");
   order.status = "paid";
-  order.paymentProvider = "example-gateway";
-  order.paymentReference = "private-payment-123";
-  order.paidAt = new Date();
   await assert.rejects(order.validate(), /Use transitionTo\(\)/);
+
+  const paymentMetadata = persistedOrder("pending_payment");
+  paymentMetadata.paymentProvider = "example-gateway";
+  paymentMetadata.paymentReference = "private-payment-123";
+  paymentMetadata.paidAt = new Date();
+  await assert.rejects(paymentMetadata.validate(), /payment metadata and lifecycle timestamps/);
 
   const paid = persistedOrder("paid");
   paid.refundedAt = new Date();
