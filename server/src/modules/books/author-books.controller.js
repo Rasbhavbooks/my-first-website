@@ -3,6 +3,7 @@ import AuthorProfile from "../auth/author-profile.model.js";
 import AuthorBook from "./author-book.model.js";
 import Category from "./category.model.js";
 import { normalizeIsbn } from "../../../../shared/isbn.js";
+import { inrPriceFromPaise, inrPriceToPaise } from "../../../../shared/money.js";
 
 const LANGUAGES = new Set(["Gujarati", "Hindi", "English"]);
 const LANGUAGE_KEYS = { Gujarati: "gu", Hindi: "hi", English: "en" };
@@ -29,10 +30,11 @@ async function validFields(body, requireDescription = false) {
   const title = localizedValues(body?.title, 160);
   const description = localizedValues(body?.description, 4000);
   const isbn = normalizeIsbn(body?.isbn ?? "");
-  const price = Number(body?.price);
+  const pricePaise = inrPriceToPaise(body?.price);
+  const price = pricePaise === null ? null : inrPriceFromPaise(pricePaise);
   const activeCategory = typeof category === "string" ? await Category.exists({ key: category, active: true }) : null;
   if (isbn === null || !LANGUAGES.has(language) || !activeCategory || !title || !description
-    || !Number.isFinite(price) || price < 0 || price > 100000 || Math.abs(price * 100 - Math.round(price * 100)) > 1e-7) {
+    || pricePaise === null) {
     return null;
   }
   const key = LANGUAGE_KEYS[language];
