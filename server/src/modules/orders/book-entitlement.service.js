@@ -1,4 +1,6 @@
+import { createHash } from "node:crypto";
 import DigitalBookOrder from "./order.model.js";
+import DigitalBookPaymentEvent from "./payment-event.model.js";
 import LedgerTransaction from "./ledger-transaction.model.js";
 import DigitalBookEntitlement from "./book-entitlement.model.js";
 
@@ -37,6 +39,34 @@ function validatePaidLedger(order, ledger) {
     || debits !== credits
   ) {
     throw fail("The payment ledger totals must balance to the paid order amount.");
+  }
+}
+
+function validateVerifiedPaymentSource(order, ledger, paymentEvent) {
+  const sourceId = String(ledger.sourceId || "");
+  const separator = sourceId.indexOf(":");
+  if (separator < 1 || separator === sourceId.length - 1) {
+    throw fail("The ledger payment source is invalid.", "VERIFIED_PAYMENT_REQUIRED");
+  }
+  const provider = sourceId.slice(0, separator);
+  const eventId = sourceId.slice(separator + 1);
+  const sourceKeyHash = createHash("sha256").update(sourceId).digest("hex");
+  if (sourceKeyHash !== ledger.sourceKeyHash || !paymentEvent) {
+    throw fail("The ledger must point to a persisted verified payment event.", "VERIFIED_PAYMENT_REQUIRED");
+  }
+  const verifiedAt = paymentEvent.signatureVerifiedAt;
+  if (
+    paymentEvent.provider !== provider
+    || paymentEvent.eventId !== eventId
+    || !sameId(paymentEvent.orderId, order._id ?? order.id)
+    || paymentEvent.outcome !== "applied"
+    || !Number.isSafeInteger(paymentEvent.amountPaise)
+    || paymentEvent.amountPaise !== order.amountPaise
+    || paymentEvent.currency !== order.currency
+    || !verifiedAt
+    || Number.isNaN(new Date(verifiedAt).getTime())
+  ) {
+    throw fail("A signature-verified payment event matching this order is required.", "VERIFIED_PAYMENT_REQUIRED");
   }
 }
 
@@ -138,10 +168,10 @@ const defaultService = createPaidBookEntitlementService({
   findOrderById: (orderId, { session } = {}) => withSession(DigitalBookOrder.findById(orderId), session).lean(),
   findPaymentLedgerByOrderId: (orderId, { session } = {}) => withSession(
     LedgerTransaction.findOne({ orderId, eventType: "order_payment", sourceType: "payment_event" })
-      .select("_id orderId eventType sourceType currency entries"),
+      .select("_id orderId eventType sourceType sourceId +sourceKeyHash currency entries"),
     session,
   ).lean(),
-  findEntitlementByOrderId: (orderId, { session } = {}) => withSession(
+  findVerifiedPaymentEvent: (provider, eventId, { session } = {}) => withSession(\n    DigitalBookPaymentEvent.findOne({ provider, eventId }).select("_id orderId provider eventId amountPaise currency outcome signatureVerifiedAt"),\n    session,\n  ).lean(),\n  findEntitlementByOrderId: (orderId, { session } = {}) => withSession(
     DigitalBookEntitlement.findOne({ orderId }).select("+sourceLedgerId"),
     session,
   ).lean(),
