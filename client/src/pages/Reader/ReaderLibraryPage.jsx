@@ -3,7 +3,7 @@ import { ArrowUpRight, BookOpen } from "lucide-react";
 import { Link, Navigate } from "react-router";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
-import { getReaderLibrary, getRecentlyOpenedBooks } from "../../services/readerLibraryService.js";
+import { getReaderLibrary, getRecentlyOpenedBooks, clearReaderReadingHistory } from "../../services/readerLibraryService.js";
 
 const styles = `
 .reader-library{max-width:1120px;min-height:70vh;margin:auto;padding:64px 24px 90px}
@@ -11,7 +11,7 @@ const styles = `
 .reader-library-intro{max-width:620px;margin:0 0 38px;color:#77716a;font-size:13px;line-height:1.8}
 .library-section{margin:38px 0}
 .library-section-heading{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:16px}
-.library-section-heading h2{margin:0;font:500 28px/1.15 var(--serif);color:#30252c}
+.library-section-heading h2{margin:0;font:500 28px/1.15 var(--serif);color:#30252c}.library-clear-history{border:1px solid #b8aa97;background:transparent;color:#635951;padding:8px 10px;font:inherit;font-size:10px;cursor:pointer}.library-clear-history:disabled{opacity:.55;cursor:wait}
 .library-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 .library-card{display:grid;grid-template-columns:88px minmax(0,1fr);gap:15px;min-height:150px;padding:14px;border:1px solid var(--line);background:#fffdfa}
 .library-card-cover{display:flex;flex-direction:column;justify-content:space-between;min-height:120px;padding:11px 9px;background:linear-gradient(145deg,#493944,#30252c);color:#fff}
@@ -30,11 +30,11 @@ const styles = `
 @media(max-width:520px){.reader-library{padding:45px 19px 70px}.library-grid{grid-template-columns:1fr}.library-card{grid-template-columns:76px minmax(0,1fr)}.library-card-cover{min-height:112px}.library-section-heading h2{font-size:24px}}
 `;
 
-function BookSection({ title, books, cursor, onMore, loadingMore, t, language }) {
+function BookSection({ title, books, cursor, onMore, loadingMore, onClear, clearing, t, language }) {
   if (!books.length && !cursor) return null;
   return (
     <section className="library-section" aria-labelledby={`library-${title}`}>
-      <div className="library-section-heading"><h2 id={`library-${title}`}>{title}</h2></div>
+      <div className="library-section-heading"><h2 id={`library-${title}`}>{title}</h2>{onClear && books.length > 0 && <button className="library-clear-history" type="button" onClick={onClear} disabled={clearing}>{clearing ? t.libraryClearingHistory : t.libraryClearHistory}</button>}</div>
       {books.length ? (
         <div className="library-grid">
           {books.map((book) => (
@@ -66,6 +66,7 @@ export default function ReaderLibraryPage() {
   const [purchasedCursor, setPurchasedCursor] = useState(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [loadingSection, setLoadingSection] = useState("");
+  const [clearingHistory, setClearingHistory] = useState(false);
   const [error, setError] = useState("");
 
   const loadFirstPage = useCallback(async () => {
@@ -89,6 +90,20 @@ export default function ReaderLibraryPage() {
   }, [user?.id, t.libraryError]);
 
   useEffect(() => { loadFirstPage(); }, [loadFirstPage]);
+
+  async function clearHistory() {
+    if (clearingHistory || !window.confirm(t.libraryConfirmClearHistory)) return;
+    setClearingHistory(true);
+    setError("");
+    try {
+      await clearReaderReadingHistory();
+      setRecentBooks([]);
+    } catch {
+      setError(t.libraryError);
+    } finally {
+      setClearingHistory(false);
+    }
+  }
 
   async function loadMore(section) {
     const cursor = section === "free" ? freeCursor : purchasedCursor;
@@ -124,7 +139,7 @@ export default function ReaderLibraryPage() {
       {pageLoading ? <p aria-live="polite">{t.libraryLoading}</p> : (
         <>
           {!recentBooks.length && !freeBooks.length && !purchasedBooks.length && <p className="library-empty">{t.libraryEmpty}</p>}
-          <BookSection title={t.libraryRecentTitle} books={recentBooks} cursor={null} onMore={() => {}} loadingMore={false} t={t} language={language} />
+          <BookSection title={t.libraryRecentTitle} books={recentBooks} cursor={null} onMore={() => {}} loadingMore={false} onClear={clearHistory} clearing={clearingHistory} t={t} language={language} />
           <BookSection title={t.libraryFreeTitle} books={freeBooks} cursor={freeCursor} onMore={() => loadMore("free")} loadingMore={loadingSection === "free"} t={t} language={language} />
           <BookSection title={t.libraryPurchasedTitle} books={purchasedBooks} cursor={purchasedCursor} onMore={() => loadMore("purchased")} loadingMore={loadingSection === "purchased"} t={t} language={language} />
         </>
