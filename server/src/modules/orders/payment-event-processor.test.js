@@ -8,7 +8,7 @@ const input = { rawBody: Buffer.from("{\"event\":\"signed\"}"), headers: { "x-si
 function fixture({ recorded = {}, application = { applied: true, replayed: false }, applicationError } = {}) {
   const calls = [];
   const transactionSession = { inTransaction: () => true };
-  const event = recorded.event || {
+  const event = Object.hasOwn(recorded, "event") ? recorded.event : {
     _id: persistedEventId,
     eventType: "payment.captured",
     outcome: "applied",
