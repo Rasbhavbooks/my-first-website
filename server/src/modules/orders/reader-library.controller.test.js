@@ -115,3 +115,25 @@ test("single-book library lookup returns no metadata without access", async () =
   assert.equal(response.statusCode, 404);
   assert.deepEqual(response.body.error.code, "BOOK_NOT_FOUND");
 });
+
+
+test("library attaches only the signed-in reader's most recent open time", async () => {
+  const free = book("free-book", 0);
+  const readerId = new mongoose.Types.ObjectId();
+  const lastOpenedAt = new Date("2026-11-25T00:00:00.000Z");
+  const controller = createReaderLibraryController({
+    findFreeCandidates: async () => [free],
+    findEntitlements: async () => [],
+    findBooksByIds: async () => [],
+    findBookById: async () => null,
+    resolveAccess: async () => ({ kind: "free" }),
+    findProgress: async (ownerId, ids) => {
+      assert.equal(ownerId, readerId);
+      assert.deepEqual(ids, ["free-book"]);
+      return [{ bookId: "free-book", lastOpenedAt }];
+    },
+  });
+  const response = responseMock();
+  await controller.list({ query: {}, reader: { _id: readerId } }, response);
+  assert.equal(response.body.data.freeBooks[0].lastOpenedAt, lastOpenedAt.toISOString());
+});
