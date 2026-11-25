@@ -193,3 +193,52 @@ test("reader can clear only their own recent reading history", async () => {
   assert.equal(response.headers["Cache-Control"], "private, no-store");
   assert.deepEqual(response.body.data, { cleared: true });
 });
+
+
+test("library shows only the signed-in reader bookmark for each accessible book", async () => {
+  const readerId = new mongoose.Types.ObjectId();
+  const free = book("free-book");
+  const controller = createReaderLibraryController({
+    findFreeCandidates: async () => [free],
+    findEntitlements: async () => [],
+    findBooksByIds: async () => [],
+    findBookById: async () => null,
+    resolveAccess: async () => ({ kind: "free" }),
+    findBookmarks: async (ownerId, bookIds) => {
+      assert.equal(ownerId, readerId);
+      assert.deepEqual(bookIds, ["free-book"]);
+      return [{ bookId: "free-book", pageNumber: 7, note: "Continue here", privateKey: "never-return" }];
+    },
+  });
+  const response = responseMock();
+
+  await controller.list({ query: {}, reader: { _id: readerId } }, response);
+
+  assert.deepEqual(response.body.data.freeBooks[0].bookmark, { pageNumber: 7, note: "Continue here" });
+  assert.equal("privateKey" in response.body.data.freeBooks[0].bookmark, false);
+});
+
+test("continue-reading response attaches bookmarks only to books the reader can still access", async () => {
+  const readerId = new mongoose.Types.ObjectId();
+  const recent = book("recent-book");
+  const lastOpenedAt = new Date("2026-11-25T04:00:00.000Z");
+  const controller = createReaderLibraryController({
+    findFreeCandidates: async () => [],
+    findEntitlements: async () => [],
+    findBooksByIds: async () => [recent],
+    findBookById: async () => null,
+    resolveAccess: async ({ readerId: owner }) => { assert.equal(owner, readerId); return { kind: "free" }; },
+    findRecentActivities: async () => [{ bookId: "recent-book", lastOpenedAt }],
+    findBookmarks: async (ownerId, bookIds) => {
+      assert.equal(ownerId, readerId);
+      assert.deepEqual(bookIds, ["recent-book"]);
+      return [{ bookId: "recent-book", pageNumber: 18, note: "Second half" }];
+    },
+  });
+  const response = responseMock();
+
+  await controller.listRecent({ reader: { _id: readerId } }, response);
+
+  assert.deepEqual(response.body.data.books[0].bookmark, { pageNumber: 18, note: "Second half" });
+  assert.equal(response.body.data.books[0].lastOpenedAt, lastOpenedAt.toISOString());
+});
