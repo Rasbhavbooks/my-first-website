@@ -33,6 +33,7 @@ export function createReaderLibraryController({
   resolveAccess,
   findProgress = async () => [],
   findRecentActivities = async () => [],
+  deleteRecentActivities = async () => {},
 }) {
   async function accessibleBooks(candidates, readerId) {
     const results = await Promise.all(candidates.map(async (book) => {
@@ -97,6 +98,12 @@ export function createReaderLibraryController({
       return response.json({ data: { books: recentBooks } });
     },
 
+    async clearRecent(request, response) {
+      await deleteRecentActivities(request.reader._id);
+      response.setHeader("Cache-Control", "private, no-store");
+      return response.json({ data: { cleared: true } });
+    },
+
     async getBook(request, response) {
       const bookId = request.params.bookId;
       if (typeof bookId !== "string" || !bookId.trim() || bookId.length > 64 || bookId !== bookId.trim()) {
@@ -136,8 +143,10 @@ const controller = createReaderLibraryController({
     .select("bookId lastOpenedAt -_id").lean(),
   findRecentActivities: (readerId, limit) => ReaderBookActivity.find({ readerId })
     .sort({ lastOpenedAt: -1, _id: -1 }).limit(limit).select("bookId lastOpenedAt -_id").lean(),
+  deleteRecentActivities: (readerId) => ReaderBookActivity.deleteMany({ readerId }),
 });
 
 export const listReaderLibrary = controller.list;
 export const getReaderLibraryBook = controller.getBook;
 export const listRecentlyOpenedBooks = controller.listRecent;
+export const clearRecentlyOpenedBooks = controller.clearRecent;

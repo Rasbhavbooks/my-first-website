@@ -32,3 +32,21 @@ export async function getRecentlyOpenedBooks() {
   const result = await readLibraryResponse("/api/v1/reader/library/recent");
   return result.books || [];
 }
+
+
+export async function clearReaderReadingHistory() {
+  const response = await fetch("/api/v1/reader/library/recent", {
+    method: "DELETE",
+    credentials: "include",
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(result.error?.message || "Could not clear your reading history.");
+    error.code = result.error?.code || "REQUEST_FAILED";
+    error.status = response.status;
+    throw error;
+  }
+  return result.data?.cleared === true;
+}
