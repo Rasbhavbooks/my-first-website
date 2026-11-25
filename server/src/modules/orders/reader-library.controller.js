@@ -32,6 +32,7 @@ export function createReaderLibraryController({
   findBookById,
   resolveAccess,
   findProgress = async () => [],
+  findRecentActivities = async () => [],
 }) {
   async function accessibleBooks(candidates, readerId) {
     const results = await Promise.all(candidates.map(async (book) => {
