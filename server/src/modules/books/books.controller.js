@@ -1,5 +1,6 @@
 import { isDatabaseConnected } from "../../config/database.js";
 import Book from "./book.model.js";
+import { cataloguePriceFilter } from "./catalogue-query.js";
 
 function serializeBook(record) {
   const {
@@ -41,7 +42,7 @@ function escapeRegex(value) {
 }
 export async function listBooks(request, response) {
   if (!isDatabaseConnected()) return databaseUnavailable(response);
-  const hasPaging = ["page", "limit", "q", "category", "bookLanguage", "sort", "locale"]
+  const hasPaging = ["page", "limit", "q", "category", "bookLanguage", "priceType", "sort", "locale"]
     .some((key) => Object.hasOwn(request.query, key));
   if (!hasPaging) {
     const records = await Book.find().sort({ catalogueId: 1 }).lean();
@@ -53,12 +54,15 @@ export async function listBooks(request, response) {
   const query = request.query.q === undefined ? "" : request.query.q;
   const category = request.query.category === undefined ? "" : request.query.category;
   const bookLanguage = request.query.bookLanguage === undefined ? "" : request.query.bookLanguage;
+  const priceType = request.query.priceType === undefined ? "all" : request.query.priceType;
+  const priceFilter = cataloguePriceFilter(priceType);
   const sortBy = request.query.sort === undefined ? "featured" : request.query.sort;
   const locale = request.query.locale === undefined ? "en" : request.query.locale;
   if (page === null || limit === null
     || typeof query !== "string" || query.length > 100
     || typeof category !== "string" || category.length > 50
     || typeof bookLanguage !== "string" || (bookLanguage && !BOOK_LANGUAGES.has(bookLanguage))
+    || !priceFilter
     || !["featured", "title", "author"].includes(sortBy)
     || typeof locale !== "string" || !LOCALES.has(locale)) {
     return response.status(400).json({
@@ -66,7 +70,7 @@ export async function listBooks(request, response) {
     });
   }
 
-  const filters = {};
+  const filters = { ...priceFilter };
   if (category && category !== "All") filters.category = category;
   if (bookLanguage) filters.language = bookLanguage;
   if (query.trim()) {
