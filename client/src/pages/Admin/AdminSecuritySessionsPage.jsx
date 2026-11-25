@@ -16,7 +16,7 @@ const styles = `
 .admin-security-current{color:#316342;font-weight:700}
 .admin-security-other{color:#77716a}
 .admin-security-error{padding:12px;background:#f8ece8;color:#863d32;font-size:11px}
-.admin-security-empty{padding:18px;border:1px solid #e4ddd1;background:#fffdfa;color:#77716a;font-size:11px}\n.admin-security-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}.admin-security-metric{padding:16px;border:1px solid #e4ddd1;background:#fffdfa}.admin-security-metric strong{display:block;font:500 24px var(--serif);color:#30252c}.admin-security-metric span{font-size:10px;color:#77716a}
+.admin-security-empty{padding:18px;border:1px solid #e4ddd1;background:#fffdfa;color:#77716a;font-size:11px}\n.admin-security-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}.admin-security-metric{padding:16px;border:1px solid #e4ddd1;background:#fffdfa}.admin-security-metric strong{display:block;font:500 24px var(--serif);color:#30252c}.admin-security-metric span{font-size:10px;color:#77716a}\n@media(max-width:600px){.admin-security-metrics{grid-template-columns:1fr}}
 `;
 
 function formatTimestamp(value, language) {
@@ -71,6 +71,24 @@ export default function AdminSecuritySessionsPage() {
         <div className="admin-security-metric"><strong>{metrics.totals.loginSuccesses}</strong><span>{t.adminLoginSuccesses}</span></div>
         <div className="admin-security-metric"><strong>{metrics.totals.loginFailures}</strong><span>{t.adminLoginFailures}</span></div>
         <div className="admin-security-metric"><strong>{metrics.totals.knownAccountFailures}</strong><span>{t.adminKnownAccountFailures}</span></div>
+      </div>}
+      {!loadingMetrics && metrics?.buckets?.length > 0 && <div className="admin-security-table-wrap">
+        <table className="admin-security-table">
+          <thead><tr>
+            <th scope="col">{t.adminLoginHour}</th>
+            <th scope="col">{t.adminLoginSuccesses}</th>
+            <th scope="col">{t.adminLoginFailures}</th>
+            <th scope="col">{t.adminKnownAccountFailures}</th>
+          </tr></thead>
+          <tbody>{metrics.buckets.map((bucket) => (
+            <tr key={bucket.hour}>
+              <td>{formatTimestamp(bucket.hour, language)}</td>
+              <td>{bucket.loginSuccesses}</td>
+              <td>{bucket.loginFailures}</td>
+              <td>{bucket.knownAccountFailures}</td>
+            </tr>
+          ))}</tbody>
+        </table>
       </div>}
       {error && <p className="admin-security-error" role="alert">{error}</p>}
       <h2>{t.adminSecuritySessionsTitle}</h2>
