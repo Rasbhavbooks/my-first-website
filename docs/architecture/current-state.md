@@ -47,7 +47,7 @@ This file records implementation status; the complete requirements remain in the
 
 ## Not implemented
 
-Broader platform settings, server-rendered SEO metadata and root-level sitemap/robots routing, book publication to the public catalogue, account deletion, passkeys/WebAuthn and hardware keys, verified-purchase review labels, production email deliverability monitoring, public paid reader checkout/order APIs, payment processing, refunds, subscriptions, royalty ledger, broader CMS features, affiliates, institutions, audiobooks, AI tools, and mobile apps.
+Broader platform settings, server-rendered SEO metadata and root-level sitemap/robots routing, book publication to the public catalogue, account deletion, passkeys/WebAuthn and hardware keys, production email deliverability monitoring, public paid reader checkout/order APIs, payment processing, refunds, subscriptions, royalty ledger, broader CMS features, affiliates, institutions, audiobooks, AI tools, and mobile apps.
 
 ## Phase 7 launch decisions
 
