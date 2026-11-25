@@ -36,7 +36,7 @@ export function useFilteredBooks(books, { category, query, language, bookLanguag
 }
 
 
-export function usePaginatedBooks({ category, query, language, bookLanguage, sort, page }) {
+export function usePaginatedBooks({ category, query, language, bookLanguage, priceType = "all", sort, page }) {
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -46,7 +46,7 @@ export function usePaginatedBooks({ category, query, language, bookLanguage, sor
     let active = true;
     const timer = setTimeout(() => {
       setLoading(true);
-      getBooksPage({ category, query, language, bookLanguage, sort, page })
+      getBooksPage({ category, query, language, bookLanguage, priceType, sort, page })
         .then((result) => {
           if (!active) return;
           setItems((current) => page === 1 ? result.items : [...current, ...result.items]);
@@ -61,7 +61,7 @@ export function usePaginatedBooks({ category, query, language, bookLanguage, sor
       active = false;
       clearTimeout(timer);
     };
-  }, [category, query, language, bookLanguage, sort, page]);
+  }, [category, query, language, bookLanguage, priceType, sort, page]);
 
   return { items, total, totalPages, loading, hasMore: page < totalPages };
 }
