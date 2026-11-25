@@ -38,3 +38,19 @@ test("returns the same not found response without access and never fetches the f
   assert.equal(res.statusCode, 404);
   assert.equal(fetched, false);
 });
+
+
+test("records reader-owned history only after a private book file is available", async () => {
+  const calls = [];
+  const body = Readable.from(["private pdf"]);
+  const res = response();
+  const handler = createEbookReader({
+    resolveAccess: async () => ({ sourceId: "507f1f77bcf86cd799439011" }),
+    findApprovedManuscript: async () => ({ key: "private/key", scanStatus: "clean", contentType: "application/pdf" }),
+    getObject: async () => { calls.push("file"); return { Body: body }; },
+    recordProgress: async (data) => { calls.push("history"); assert.deepEqual(data, { readerId: "reader-id", bookId: "quiet-river" }); },
+  });
+  await handler({ params: { bookId: "quiet-river" }, reader: { _id: "reader-id" } }, res);
+  assert.deepEqual(calls, ["file", "history"]);
+  await new Promise((resolve, reject) => res.finished ? resolve() : res.once("finish", resolve).once("error", reject));
+});
