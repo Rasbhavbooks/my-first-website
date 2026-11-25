@@ -94,9 +94,9 @@ export function createReaderLibraryController({
         return response.status(404).json({ error: { code: "BOOK_NOT_FOUND", message: "Book not found." } });
       }
 
-      const [safeBook] = await accessibleBooks([book], request.reader._id);
+      const [activity] = await findProgress(request.reader._id, [bookId]);
       response.setHeader("Cache-Control", "private, no-store");
-      return response.json({ data: { book: safeBook } });
+      return response.json({ data: { book: { ...serializeLibraryBook(book, access.kind), lastOpenedAt: activity?.lastOpenedAt?.toISOString?.() || null } } });
     },
   };
 }
