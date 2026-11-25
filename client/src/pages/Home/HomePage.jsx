@@ -29,6 +29,7 @@ export default function HomePage() {
   const [category, setCategory] = useState("All");
   const [query, setQuery] = useState("");
   const [bookLanguage, setBookLanguage] = useState("");
+  const [priceType, setPriceType] = useState("all");
   const [sort, setSort] = useState("featured");
   const [page, setPage] = useState(1);
   const [searchHistory, setSearchHistory] = useState([]);
@@ -43,7 +44,7 @@ export default function HomePage() {
     }
   });
   const [subscribed, setSubscribed] = useState(false);
-  const { items: visibleBooks, total: totalBooks, loading: catalogueLoading, hasMore } = usePaginatedBooks({ category, query, language, bookLanguage, sort, page });
+  const { items: visibleBooks, total: totalBooks, loading: catalogueLoading, hasMore } = usePaginatedBooks({ category, query, language, bookLanguage, priceType, sort, page });
 
   useEffect(() => {
     try {
@@ -217,6 +218,11 @@ export default function HomePage() {
             </div>}
           </div>
           <div className="catalog-refinements">
+            <label className="catalog-refinement"><span>{t.priceFilter}</span><select value={priceType} onChange={(event) => { setPriceType(event.target.value); setPage(1); }}>
+              <option value="all">{t.allPrices}</option>
+              <option value="free">{t.freeBooksFilter}</option>
+              <option value="paid">{t.paidBooksFilter}</option>
+            </select></label>
             <label className="catalog-refinement"><span>{t.bookLanguageFilter}</span><select value={bookLanguage} onChange={(event) => { setBookLanguage(event.target.value); setPage(1); }}>
               <option value="">{t.allLanguages}</option>
               <option value="Gujarati">{t.gujarati}</option>
