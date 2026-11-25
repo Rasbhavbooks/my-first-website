@@ -154,7 +154,8 @@ export function createPaidBookEntitlementService({
       const entitlement = await createEntitlement(record, { session });
       return { entitlement, replayed: false, alreadyOwned: false };
     } catch (error) {
-      if (error?.code !== 11000) throw error;
+      // A duplicate write aborts an active MongoDB transaction. Let the caller retry it.
+      if (error?.code !== 11000 || session?.inTransaction()) throw error;
       const racedOrder = await findEntitlementByOrderId(order._id ?? order.id);
       if (racedOrder && matchesOrder(racedOrder, order, ledger)) {
         return { entitlement: racedOrder, replayed: true, alreadyOwned: false };

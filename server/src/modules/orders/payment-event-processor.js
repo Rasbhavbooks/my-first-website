@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import grantPaidBookEntitlement from "./book-entitlement.service.js";
 import applyCapturedPayment from "./payment-application.service.js";
 import postVerifiedPaymentLedger from "./ledger-writer.js";
 import recordPaymentEvent from "./payment-event-recorder.js";
@@ -23,14 +24,16 @@ export function createPaymentEventProcessor({
   withTransaction = withMongoTransaction,
   applyCapturedPayment,
   postLedger,
+  grantEntitlement,
 }) {
   if (
     typeof recordEvent !== "function"
     || typeof withTransaction !== "function"
     || typeof applyCapturedPayment !== "function"
     || typeof postLedger !== "function"
+    || typeof grantEntitlement !== "function"
   ) {
-    throw new TypeError("Payment event processor requires event recording, transaction, and application services.");
+    throw new TypeError("Payment event processor requires event recording, transaction, capture, ledger, and entitlement services.");
   }
 
   return async function processPaymentEvent({ rawBody, headers }) {
@@ -62,6 +65,7 @@ export function createPaymentEventProcessor({
             { accountCode: "unallocated_book_receipts", direction: "credit", amountPaise },
           ],
         }, { session });
+        await grantEntitlement(String(event.orderId), { session });
       }
       return result;
     });
@@ -78,6 +82,7 @@ const defaultProcessor = createPaymentEventProcessor({
   recordEvent: recordPaymentEvent,
   applyCapturedPayment,
   postLedger: postVerifiedPaymentLedger,
+  grantEntitlement: grantPaidBookEntitlement,
 });
 
 export default defaultProcessor;
