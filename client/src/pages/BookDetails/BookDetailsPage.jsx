@@ -10,13 +10,17 @@ import { useCategories } from "../../hooks/useCategories.js";
 import { getBookById } from "../../services/bookService.js";
 import { usePageMetadata } from "../../hooks/usePageMetadata.js";
 import { formatInr } from "../../utils/formatCurrency.js";
+import { useAuth } from "../../context/AuthContext.jsx";
+import { getReaderLibraryBook } from "../../services/readerLibraryService.js";
 
 export default function BookDetailsPage() {
   const { bookId } = useParams();
   const { language, t } = useLanguage();
   const { getCategoryLabel } = useCategories();
+  const { user, loading: authLoading } = useAuth();
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [readerAccess, setReaderAccess] = useState({ status: "idle" });
 
   useEffect(() => {
     let active = true;
@@ -29,6 +33,23 @@ export default function BookDetailsPage() {
     });
     return () => { active = false; };
   }, [bookId]);
+
+  useEffect(() => {
+    let active = true;
+    if (!book?.id || authLoading) return () => { active = false; };
+    if (!user?.id) {
+      setReaderAccess({ status: "guest" });
+      return () => { active = false; };
+    }
+    setReaderAccess({ status: "checking" });
+    getReaderLibraryBook(book.id)
+      .then((accessibleBook) => { if (active) setReaderAccess({ status: "available", book: accessibleBook }); })
+      .catch((error) => {
+        if (!active) return;
+        setReaderAccess({ status: error.status === 404 ? "unavailable" : "error" });
+      });
+    return () => { active = false; };
+  }, [book?.id, user?.id, authLoading]);
 
   const title = book ? getBookTitle(book, language) : "";
   usePageMetadata({
@@ -51,6 +72,7 @@ export default function BookDetailsPage() {
 
   return (
     <main className="detail-page">
+      <style>{`.detail-reading-action{display:inline-flex;align-items:center;justify-content:center;min-height:42px;margin:4px 0 8px;padding:0 18px;background:#30252c;color:#fff;text-decoration:none;font-size:10px;letter-spacing:.04em}.detail-access-note{margin:5px 0 14px;color:#77716a;font-size:11px;line-height:1.7}.detail-access-error{color:#863d32}`}</style>
       <Link to="/#discover" className="back-link"><ArrowLeft size={16} />{t.backToCatalogue}</Link>
       <div className="detail-grid">
         <div className={`book-cover detail-cover cover-${book.tone}`}>
@@ -62,13 +84,26 @@ export default function BookDetailsPage() {
           <p className="detail-author">{t.by} <strong>{book.author}</strong></p>
           <AuthorFollowButton authorName={book.author} />
           <div className="detail-price">{book.price === 0 ? t.freeBookPrice : formatInr(book.price, language)}</div>
+          {readerAccess.status === "available" ? (
+            <Link className="detail-reading-action" to={`/read/${encodeURIComponent(book.id)}`}>{t.readEbook}</Link>
+          ) : book.price === 0 && readerAccess.status === "guest" ? (
+            <Link className="detail-reading-action" to="/reader/login">{t.freeBookSignIn}</Link>
+          ) : readerAccess.status === "checking" ? (
+            <p className="detail-access-note" role="status">{t.checkingBookAccess}</p>
+          ) : readerAccess.status === "error" ? (
+            <p className="detail-access-note detail-access-error" role="alert">{t.bookAccessCheckError}</p>
+          ) : book.price === 0 && readerAccess.status === "unavailable" ? (
+            <p className="detail-access-note">{t.freeBookNotAvailable}</p>
+          ) : book.price > 0 ? (
+            <p className="detail-access-note">{t.paidPurchaseUnavailable}</p>
+          ) : null}
           <p className="detail-description">{t.descriptionText[language]}</p>
           <dl className="detail-facts">
             <div><dt>{t.languageLabel}</dt><dd>{book.language}</dd></div>
             <div><dt>{t.categoryLabel}</dt><dd>{getCategoryLabel(book.category)}</dd></div>
             {book.isbn && <div><dt>{t.bookIsbn}</dt><dd>{book.isbn}</dd></div>}
           </dl>
-          <p className="demo-note">{t.demoNotice}</p>
+
         </article>
       </div>
       <BookReviews bookId={book.id} />
