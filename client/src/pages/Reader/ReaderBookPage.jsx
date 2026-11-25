@@ -5,7 +5,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { deleteReaderBookBookmark, getReaderBookBookmark, getReaderLibraryBook, saveReaderBookBookmark } from "../../services/readerLibraryService.js";
 
-const styles = [
+const styles = `
 .reader-page{max-width:1180px;min-height:78vh;margin:auto;padding:36px 24px 64px}
 .reader-toolbar{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:20px}
 .reader-toolbar a{display:inline-flex;align-items:center;gap:7px;color:#635951;font-size:11px}
@@ -25,7 +25,7 @@ const styles = [
 .reader-bookmark-error{grid-column:1/-1;margin:0;color:#863d32;font-size:11px}
 .reader-bookmark-hint{grid-column:1/-1;margin:0;color:#77716a;font-size:10px;line-height:1.6}
 @media(max-width:600px){.reader-page{padding:26px 14px 44px}.reader-frame{height:72vh;min-height:420px}.reader-bookmark{grid-template-columns:1fr}.reader-bookmark-actions{flex-wrap:wrap}.reader-bookmark-status,.reader-bookmark-error,.reader-bookmark-hint{grid-column:auto}}
-].join("");
+`;
 
 export default function ReaderBookPage() {
   const { bookId } = useParams();
