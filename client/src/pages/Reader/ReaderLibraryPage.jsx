@@ -123,7 +123,7 @@ export default function ReaderLibraryPage() {
       {error && <p className="library-error" role="alert">{error}</p>}
       {pageLoading ? <p aria-live="polite">{t.libraryLoading}</p> : (
         <>
-          {!freeBooks.length && !purchasedBooks.length && <p className="library-empty">{t.libraryEmpty}</p>}
+          {!recentBooks.length && !freeBooks.length && !purchasedBooks.length && <p className="library-empty">{t.libraryEmpty}</p>}
           <BookSection title={t.libraryRecentTitle} books={recentBooks} cursor={null} onMore={() => {}} loadingMore={false} t={t} language={language} />
           <BookSection title={t.libraryFreeTitle} books={freeBooks} cursor={freeCursor} onMore={() => loadMore("free")} loadingMore={loadingSection === "free"} t={t} language={language} />
           <BookSection title={t.libraryPurchasedTitle} books={purchasedBooks} cursor={purchasedCursor} onMore={() => loadMore("purchased")} loadingMore={loadingSection === "purchased"} t={t} language={language} />
