@@ -3,6 +3,9 @@ import { createHmac, randomBytes } from "node:crypto";
 import { once } from "node:events";
 import test from "node:test";
 import mongoose from "mongoose";
+import Book from "../src/modules/books/book.model.js";
+import AuthorBook from "../src/modules/books/author-book.model.js";
+import resolveReadingAccess from "../src/modules/books/reading-access.service.js";
 import Order from "../src/modules/orders/order.model.js";
 import Attempt from "../src/modules/orders/payment-attempt.model.js";
 import PaymentEvent from "../src/modules/orders/payment-event.model.js";
@@ -20,7 +23,7 @@ test("signed capture updates a book order and posts one receipt and grants one e
   t.after(async () => {
     try { await mongoose.connection.dropDatabase(); } finally { await mongoose.disconnect(); }
   });
-  await Promise.all([Order.init(), Attempt.init(), PaymentEvent.init(), Ledger.init(), Entitlement.init()]);
+  await Promise.all([Order.init(), Attempt.init(), PaymentEvent.init(), Ledger.init(), Entitlement.init(), Book.init(), AuthorBook.init()]);
   const order = await Order.create({
     buyerId: new mongoose.Types.ObjectId(), idempotencyKeyHash: "a".repeat(64),
     bookId: "quiet-river", bookTitle: { en: "Quiet River", gu: "શાંત નદી", hi: "शांत नदी" },
@@ -76,4 +79,36 @@ test("signed capture updates a book order and posts one receipt and grants one e
   assert.equal(grants[0].bookId, order.bookId);
   assert.equal(String(grants[0].sourceLedgerId), String(receipts[0]._id));
   assert.deepEqual(receipts[0].entries.map(e => [e.direction, e.amountPaise]).sort(), [["credit", 4900], ["debit", 4900]]);
+  const readerId = order.buyerId;
+  const otherReaderId = new mongoose.Types.ObjectId();
+  const text = { en: "Quiet River", gu: "શાંત નદી", hi: "शांत नदी" };
+  const catalogue = await Book.create({
+    catalogueId: order.bookId, title: text, description: text,
+    author: order.authorName, language: "English", category: "Novel", price: 49,
+    tone: "blue", badge: "New",
+  });
+  const source = await AuthorBook.create({
+    authorId: otherReaderId, authorName: order.authorName, title: text, description: text, price: 49,
+    assets: { manuscript: { key: "private/test/reading.pdf", contentType: "application/pdf",
+      fileName: "reading.pdf", size: 512, scanStatus: "clean" } },
+  });
+  assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId }), null);
+  await Book.updateOne({ _id: catalogue._id }, { $set: { readingSourceId: source._id } });
+  assert.equal((await Book.findById(catalogue._id).lean()).readingSourceId, undefined);
+  assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId }), null);
+  await AuthorBook.updateOne({ _id: source._id }, { $set: { status: "approved" } });
+  assert.deepEqual(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId }),
+    { sourceId: String(source._id), kind: "purchased" });
+  assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId: otherReaderId }), null);
+  assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId }), null);
+  const paid = await Order.findById(order._id).select("+paymentReference");
+  paid.transitionTo("refund_pending");
+  await paid.save();
+  assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId }), null);
+  await Book.updateOne({ _id: catalogue._id }, { $set: { price: 0 } });
+  assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId }), null);
+  await AuthorBook.updateOne({ _id: source._id }, { $set: { price: 0 } });
+  assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId }), null);
+  assert.deepEqual(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId: otherReaderId }),
+    { sourceId: String(source._id), kind: "free" });
 });
