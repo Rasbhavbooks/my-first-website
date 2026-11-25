@@ -1,4 +1,3 @@
-import Book from "../books/book.model.js";
 import resolveReadingAccess from "../books/reading-access.service.js";
 import ReaderBookBookmark from "./reader-bookmark.model.js";
 
