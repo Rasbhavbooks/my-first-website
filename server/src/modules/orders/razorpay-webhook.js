@@ -68,6 +68,8 @@ export function createRazorpayWebhookVerifier({ webhookSecret, findAttemptByProv
       eventId,
       eventType,
       orderId: attempt.orderId,
+      paymentAttemptId: attempt._id,
+      providerOrderId: attempt.providerOrderId,
       providerPaymentId,
       amountPaise,
       currency,

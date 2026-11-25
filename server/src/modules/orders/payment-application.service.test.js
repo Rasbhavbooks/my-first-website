@@ -3,13 +3,17 @@ import test from "node:test";
 import { createCapturedPaymentApplicationService } from "./payment-application.service.js";
 
 const id = "507f1f77bcf86cd799439011";
+const attemptId = "507f1f77bcf86cd799439012";
+const providerOrderId = "order_test123";
 const now = new Date("2026-11-25T10:00:00.000Z");
 
 function fixture(overrides = {}) {
   const calls = [];
   const event = {
     _id: id,
-    orderId: "order-1",
+    orderId: id,
+    paymentAttemptId: attemptId,
+    providerOrderId,
     provider: "example-gateway",
     eventId: "evt-1",
     eventType: "payment.captured",
@@ -21,7 +25,7 @@ function fixture(overrides = {}) {
     ...overrides.event,
   };
   const order = {
-    _id: "order-1",
+    _id: id,
     status: "pending_payment",
     amountPaise: 4900,
     currency: "INR",
@@ -37,12 +41,18 @@ function fixture(overrides = {}) {
     ...overrides.order,
   };
   const attempt = {
-    orderId: "order-1",
+    _id: attemptId,
+    orderId: id,
     provider: "example-gateway",
-    providerPaymentId: "pay-1",
+    providerOrderId,
+    providerPaymentId: "",
     amountPaise: 4900,
     currency: "INR",
     status: "authorized",
+    attachProviderPaymentId(paymentId) {
+      calls.push(["attach-payment", paymentId]);
+      this.providerPaymentId = paymentId;
+    },
     transitionTo(status, time) {
       calls.push(["attempt-transition", status, time]);
       this.status = status;
@@ -60,8 +70,8 @@ function fixture(overrides = {}) {
       calls.push(["order-lookup", orderId, options]);
       return order;
     },
-    findAttemptByProviderPaymentId: async (provider, paymentId, options) => {
-      calls.push(["attempt-lookup", provider, paymentId, options]);
+    findAttemptById: async (id, options) => {
+      calls.push(["attempt-lookup", id, options]);
       return attempt;
     },
   });
@@ -73,6 +83,8 @@ test("applies a verified capture to its matching attempt and one-book order in t
   const result = await data.service(id, { session: data.session, now });
   assert.deepEqual(result, { applied: true, replayed: false });
   assert.equal(data.attempt.status, "captured");
+  assert.equal(data.attempt.providerPaymentId, "pay-1");
+  assert.ok(data.calls.some(([name, value]) => name === "attach-payment" && value === "pay-1"));
   assert.equal(data.order.status, "paid");
   assert.equal(data.order.paymentProvider, "example-gateway");
   assert.equal(data.order.paymentReference, "pay-1");
@@ -110,6 +122,8 @@ test("rejects amount, order, or provider payment mismatches without changing rec
     ["order amount", { order: { amountPaise: 5000 } }],
     ["attempt order", { attempt: { orderId: "different-order" } }],
     ["attempt payment ID", { attempt: { providerPaymentId: "other-payment" } }],
+    ["provider order reference", { attempt: { providerOrderId: "order_other123" } }],
+    ["wrong attempt id", { event: { paymentAttemptId: "507f1f77bcf86cd799439099" } }],
   ];
   for (const [label, overrides] of cases) {
     await t.test(label, async () => {
@@ -123,7 +137,7 @@ test("rejects amount, order, or provider payment mismatches without changing rec
 test("returns an idempotent replay for the same already-paid capture", async () => {
   const data = fixture({
     order: { status: "paid", paymentProvider: "example-gateway", paymentReference: "pay-1" },
-    attempt: { status: "captured" },
+    attempt: { status: "captured", providerPaymentId: "pay-1" },
   });
   assert.deepEqual(await data.service(id, { session: data.session }), { applied: true, replayed: true });
   assert.equal(data.calls.some(([name]) => name.endsWith("-save")), false);
@@ -132,7 +146,7 @@ test("returns an idempotent replay for the same already-paid capture", async () 
 test("rejects a paid order linked to another payment and never calls ledger or access services", async () => {
   const data = fixture({
     order: { status: "paid", paymentProvider: "example-gateway", paymentReference: "different-payment" },
-    attempt: { status: "captured" },
+    attempt: { status: "captured", providerPaymentId: "pay-1" },
   });
   await assert.rejects(data.service(id, { session: data.session }));
   assert.equal(data.calls.some(([name]) => name.includes("ledger") || name.includes("entitlement")), false);

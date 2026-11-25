@@ -15,6 +15,8 @@ function validVerifiedEvent(event) {
     && Boolean(event.provider)
     && Boolean(event.eventId)
     && Boolean(event.providerPaymentId)
+    && Boolean(event.paymentAttemptId)
+    && Boolean(event.providerOrderId)
     && verifiedAt
     && !Number.isNaN(new Date(verifiedAt).getTime())
     && Number.isSafeInteger(event.amountPaise)
@@ -25,12 +27,12 @@ function validVerifiedEvent(event) {
 export function createCapturedPaymentApplicationService({
   findPaymentEventById,
   findOrderById,
-  findAttemptByProviderPaymentId,
+  findAttemptById,
 }) {
   if (
     typeof findPaymentEventById !== "function"
     || typeof findOrderById !== "function"
-    || typeof findAttemptByProviderPaymentId !== "function"
+    || typeof findAttemptById !== "function"
   ) {
     throw new TypeError("Payment application requires authoritative event, order, and attempt lookups.");
   }
@@ -60,25 +62,24 @@ export function createCapturedPaymentApplicationService({
       throw fail("The verified amount and currency must match the one-book order.");
     }
 
-    const attempt = await findAttemptByProviderPaymentId(
-      event.provider,
-      event.providerPaymentId,
-      { session },
-    );
+    const attempt = await findAttemptById(event.paymentAttemptId, { session });
     if (!attempt) throw fail("The payment attempt was not found.", "PAYMENT_ATTEMPT_NOT_FOUND");
     if (
-      String(attempt.orderId) !== String(order._id ?? order.id)
+      String(attempt._id ?? attempt.id) !== String(event.paymentAttemptId)
+      || String(attempt.orderId) !== String(order._id ?? order.id)
       || attempt.provider !== event.provider
+      || attempt.providerOrderId !== event.providerOrderId
       || attempt.amountPaise !== event.amountPaise
       || attempt.currency !== event.currency
-      || attempt.providerPaymentId !== event.providerPaymentId
+      || (attempt.providerPaymentId && attempt.providerPaymentId !== event.providerPaymentId)
     ) {
       throw fail("The verified payment does not match its payment attempt and order.");
     }
 
     if (order.status === "paid" && attempt.status === "captured") {
       if (
-        order.paymentProvider !== event.provider
+        attempt.providerPaymentId !== event.providerPaymentId
+        || order.paymentProvider !== event.provider
         || order.paymentReference !== event.providerPaymentId
       ) {
         throw fail("The paid order is linked to a different captured payment.");
@@ -93,6 +94,7 @@ export function createCapturedPaymentApplicationService({
       throw fail("Only an uncaptured payment attempt can be captured.");
     }
 
+    attempt.attachProviderPaymentId(event.providerPaymentId);
     attempt.transitionTo("captured", now);
     await attempt.save({ session });
     order.transitionTo("paid", {
@@ -108,7 +110,7 @@ export function createCapturedPaymentApplicationService({
 
 const defaultService = createCapturedPaymentApplicationService({
   findPaymentEventById: (paymentEventId, { session } = {}) => {
-    let query = DigitalBookPaymentEvent.findById(paymentEventId).select("+providerPaymentId");
+    let query = DigitalBookPaymentEvent.findById(paymentEventId).select("+providerPaymentId +providerOrderId");
     if (session) query = query.session(session);
     return query;
   },
@@ -117,9 +119,9 @@ const defaultService = createCapturedPaymentApplicationService({
     if (session) query = query.session(session);
     return query;
   },
-  findAttemptByProviderPaymentId: (provider, providerPaymentId, { session } = {}) => {
-    let query = DigitalBookPaymentAttempt.findOne({ provider, providerPaymentId })
-      .select("+providerPaymentId");
+  findAttemptById: (attemptId, { session } = {}) => {
+    let query = DigitalBookPaymentAttempt.findById(attemptId)
+      .select("+providerOrderId +providerPaymentId");
     if (session) query = query.session(session);
     return query;
   },

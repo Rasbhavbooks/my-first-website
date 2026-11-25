@@ -70,6 +70,10 @@ const paymentAttemptSchema = new mongoose.Schema(
 paymentAttemptSchema.index({ orderId: 1, attemptNumber: 1 }, { unique: true });
 paymentAttemptSchema.index({ orderId: 1, idempotencyKeyHash: 1 }, { unique: true });
 paymentAttemptSchema.index(
+  { provider: 1, providerOrderId: 1 },
+  { unique: true, partialFilterExpression: { providerOrderId: { $type: "string" } } },
+);
+paymentAttemptSchema.index(
   { provider: 1, providerPaymentId: 1 },
   { unique: true, partialFilterExpression: { providerPaymentId: { $type: "string" } } },
 );
@@ -84,11 +88,12 @@ paymentAttemptSchema.post("init", function rememberPersistedStatus() {
   this.$locals.persistedStatus = this.status;
 });
 
-paymentAttemptSchema.pre("validate", function validateProviderOrderReference() {
-  const unauthorizedChange = this.isModified("providerOrderId")
-    && this.$locals.providerOrderIdChangeAuthorized !== true;
-  if (unauthorizedChange) {
+paymentAttemptSchema.pre("validate", function validateProviderReferences() {
+  if (this.isModified("providerOrderId") && this.$locals.providerOrderIdChangeAuthorized !== true) {
     this.invalidate("providerOrderId", "Provider order references must be attached through attachProviderOrderId().");
+  }
+  if (this.isModified("providerPaymentId") && (!this.$locals.authorizedPaymentId || this.$locals.authorizedPaymentId !== this.providerPaymentId)) {
+    this.invalidate("providerPaymentId", "Provider payment references must be attached through attachProviderPaymentId().");
   }
 });
 
@@ -137,6 +142,23 @@ paymentAttemptSchema.methods.attachProviderOrderId = function attachProviderOrde
   return this;
 };
 
+paymentAttemptSchema.methods.attachProviderPaymentId = function attachProviderPaymentId(providerPaymentId) {
+  const normalized = String(providerPaymentId ?? "").trim();
+  if (!normalized || normalized.length > 160 || !/^[A-Za-z0-9_-]+$/.test(normalized)) {
+    throw transitionError("A valid provider payment reference is required.");
+  }
+  if (this.providerPaymentId && this.providerPaymentId !== normalized) {
+    throw transitionError("A different provider payment is already attached to this attempt.");
+  }
+  if (this.providerPaymentId === normalized) return this;
+  if (!this.isNew && !this.isSelected("providerPaymentId")) {
+    throw transitionError("Load the private payment reference before attaching a payment.");
+  }
+  this.$locals.authorizedPaymentId = normalized;
+  this.providerPaymentId = normalized;
+  return this;
+};
+
 paymentAttemptSchema.methods.transitionTo = function transitionTo(nextStatus, now = new Date()) {
   if (this.$locals.transitionAuthorized) {
     throw transitionError("Save this payment transition before changing its status again.");
@@ -165,6 +187,7 @@ paymentAttemptSchema.post("save", function rememberSavedStatus(document) {
   document.$locals.transitionFrom = undefined;
   document.$locals.transitionAuthorized = false;
   document.$locals.providerOrderIdChangeAuthorized = false;
+  delete document.$locals.authorizedPaymentId;
 });
 
 const DigitalBookPaymentAttempt = mongoose.models.DigitalBookPaymentAttempt

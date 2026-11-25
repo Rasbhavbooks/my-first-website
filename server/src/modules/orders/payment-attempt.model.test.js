@@ -123,3 +123,23 @@ test("does not allow replacing a provider order once attached", () => {
     code: "INVALID_PAYMENT_TRANSITION",
   });
 });
+
+
+test("attaches a private provider payment reference through the validated method", async () => {
+  const attempt = persistedAttempt("authorized");
+  attempt.attachProviderPaymentId("pay_test123");
+  await attempt.validate();
+  assert.equal(attempt.providerPaymentId, "pay_test123");
+});
+
+test("rejects direct changes and replacement of a provider payment reference", async () => {
+  const direct = persistedAttempt("authorized");
+  direct.providerPaymentId = "pay_unchecked123";
+  await assert.rejects(direct.validate(), (error) => Boolean(error.errors.providerPaymentId));
+
+  const existing = persistedAttempt("authorized");
+  existing.providerPaymentId = "pay_test123";
+  assert.throws(() => existing.attachProviderPaymentId("pay_other123"), {
+    code: "INVALID_PAYMENT_TRANSITION",
+  });
+});
