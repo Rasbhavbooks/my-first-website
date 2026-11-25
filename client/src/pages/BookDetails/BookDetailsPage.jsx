@@ -61,7 +61,7 @@ export default function BookDetailsPage() {
           <h1>{title}</h1>
           <p className="detail-author">{t.by} <strong>{book.author}</strong></p>
           <AuthorFollowButton authorName={book.author} />
-          <div className="detail-price">{formatInr(book.price, language)}</div>
+          <div className="detail-price">{book.price === 0 ? t.freeBookPrice : formatInr(book.price, language)}</div>
           <p className="detail-description">{t.descriptionText[language]}</p>
           <dl className="detail-facts">
             <div><dt>{t.languageLabel}</dt><dd>{book.language}</dd></div>
