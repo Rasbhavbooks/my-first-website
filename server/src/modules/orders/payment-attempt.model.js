@@ -84,6 +84,14 @@ paymentAttemptSchema.post("init", function rememberPersistedStatus() {
   this.$locals.persistedStatus = this.status;
 });
 
+paymentAttemptSchema.pre("validate", function validateProviderOrderReference() {
+  const unauthorizedChange = this.isModified("providerOrderId")
+    && this.$locals.providerOrderIdChangeAuthorized !== true;
+  if (unauthorizedChange) {
+    this.invalidate("providerOrderId", "Provider order references must be attached through attachProviderOrderId().");
+  }
+});
+
 paymentAttemptSchema.pre("validate", function validateStatusTransition() {
   if (this.isNew) {
     const validInitialTransition = this.$locals.transitionAuthorized === true
@@ -115,6 +123,20 @@ for (const operation of ["updateOne", "updateMany", "findOneAndUpdate", "replace
   paymentAttemptSchema.pre(operation, rejectQueryMutation);
 }
 
+paymentAttemptSchema.methods.attachProviderOrderId = function attachProviderOrderId(providerOrderId) {
+  const normalized = String(providerOrderId ?? "").trim();
+  if (!/^order_[A-Za-z0-9]{1,150}$/.test(normalized)) {
+    throw transitionError("A valid Razorpay order reference is required.");
+  }
+  if (this.providerOrderId && this.providerOrderId !== normalized) {
+    throw transitionError("A different provider order is already attached to this attempt.");
+  }
+  if (this.providerOrderId === normalized) return this;
+  this.$locals.providerOrderIdChangeAuthorized = true;
+  this.providerOrderId = normalized;
+  return this;
+};
+
 paymentAttemptSchema.methods.transitionTo = function transitionTo(nextStatus, now = new Date()) {
   if (this.$locals.transitionAuthorized) {
     throw transitionError("Save this payment transition before changing its status again.");
@@ -142,6 +164,7 @@ paymentAttemptSchema.post("save", function rememberSavedStatus(document) {
   document.$locals.persistedStatus = document.status;
   document.$locals.transitionFrom = undefined;
   document.$locals.transitionAuthorized = false;
+  document.$locals.providerOrderIdChangeAuthorized = false;
 });
 
 const DigitalBookPaymentAttempt = mongoose.models.DigitalBookPaymentAttempt
