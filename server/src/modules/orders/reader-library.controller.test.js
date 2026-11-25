@@ -174,3 +174,22 @@ test("recent library lists only books the reader can still access", async () => 
   assert.equal(response.body.data.books[0].lastOpenedAt, recentAt.toISOString());
   assert.equal("privateKey" in response.body.data.books[0], false);
 });
+
+
+test("reader can clear only their own recent reading history", async () => {
+  const readerId = new mongoose.Types.ObjectId();
+  let deletedOwner;
+  const controller = createReaderLibraryController({
+    findFreeCandidates: async () => [],
+    findEntitlements: async () => [],
+    findBooksByIds: async () => [],
+    findBookById: async () => null,
+    resolveAccess: async () => null,
+    deleteRecentActivities: async (ownerId) => { deletedOwner = ownerId; },
+  });
+  const response = responseMock();
+  await controller.clearRecent({ reader: { _id: readerId } }, response);
+  assert.equal(deletedOwner, readerId);
+  assert.equal(response.headers["Cache-Control"], "private, no-store");
+  assert.deepEqual(response.body.data, { cleared: true });
+});
