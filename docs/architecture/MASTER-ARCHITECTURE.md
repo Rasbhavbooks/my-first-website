@@ -1527,6 +1527,7 @@ Development must happen step by step.
 - Print-on-demand and monthly reader membership are deferred from the initial release.
 - Razorpay is the selected gateway. Keep checkout and paid access disabled until book prices, platform/author revenue split, tax/refund terms, and author-rights wording are approved.
 
+- Authors set the proposed price for their eBooks. An administrator approves the submitted price or returns the submission to the author for revision.
 - Product and book pricing.
 - Orders.
 - Payments.

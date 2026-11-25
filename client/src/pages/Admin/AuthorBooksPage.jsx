@@ -79,10 +79,10 @@ export default function AuthorBooksAdminPage() {
   async function review(book, decision) {
     setBusyId(book.id); setError("");
     try {
-      await decideAuthorBook(book.id, { decision, adminNote: notes[book.id] || "" });
+      await decideAuthorBook(book.id, { decision, adminNote: notes[book.id] || "", reviewedPrice: book.price, submittedAt: book.submittedAt });
       await loadBooks();
-    } catch {
-      setError(t.bookReviewError);
+    } catch (failure) {
+      setError(failure.code === "STALE_BOOK_REVIEW" ? t.staleBookPrice : t.bookReviewError);
     } finally {
       setBusyId("");
     }
