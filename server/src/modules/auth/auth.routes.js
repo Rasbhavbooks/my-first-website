@@ -82,7 +82,7 @@ router.post("/login", loginLimiter, loginReader);
 router.get("/session", getReaderSession);
 router.post("/logout", logoutReader);
 router.get("/profile/export", requireReader, accountExportLimiter, exportReaderAccountData);
-router.delete("/profile", requireReader, accountDeletionLimiter, deleteReaderAccount);
+router.delete("/profile", accountDeletionLimiter, requireReader, deleteReaderAccount);
 router.get("/profile/photo", requireReader, getReaderAvatar);
 router.put("/profile/photo", requireReader, avatarUploadLimiter, raw({ type: "*/*", limit: "5mb" }), uploadReaderAvatar);
 router.delete("/profile/photo", requireReader, avatarUploadLimiter, deleteReaderAvatar);
