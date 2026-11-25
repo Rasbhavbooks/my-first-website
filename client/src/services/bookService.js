@@ -55,7 +55,7 @@ export async function getRelatedBooks(bookId, currentBook, limit = 4) {
 
 const CATALOGUE_PAGE_SIZE = 24;
 
-function filterFallbackBooks(allBooks, { category, query, bookLanguage, priceType = "all", sort, language }) {
+export function filterFallbackBooks(allBooks, { category, query, bookLanguage, priceType = "all", sort, language }) {
   const locale = { en: "en-IN", gu: "gu-IN", hi: "hi-IN" }[language] || "en-IN";
   const term = query.trim().toLocaleLowerCase(locale);
   const filtered = allBooks.filter((book) => {
