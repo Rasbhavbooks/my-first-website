@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import applyCapturedPayment from "./payment-application.service.js";
+import postVerifiedPaymentLedger from "./ledger-writer.js";
 import recordPaymentEvent from "./payment-event-recorder.js";
 
 function fail(message, code = "INVALID_PAYMENT_EVENT") {
@@ -21,11 +22,13 @@ export function createPaymentEventProcessor({
   recordEvent,
   withTransaction = withMongoTransaction,
   applyCapturedPayment,
+  postLedger,
 }) {
   if (
     typeof recordEvent !== "function"
     || typeof withTransaction !== "function"
     || typeof applyCapturedPayment !== "function"
+    || typeof postLedger !== "function"
   ) {
     throw new TypeError("Payment event processor requires event recording, transaction, and application services.");
   }
@@ -47,7 +50,21 @@ export function createPaymentEventProcessor({
       };
     }
 
-    const application = await withTransaction((session) => applyCapturedPayment(eventId, { session }));
+    const application = await withTransaction(async (session) => {
+      const result = await applyCapturedPayment(eventId, { session });
+      if (result.applied && !result.replayed) {
+        // Both sides record the gross receipt. Royalties and fees are separate transactions.
+        const amountPaise = event.amountPaise;
+        await postLedger({
+          paymentEventId: eventId,
+          entries: [
+            { accountCode: "gateway_clearing", direction: "debit", amountPaise },
+            { accountCode: "unallocated_book_receipts", direction: "credit", amountPaise },
+          ],
+        }, { session });
+      }
+      return result;
+    });
     return {
       recorded: true,
       replayed: recorded.replayed === true,
@@ -60,6 +77,7 @@ export function createPaymentEventProcessor({
 const defaultProcessor = createPaymentEventProcessor({
   recordEvent: recordPaymentEvent,
   applyCapturedPayment,
+  postLedger: postVerifiedPaymentLedger,
 });
 
 export default defaultProcessor;
