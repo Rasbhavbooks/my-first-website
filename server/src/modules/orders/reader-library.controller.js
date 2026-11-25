@@ -81,6 +81,21 @@ export function createReaderLibraryController({
       return response.json({ data });
     },
 
+    async listRecent(request, response) {
+      const activities = await findRecentActivities(request.reader._id, 8);
+      const books = await findBooksByIds([...new Set(activities.map((activity) => activity.bookId))]);
+      const booksById = new Map(books.map((book) => [book.catalogueId, book]));
+      const recentBooks = (await Promise.all(activities.map(async (activity) => {
+        const book = booksById.get(activity.bookId);
+        if (!book) return null;
+        const access = await resolveAccess({ bookId: book.catalogueId, readerId: request.reader._id });
+        if (!access) return null;
+        return { ...serializeLibraryBook(book, access.kind), lastOpenedAt: activity.lastOpenedAt?.toISOString?.() || null };
+      }))).filter(Boolean);
+      response.setHeader("Cache-Control", "private, no-store");
+      return response.json({ data: { books: recentBooks } });
+    },
+
     async getBook(request, response) {
       const bookId = request.params.bookId;
       if (typeof bookId !== "string" || !bookId.trim() || bookId.length > 64 || bookId !== bookId.trim()) {
@@ -118,7 +133,10 @@ const controller = createReaderLibraryController({
   resolveAccess: resolveReadingAccess,
   findProgress: (readerId, bookIds) => ReaderBookActivity.find({ readerId, bookId: { $in: bookIds } })
     .select("bookId lastOpenedAt -_id").lean(),
+  findRecentActivities: (readerId, limit) => ReaderBookActivity.find({ readerId })
+    .sort({ lastOpenedAt: -1, _id: -1 }).limit(limit).select("bookId lastOpenedAt -_id").lean(),
 });
 
 export const listReaderLibrary = controller.list;
 export const getReaderLibraryBook = controller.getBook;
+export const listRecentlyOpenedBooks = controller.listRecent;
