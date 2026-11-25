@@ -53,35 +53,38 @@ test("library lists only free books that pass reader access checks", async () =>
 });
 
 test("library limits candidates and advances independent section cursors", async () => {
-  const firstFree = book("free-first");
-  const secondFree = book("free-second");
-  const firstEntitlement = { _id: new mongoose.Types.ObjectId(), bookId: "paid-first" };
-  const secondEntitlement = { _id: new mongoose.Types.ObjectId(), bookId: "paid-second" };
-  const paid = book("paid-first", 125);
+  const freeCandidates = Array.from({ length: 21 }, (_value, index) => book(`free-${index}`));
+  const entitlementCandidates = Array.from({ length: 21 }, (_value, index) => ({
+    _id: new mongoose.Types.ObjectId(),
+    bookId: `paid-${index}`,
+  }));
+  const paid = book("paid-0", 125);
+  const readerId = new mongoose.Types.ObjectId();
   const controller = createReaderLibraryController({
     findFreeCandidates: async (_cursor, limit) => {
       assert.equal(limit, 21);
-      return [firstFree, secondFree, book("free-overflow")];
+      return freeCandidates;
     },
-    findEntitlements: async (_readerId, _cursor, limit) => {
+    findEntitlements: async (ownerId, _cursor, limit) => {
+      assert.equal(ownerId, readerId);
       assert.equal(limit, 21);
-      return [firstEntitlement, secondEntitlement, { _id: new mongoose.Types.ObjectId(), bookId: "paid-overflow" }];
+      return entitlementCandidates;
     },
     findBooksByIds: async (ids) => {
-      assert.deepEqual(ids, ["paid-first", "paid-second"]);
+      assert.deepEqual(ids, entitlementCandidates.slice(0, 20).map((item) => item.bookId));
       return [paid];
     },
     findBookById: async () => null,
-    resolveAccess: async ({ bookId }) => bookId === "free-second" || bookId === "paid-first"
-      ? { kind: bookId === "paid-first" ? "purchased" : "free" }
+    resolveAccess: async ({ bookId }) => bookId === "free-1" || bookId === "paid-0"
+      ? { kind: bookId === "paid-0" ? "purchased" : "free" }
       : null,
   });
   const response = responseMock();
-  await controller.list({ query: {}, reader: { _id: new mongoose.Types.ObjectId() } }, response);
-  assert.deepEqual(response.body.data.freeBooks.map((item) => item.id), ["free-second"]);
-  assert.deepEqual(response.body.data.purchasedBooks.map((item) => item.id), ["paid-first"]);
-  assert.equal(response.body.data.freeNextCursor, String(secondFree._id));
-  assert.equal(response.body.data.purchasedNextCursor, String(secondEntitlement._id));
+  await controller.list({ query: {}, reader: { _id: readerId } }, response);
+  assert.deepEqual(response.body.data.freeBooks.map((item) => item.id), ["free-1"]);
+  assert.deepEqual(response.body.data.purchasedBooks.map((item) => item.id), ["paid-0"]);
+  assert.equal(response.body.data.freeNextCursor, String(freeCandidates[19]._id));
+  assert.equal(response.body.data.purchasedNextCursor, String(entitlementCandidates[19]._id));
 });
 
 test("library rejects malformed cursors", async () => {
