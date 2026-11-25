@@ -28,16 +28,17 @@ export function createReaderBookmarkController({
 
   return {
     async get(request, response) {
+      response.setHeader("Cache-Control", "private, no-store");
       const { bookId } = request.params;
       if (!await requireBookAccess(bookId, request.reader._id)) {
         return response.status(404).json({ error: { code: "BOOK_NOT_FOUND", message: "Book not found." } });
       }
       const bookmark = await findBookmark(request.reader._id, bookId);
-      response.setHeader("Cache-Control", "private, no-store");
       return response.json({ data: { bookmark: serialize(bookmark) } });
     },
 
     async save(request, response) {
+      response.setHeader("Cache-Control", "private, no-store");
       const { bookId } = request.params;
       if (!await requireBookAccess(bookId, request.reader._id)) {
         return response.status(404).json({ error: { code: "BOOK_NOT_FOUND", message: "Book not found." } });
@@ -57,17 +58,16 @@ export function createReaderBookmarkController({
       }
 
       const bookmark = await saveBookmark(request.reader._id, bookId, { pageNumber, note });
-      response.setHeader("Cache-Control", "private, no-store");
       return response.json({ data: { bookmark: serialize(bookmark) } });
     },
 
     async remove(request, response) {
+      response.setHeader("Cache-Control", "private, no-store");
       const { bookId } = request.params;
       if (!validBookId(bookId)) {
         return response.status(404).json({ error: { code: "BOOK_NOT_FOUND", message: "Book not found." } });
       }
       const result = await deleteBookmark(request.reader._id, bookId);
-      response.setHeader("Cache-Control", "private, no-store");
       return response.json({ data: { removed: result?.deletedCount > 0 } });
     },
   };
