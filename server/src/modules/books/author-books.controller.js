@@ -119,7 +119,7 @@ export async function submitAuthorBook(request, response) {
   if (!current) return errorResponse(response, 404, "AUTHOR_BOOK_NOT_EDITABLE", "This draft was not found or can no longer be submitted.");
   const fields = await validFields(current, true);
   if (!current.assets?.cover?.key || !current.assets?.manuscript?.key) return errorResponse(response, 400, "AUTHOR_BOOK_ASSETS_REQUIRED", "Upload a cover and a manuscript and wait for the security scan before submitting.");
-  if (!fields return errorResponse(response, 400, "AUTHOR_BOOK_INCOMPLETE", "Add a title and a description of at least 40 characters in the book's language before submitting.");
+  if (!fields) return errorResponse(response, 400, "AUTHOR_BOOK_INCOMPLETE", "Add a title and a description of at least 40 characters in the book's language before submitting.");
   const book = await AuthorBook.findOneAndUpdate(
     { _id: current._id, authorId: request.reader._id, status: { $in: ["draft", "rejected"] } },
     { $set: { ...fields, status: "submitted", submittedAt: new Date(), adminNote: "" } },
