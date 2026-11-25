@@ -37,6 +37,7 @@ const styles = `
 .review-reader{display:flex;align-items:center;gap:11px}
 .review-avatar{width:38px;height:38px;border-radius:50%;object-fit:cover;background:#eee8de}
 .review-reader-name{font-size:11px;font-weight:600}.review-date{margin-top:4px;color:#81796f;font-size:9px}
+.verified-purchase-badge{display:inline-block;margin-left:7px;padding:3px 5px;background:#edf3e9;color:#316342;font-size:8px;letter-spacing:.02em;font-weight:500;vertical-align:middle}
 .review-stars{color:#9a7136;letter-spacing:2px;font-size:13px;white-space:nowrap}
 .review-body{margin:14px 0 0;color:#615b54;font-size:12px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}
 .review-actions{display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
@@ -245,7 +246,7 @@ export default function BookReviews({ bookId }) {
                   {review.reader.avatarUrl
                     ? <img className="review-avatar" src={review.reader.avatarUrl} alt="" loading="lazy" referrerPolicy="no-referrer" />
                     : <span className="review-avatar" aria-hidden="true" />}
-                  <div><div className="review-reader-name">{review.reader.displayName}</div><div className="review-date">{new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(review.createdAt))}</div></div>
+                  <div><div className="review-reader-name">{review.reader.displayName}{review.verifiedPurchase && <span className="verified-purchase-badge">{t.verifiedPurchase}</span>}</div><div className="review-date">{new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(review.createdAt))}</div></div>
                 </div>
                 <span className="review-stars" aria-label={`${review.rating} ${t.outOfFive}`}>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
               </div>
