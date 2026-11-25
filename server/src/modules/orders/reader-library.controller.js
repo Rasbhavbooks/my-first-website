@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Book from "../books/book.model.js";
 import resolveReadingAccess from "../books/reading-access.service.js";
 import DigitalBookEntitlement from "./book-entitlement.model.js";
+import ReaderBookActivity from "./reader-book-activity.model.js";
 
 const PAGE_SIZE = 20;
 const CURSOR_PATTERN = /^[a-f0-9]{24}$/i;
@@ -30,13 +31,18 @@ export function createReaderLibraryController({
   findBooksByIds,
   findBookById,
   resolveAccess,
+  findProgress = async () => [],
 }) {
   async function accessibleBooks(candidates, readerId) {
     const results = await Promise.all(candidates.map(async (book) => {
       const access = await resolveAccess({ bookId: book.catalogueId, readerId });
       return access ? serializeLibraryBook(book, access.kind) : null;
     }));
-    return results.filter(Boolean);
+    const accessible = results.filter(Boolean);
+    if (!accessible.length) return accessible;
+    const progress = await findProgress(readerId, accessible.map((book) => book.id));
+    const openedAt = new Map(progress.map((item) => [item.bookId, item.lastOpenedAt?.toISOString?.() || null]));
+    return accessible.map((book) => ({ ...book, lastOpenedAt: openedAt.get(book.id) || null }));
   }
 
   return {
@@ -88,8 +94,9 @@ export function createReaderLibraryController({
         return response.status(404).json({ error: { code: "BOOK_NOT_FOUND", message: "Book not found." } });
       }
 
+      const [safeBook] = await accessibleBooks([book], request.reader._id);
       response.setHeader("Cache-Control", "private, no-store");
-      return response.json({ data: { book: serializeLibraryBook(book, access.kind) } });
+      return response.json({ data: { book: safeBook } });
     },
   };
 }
@@ -109,6 +116,8 @@ const controller = createReaderLibraryController({
   findBookById: (bookId) => Book.findOne({ catalogueId: bookId })
     .select("catalogueId title author language category price tone badge").lean(),
   resolveAccess: resolveReadingAccess,
+  findProgress: (readerId, bookIds) => ReaderBookActivity.find({ readerId, bookId: { $in: bookIds } })
+    .select("bookId lastOpenedAt -_id").lean(),
 });
 
 export const listReaderLibrary = controller.list;
