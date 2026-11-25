@@ -6,9 +6,10 @@ import mongoose from "mongoose";
 import Order from "../src/modules/orders/order.model.js";
 import Attempt from "../src/modules/orders/payment-attempt.model.js";
 import PaymentEvent from "../src/modules/orders/payment-event.model.js";
+import Entitlement from "../src/modules/orders/book-entitlement.model.js";
 import Ledger from "../src/modules/orders/ledger-transaction.model.js";
 
-test("signed capture updates a book order and posts one receipt across retries", async (t) => {
+test("signed capture updates a book order and posts one receipt and grants one entitlement across retries", async (t) => {
   const secret = randomBytes(32).toString("hex");
   process.env.RAZORPAY_WEBHOOK_SECRET = secret;
   const { default: app } = await import("../src/app.js");
@@ -19,7 +20,7 @@ test("signed capture updates a book order and posts one receipt across retries",
   t.after(async () => {
     try { await mongoose.connection.dropDatabase(); } finally { await mongoose.disconnect(); }
   });
-  await Promise.all([Order.init(), Attempt.init(), PaymentEvent.init(), Ledger.init()]);
+  await Promise.all([Order.init(), Attempt.init(), PaymentEvent.init(), Ledger.init(), Entitlement.init()]);
   const order = await Order.create({
     buyerId: new mongoose.Types.ObjectId(), idempotencyKeyHash: "a".repeat(64),
     bookId: "quiet-river", bookTitle: { en: "Quiet River", gu: "શાંત નદી", hi: "शांत नदी" },
@@ -47,6 +48,17 @@ test("signed capture updates a book order and posts one receipt across retries",
 
   assert.equal((await notify("evt1", "0".repeat(64))).status, 400);
   assert.equal(await PaymentEvent.countDocuments(), 0);
+  // A conflicting record must prevent both the paid transition and the journal write.
+  const conflicting = await Entitlement.create({
+    readerId: new mongoose.Types.ObjectId(), bookId: order.bookId, orderId: order._id,
+    sourceLedgerId: new mongoose.Types.ObjectId(), amountPaise: order.amountPaise, currency: "INR",
+  });
+  assert.equal((await notify("evt1")).status, 500);
+  assert.equal((await Order.findById(order._id)).status, "pending_payment");
+  assert.equal((await Attempt.findById(attempt._id)).status, "pending");
+  assert.equal(await Ledger.countDocuments({ orderId: order._id }), 0);
+  await Entitlement.deleteOne({ _id: conflicting._id });
+
   const first = await notify("evt1");
   assert.equal(first.status, 200, await first.text());
   for (const result of await Promise.all([notify("evt1"), notify("evt2")])) {
@@ -58,5 +70,10 @@ test("signed capture updates a book order and posts one receipt across retries",
   assert.equal(captured.providerPaymentId, "pay_capture1");
   const receipts = await Ledger.find({ orderId: order._id });
   assert.equal(receipts.length, 1);
+  const grants = await Entitlement.find({ orderId: order._id }).select("+sourceLedgerId");
+  assert.equal(grants.length, 1);
+  assert.equal(String(grants[0].readerId), String(order.buyerId));
+  assert.equal(grants[0].bookId, order.bookId);
+  assert.equal(String(grants[0].sourceLedgerId), String(receipts[0]._id));
   assert.deepEqual(receipts[0].entries.map(e => [e.direction, e.amountPaise]).sort(), [["credit", 4900], ["debit", 4900]]);
 });
