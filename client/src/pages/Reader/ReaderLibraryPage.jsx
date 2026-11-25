@@ -3,7 +3,7 @@ import { ArrowUpRight, BookOpen } from "lucide-react";
 import { Link, Navigate } from "react-router";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
-import { getReaderLibrary } from "../../services/readerLibraryService.js";
+import { getReaderLibrary, getRecentlyOpenedBooks } from "../../services/readerLibraryService.js";
 
 const styles = `
 .reader-library{max-width:1120px;min-height:70vh;margin:auto;padding:64px 24px 90px}
@@ -59,6 +59,7 @@ function BookSection({ title, books, cursor, onMore, loadingMore, t, language })
 export default function ReaderLibraryPage() {
   const { user, loading } = useAuth();
   const { language, t } = useLanguage();
+  const [recentBooks, setRecentBooks] = useState([]);
   const [freeBooks, setFreeBooks] = useState([]);
   const [purchasedBooks, setPurchasedBooks] = useState([]);
   const [freeCursor, setFreeCursor] = useState(null);
@@ -72,7 +73,10 @@ export default function ReaderLibraryPage() {
     setPageLoading(true);
     setError("");
     try {
-      const result = await getReaderLibrary();
+      const [libraryResult, recentResult] = await Promise.allSettled([getReaderLibrary(), getRecentlyOpenedBooks()]);
+      if (libraryResult.status === "rejected") throw libraryResult.reason;
+      const result = libraryResult.value;
+      setRecentBooks(recentResult.status === "fulfilled" ? recentResult.value : []);
       setFreeBooks(result.freeBooks || []);
       setPurchasedBooks(result.purchasedBooks || []);
       setFreeCursor(result.freeNextCursor || null);
@@ -119,7 +123,8 @@ export default function ReaderLibraryPage() {
       {error && <p className="library-error" role="alert">{error}</p>}
       {pageLoading ? <p aria-live="polite">{t.libraryLoading}</p> : (
         <>
-          {!freeBooks.length && !purchasedBooks.length && <p className="library-empty">{t.libraryEmpty}</p>}
+          {!recentBooks.length && !freeBooks.length && !purchasedBooks.length && <p className="library-empty">{t.libraryEmpty}</p>}
+          <BookSection title={t.libraryRecentTitle} books={recentBooks} cursor={null} onMore={() => {}} loadingMore={false} t={t} language={language} />
           <BookSection title={t.libraryFreeTitle} books={freeBooks} cursor={freeCursor} onMore={() => loadMore("free")} loadingMore={loadingSection === "free"} t={t} language={language} />
           <BookSection title={t.libraryPurchasedTitle} books={purchasedBooks} cursor={purchasedCursor} onMore={() => loadMore("purchased")} loadingMore={loadingSection === "purchased"} t={t} language={language} />
         </>

@@ -137,3 +137,40 @@ test("library attaches only the signed-in reader's most recent open time", async
   await controller.list({ query: {}, reader: { _id: readerId } }, response);
   assert.equal(response.body.data.freeBooks[0].lastOpenedAt, lastOpenedAt.toISOString());
 });
+
+
+test("recent library lists only books the reader can still access", async () => {
+  const older = book("older-book");
+  const recent = book("recent-book");
+  const hidden = book("revoked-book");
+  const readerId = new mongoose.Types.ObjectId();
+  const recentAt = new Date("2026-11-25T04:00:00.000Z");
+  const controller = createReaderLibraryController({
+    findFreeCandidates: async () => [],
+    findEntitlements: async () => [],
+    findBooksByIds: async (ids) => {
+      assert.deepEqual(ids, ["recent-book", "revoked-book", "older-book"]);
+      return [older, recent, hidden];
+    },
+    findBookById: async () => null,
+    resolveAccess: async ({ bookId, readerId: owner }) => {
+      assert.equal(owner, readerId);
+      return bookId === "revoked-book" ? null : { kind: "free" };
+    },
+    findRecentActivities: async (owner, limit) => {
+      assert.equal(owner, readerId);
+      assert.equal(limit, 8);
+      return [
+        { bookId: "recent-book", lastOpenedAt: recentAt },
+        { bookId: "revoked-book", lastOpenedAt: new Date("2026-11-25T03:00:00.000Z") },
+        { bookId: "older-book", lastOpenedAt: new Date("2026-11-24T03:00:00.000Z") },
+      ];
+    },
+  });
+  const response = responseMock();
+  await controller.listRecent({ reader: { _id: readerId } }, response);
+  assert.equal(response.headers["Cache-Control"], "private, no-store");
+  assert.deepEqual(response.body.data.books.map((item) => item.id), ["recent-book", "older-book"]);
+  assert.equal(response.body.data.books[0].lastOpenedAt, recentAt.toISOString());
+  assert.equal("privateKey" in response.body.data.books[0], false);
+});

@@ -26,3 +26,9 @@ export async function getReaderLibraryBook(bookId) {
   const result = await readLibraryResponse(`/api/v1/reader/library/${encodeURIComponent(bookId)}`);
   return result.book;
 }
+
+
+export async function getRecentlyOpenedBooks() {
+  const result = await readLibraryResponse("/api/v1/reader/library/recent");
+  return result.books || [];
+}
