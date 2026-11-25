@@ -37,7 +37,7 @@ function sendError(response, status, code, message) {
   return response.status(status).json({ error: { code, message } });
 }
 
-async function removePrivateRecords(userId, session) {
+export async function removePrivateRecords(userId, session) {
   const profiles = await AuthorProfile.find({ userId }).select("_id").session(session).lean();
   const profileIds = profiles.map((item) => item._id);
   const books = await AuthorBook.find({ authorId: userId }).select("_id").session(session).lean();
