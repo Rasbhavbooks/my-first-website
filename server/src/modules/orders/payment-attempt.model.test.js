@@ -99,3 +99,27 @@ test("payment model refuses raw payment credential fields", () => {
   assert.equal(DigitalBookPaymentAttempt.schema.path("providerPaymentId").options.select, false);
   assert.equal(DigitalBookPaymentAttempt.schema.path("idempotencyKeyHash").options.select, false);
 });
+
+test("attaches a private provider order reference through the validated method", async () => {
+  const attempt = persistedAttempt("created");
+  attempt.attachProviderOrderId("order_test123");
+  await attempt.validate();
+  assert.equal(attempt.providerOrderId, "order_test123");
+});
+
+test("rejects direct changes to a persisted provider order reference", async () => {
+  const attempt = persistedAttempt("created");
+  attempt.providerOrderId = "order_unchecked123";
+  await assert.rejects(attempt.validate(), (error) => {
+    assert.ok(error.errors.providerOrderId);
+    return true;
+  });
+});
+
+test("does not allow replacing a provider order once attached", () => {
+  const attempt = persistedAttempt("created");
+  attempt.providerOrderId = "order_test123";
+  assert.throws(() => attempt.attachProviderOrderId("order_other123"), {
+    code: "INVALID_PAYMENT_TRANSITION",
+  });
+});

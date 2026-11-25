@@ -1525,7 +1525,7 @@ Development must happen step by step.
 
 - Initial release: digital eBooks sold as separate one-time purchases.
 - Print-on-demand and monthly reader membership are deferred from the initial release.
-- Keep checkout and paid access disabled until the payment gateway, book prices, platform/author revenue split, tax/refund terms, and author-rights wording are approved.
+- Razorpay is the selected gateway. Keep checkout and paid access disabled until book prices, platform/author revenue split, tax/refund terms, and author-rights wording are approved.
 
 - Product and book pricing.
 - Orders.
