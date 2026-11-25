@@ -67,7 +67,7 @@ const userSchema = new mongoose.Schema(
     },
     accountStatus: {
       type: String,
-      enum: ["pending_verification", "active", "suspended"],
+      enum: ["pending_verification", "active", "suspended", "deleted"],
       default: "pending_verification",
       required: true,
     },

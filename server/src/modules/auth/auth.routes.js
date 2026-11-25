@@ -17,6 +17,7 @@ import { requireReader } from "./auth.middleware.js";
 import { exportReaderAccountData } from "./account-data-export.controller.js";
 import { listReaderSessions, revokeReaderSession } from "./reader-sessions.controller.js";
 import { deleteReaderAvatar, getReaderAvatar, uploadReaderAvatar } from "./reader-avatar.controller.js";
+import { deleteReaderAccount } from "./account-deletion.controller.js";
 
 const router = Router();
 const registrationLimiter = rateLimit({
@@ -61,6 +62,12 @@ const avatarUploadLimiter = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
 });
+const accountDeletionLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 3,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+});
 const accountExportLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   limit: 3,
@@ -75,6 +82,7 @@ router.post("/login", loginLimiter, loginReader);
 router.get("/session", getReaderSession);
 router.post("/logout", logoutReader);
 router.get("/profile/export", requireReader, accountExportLimiter, exportReaderAccountData);
+router.delete("/profile", requireReader, accountDeletionLimiter, deleteReaderAccount);
 router.get("/profile/photo", requireReader, getReaderAvatar);
 router.put("/profile/photo", requireReader, avatarUploadLimiter, raw({ type: "*/*", limit: "5mb" }), uploadReaderAvatar);
 router.delete("/profile/photo", requireReader, avatarUploadLimiter, deleteReaderAvatar);
