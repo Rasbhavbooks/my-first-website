@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router";
 import { useLanguage } from "../../hooks/useLanguage.js";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { changeReaderPassword, downloadReaderAccountData, getReaderSessions, removeReaderAvatar, revokeReaderSession, updateReaderProfile, uploadReaderAvatar } from "../../services/authService.js";
+import { changeReaderPassword, deleteReaderAccount, downloadReaderAccountData, getReaderSessions, removeReaderAvatar, revokeReaderSession, updateReaderProfile, uploadReaderAvatar } from "../../services/authService.js";
 import FollowedAuthorsPanel from "../../components/account/FollowedAuthorsPanel.jsx";
 import { formatInr } from "../../utils/formatCurrency.js";
 import { getReaderOrders } from "../../services/orderService.js";
@@ -26,7 +26,7 @@ const accountStyles = `
 .account-submit{min-height:43px;margin-top:3px;border:0;background:#30252c;color:#fff;font-size:10px;letter-spacing:.4px;cursor:pointer}
 .account-submit:disabled{opacity:.6;cursor:wait}
 .account-message{margin:0 0 18px;padding:12px 14px;font-size:11px;line-height:1.6;background:#edf3e9;color:#39513d}
-.account-error{margin:0;padding:10px 12px;font-size:10px;background:#f8ece8;color:#863d32}
+.account-error{margin:0;padding:10px 12px;font-size:10px;background:#f8ece8;color:#863d32}\n.account-danger{border-color:#c9988d}.account-danger h2{color:#863d32}.account-danger .account-submit{background:#863d32}
 .account-back{display:inline-block;margin-top:24px;font-size:10px;color:#716b63;text-decoration:underline;text-underline-offset:3px}
 .account-success{max-width:500px;margin:70px auto;padding:40px;border:1px solid var(--line);background:#fffdfa;text-align:center}
 .account-success h1{font:500 36px var(--serif)}.account-success p{color:#77716a;font-size:12px;line-height:1.8}
@@ -71,6 +71,10 @@ export default function AccountPage() {
   const [busy, setBusy] = useState(false);
   const [exportBusy, setExportBusy] = useState(false);
   const [passwordChanged, setPasswordChanged] = useState(false);
+  const [accountDeleted, setAccountDeleted] = useState(false);
+  const [deletionForm, setDeletionForm] = useState({ currentPassword: "", confirmation: "" });
+  const [deletionBusy, setDeletionBusy] = useState(false);
+  const [deletionError, setDeletionError] = useState("");
   const [sessions, setSessions] = useState([]);
   const [sessionsHasMore, setSessionsHasMore] = useState(false);
   const [sessionsLoading, setSessionsLoading] = useState(true);
@@ -149,6 +153,7 @@ export default function AccountPage() {
   }
 
   if (loading) return <main className="account-page"><p>{t.loadingAccount}</p></main>;
+  if (accountDeleted) return <main className="account-page"><style>{accountStyles}</style><section className="account-success"><h1>{t.deleteAccountSuccessTitle}</h1><p>{t.deleteAccountSuccessHint}</p><Link className="button button-dark" to="/reader/login">{t.signIn}</Link></section></main>;
   if (!user && !passwordChanged) return <Navigate to="/reader/login" replace />;
 
   async function handleAvatarUpload(event) {
@@ -233,6 +238,29 @@ export default function AccountPage() {
       setError(t.exportDataError);
     } finally {
       setExportBusy(false);
+    }
+  }
+
+  async function handleAccountDeletion(event) {
+    event.preventDefault();
+    setDeletionError("");
+    if (!window.confirm(t.deleteAccountConfirm)) return;
+    setDeletionBusy(true);
+    try {
+      await deleteReaderAccount(deletionForm);
+      await signOut();
+      setAccountDeleted(true);
+    } catch (requestError) {
+      const errors = {
+        CURRENT_PASSWORD_INCORRECT: t.currentPasswordIncorrect,
+        CURRENT_PASSWORD_REQUIRED: t.deleteAccountPasswordError,
+        DELETE_CONFIRMATION_REQUIRED: t.deleteAccountConfirmationError,
+        ADMIN_ACCOUNT_DELETION_UNAVAILABLE: t.deleteAccountUnavailable,
+        ACCOUNT_FILES_UNAVAILABLE: t.deleteAccountError,
+      };
+      setDeletionError(errors[requestError.code] || t.deleteAccountError);
+    } finally {
+      setDeletionBusy(false);
     }
   }
 
@@ -404,6 +432,17 @@ export default function AccountPage() {
         <button className="account-submit" style={{ width: "min(100%, 320px)" }} type="button" disabled={exportBusy} onClick={handleExport}>
           {exportBusy ? t.exportingData : t.exportData}
         </button>
+      </section>
+      <section className="account-panel account-danger" style={{ marginTop: 20 }}>
+        <h2>{t.deleteAccountTitle}</h2>
+        <p className="account-intro">{t.deleteAccountWarning}</p>
+        <form className="account-form" onSubmit={handleAccountDeletion}>
+          <label className="account-field"><span>{t.deleteAccountPassword}</span><input type="password" autoComplete="current-password" required maxLength={128} value={deletionForm.currentPassword} onChange={(event) => setDeletionForm((current) => ({ ...current, currentPassword: event.target.value }))} /></label>
+          <label className="account-field"><span>{t.deleteAccountConfirmLabel}</span><input required autoComplete="off" value={deletionForm.confirmation} onChange={(event) => setDeletionForm((current) => ({ ...current, confirmation: event.target.value }))} /></label>
+          <p className="account-intro">{t.deleteAccountConfirmHint}</p>
+          {deletionError && <p className="account-error" role="alert">{deletionError}</p>}
+          <button className="account-submit" type="submit" disabled={deletionBusy || deletionForm.confirmation !== "DELETE"}>{deletionBusy ? t.deletingAccount : t.deleteAccountButton}</button>
+        </form>
       </section>
       <FollowedAuthorsPanel />
       <button className="account-submit" style={{ width: "min(100%, 260px)", marginTop: 18 }} type="button" disabled={busy} onClick={handleLogout}>{t.signOut}</button>

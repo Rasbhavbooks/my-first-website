@@ -161,3 +161,7 @@ export async function removeReaderAvatar() {
   }
   return result.data;
 }
+
+export function deleteReaderAccount(payload) {
+  return postAuthRequest("/api/v1/auth/profile", payload, "DELETE");
+}
