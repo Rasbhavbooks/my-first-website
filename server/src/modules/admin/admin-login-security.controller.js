@@ -6,8 +6,9 @@ export async function getAdminLoginSecurityMetrics(request, response) {
   response.setHeader("Cache-Control", "no-store");
   const to = new Date();
   const from = new Date(to.getTime() - WINDOW_MS);
+  const firstBucket = new Date(Math.floor(to.getTime() / 3600000) * 3600000 - 23 * 3600000);
   const buckets = await LoginSecurityMetric.find({
-    bucketStart: { $gte: new Date(Math.floor(from.getTime() / 3600000) * 3600000), $lte: to },
+    bucketStart: { $gte: firstBucket, $lte: to },
   }).sort({ bucketStart: 1 }).lean();
   const totals = buckets.reduce((sum, item) => ({
     loginSuccesses: sum.loginSuccesses + item.loginSuccesses,
