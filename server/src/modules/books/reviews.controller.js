@@ -2,15 +2,17 @@ import Book from "./book.model.js";
 import BookReview from "./book-review.model.js";
 import ReviewReport from "./review-report.model.js";
 import ReviewHelpfulVote from "./review-helpful-vote.model.js";
+import DigitalBookEntitlement from "../orders/book-entitlement.model.js";
 
 const MIN_REVIEW_LENGTH = 10;
 const MAX_REVIEW_LENGTH = 2000;
 const REPORT_REASONS = new Set(["spam", "abuse", "irrelevant", "other"]);
 
-function reviewDto(review, helpfulCount = 0) {
+export function reviewDto(review, helpfulCount = 0, verifiedPurchase = false) {
   return {
     id: review.id,
     helpfulCount,
+    verifiedPurchase,
     rating: review.rating,
     body: review.body,
     createdAt: review.createdAt,
@@ -64,10 +66,22 @@ export async function listBookReviews(request, response) {
     ])
     : [];
   const helpfulCountById = new Map(helpfulCounts.map((item) => [String(item._id), item.count]));
+  const readerIds = records.map((review) => review.userId?._id || review.userId).filter(Boolean);
+  const purchaseRecords = readerIds.length
+    ? await DigitalBookEntitlement.find({ bookId: catalogueId, readerId: { $in: readerIds } }).select("readerId -_id").lean()
+    : [];
+  const verifiedReaderIds = new Set(purchaseRecords.map((item) => String(item.readerId)));
   response.setHeader("Cache-Control", "no-store");
   return response.json({
     data: {
-      reviews: records.map((review) => reviewDto(review, helpfulCountById.get(String(review._id)) || 0)),
+      reviews: records.map((review) => {
+        const readerId = review.userId?._id || review.userId;
+        return reviewDto(
+          review,
+          helpfulCountById.get(String(review._id)) || 0,
+          Boolean(readerId && verifiedReaderIds.has(String(readerId))),
+        );
+      }),
       page,
       pageSize: limit,
       total,
