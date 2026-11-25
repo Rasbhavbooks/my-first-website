@@ -7,6 +7,7 @@ const input = { rawBody: Buffer.from("{\"event\":\"signed\"}"), headers: { "x-si
 
 function fixture({ recorded = {}, application = { applied: true, replayed: false }, applicationError } = {}) {
   const calls = [];
+  const transactionSession = { inTransaction: () => true };
   const event = recorded.event || {
     _id: persistedEventId,
     eventType: "payment.captured",
@@ -19,8 +20,7 @@ function fixture({ recorded = {}, application = { applied: true, replayed: false
     },
     withTransaction: async (callback) => {
       calls.push(["transaction"]);
-      const session = { inTransaction: () => true };
-      return callback(session);
+      return callback(transactionSession);
     },
     applyCapturedPayment: async (eventId, options) => {
       calls.push(["apply", eventId, options]);
@@ -28,7 +28,7 @@ function fixture({ recorded = {}, application = { applied: true, replayed: false
       return application;
     },
   });
-  return { calls, processor };
+  return { calls, processor, transactionSession };
 }
 
 test("records a verified capture, then applies it inside a transaction", async () => {
@@ -43,7 +43,7 @@ test("records a verified capture, then applies it inside a transaction", async (
   assert.deepEqual(data.calls.map(([name]) => name), ["record", "transaction", "apply"]);
   assert.equal(data.calls[0][1].rawBody, input.rawBody);
   assert.equal(data.calls[2][1].session.inTransaction(), true);
-  assert.equal(data.calls[2][1].session, data.calls[2][1].session);
+  assert.equal(data.calls[2][1].session, data.transactionSession);
 });
 
 test("does not open a transaction for ignored events", async () => {
