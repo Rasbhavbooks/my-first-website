@@ -5,13 +5,14 @@ import { createPaymentEventProcessor } from "./payment-event-processor.js";
 const persistedEventId = "507f1f77bcf86cd799439011";
 const input = { rawBody: Buffer.from("{\"event\":\"signed\"}"), headers: { "x-signature": "signature" } };
 
-function fixture({ recorded = {}, application = { applied: true, replayed: false }, applicationError } = {}) {
+function fixture({ recorded = {}, application = { applied: true, replayed: false }, applicationError, ledgerError } = {}) {
   const calls = [];
   const transactionSession = { inTransaction: () => true };
   const event = Object.hasOwn(recorded, "event") ? recorded.event : {
     _id: persistedEventId,
     eventType: "payment.captured",
     outcome: "applied",
+    amountPaise: 4900,
   };
   const processor = createPaymentEventProcessor({
     recordEvent: async (request) => {
@@ -21,6 +22,10 @@ function fixture({ recorded = {}, application = { applied: true, replayed: false
     withTransaction: async (callback) => {
       calls.push(["transaction"]);
       return callback(transactionSession);
+    },
+    postLedger: async (payload, options) => {
+      calls.push(["ledger", payload, options]);
+      if (ledgerError) throw ledgerError;
     },
     applyCapturedPayment: async (eventId, options) => {
       calls.push(["apply", eventId, options]);
@@ -40,7 +45,10 @@ test("records a verified capture, then applies it inside a transaction", async (
     paymentApplied: true,
     applicationReplayed: false,
   });
-  assert.deepEqual(data.calls.map(([name]) => name), ["record", "transaction", "apply"]);
+  assert.deepEqual(data.calls.map(([name]) => name), ["record", "transaction", "apply", "ledger"]);
+  assert.equal(data.calls[3][2].session, data.transactionSession);
+  assert.equal(data.calls[3][1].paymentEventId, persistedEventId);
+  assert.deepEqual(data.calls[3][1].entries.map(({ direction, amountPaise }) => [direction, amountPaise]), [["debit", 4900], ["credit", 4900]]);
   assert.equal(data.calls[0][1].rawBody, input.rawBody);
   assert.equal(data.calls[2][2].session.inTransaction(), true);
   assert.equal(data.calls[2][2].session, data.transactionSession);
@@ -88,4 +96,11 @@ test("surfaces matching duplicate event and application replays", async () => {
     paymentApplied: true,
     applicationReplayed: true,
   });
+  assert.equal(data.calls.some(([name]) => name === "ledger"), false);
+});
+
+test("a ledger failure rejects the capture transaction", async () => {
+  const data = fixture({ ledgerError: new Error("ledger unavailable") });
+  await assert.rejects(data.processor(input), /ledger unavailable/);
+  assert.equal(data.calls.at(-1)[0], "ledger");
 });
