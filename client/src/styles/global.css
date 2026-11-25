@@ -68,7 +68,7 @@ button { color: inherit; }
 .search-suggestion:hover, .search-suggestion:focus-visible { background: #f2eee7; outline: 0; }
 .search input { width: 100%; border: 0; outline: 0; background: transparent; font-size: 10px; color: var(--ink); }
 .search input::placeholder { color: #9b948b; }
-.catalog-refinements { display: flex; gap: 10px; }
+.catalog-refinements { display: flex; flex-wrap: wrap; gap: 10px; }
 .catalog-refinement { display: grid; gap: 4px; color: #77716a; font-size: 9px; }
 .catalog-refinement select { min-height: 36px; border: 1px solid #ded7ce; border-radius: 0; background: #fffdfa; color: var(--ink); padding: 0 10px; font: 10px var(--sans); }
 .category-list { display: flex; gap: 7px; flex-wrap: wrap; }
