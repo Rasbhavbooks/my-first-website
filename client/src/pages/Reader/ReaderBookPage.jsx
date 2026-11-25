@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Bookmark, ExternalLink, Trash2 } from "lucide-react";
 import { Link, Navigate, useParams } from "react-router";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -29,6 +29,8 @@ const styles = `
 
 export default function ReaderBookPage() {
   const { bookId } = useParams();
+  const currentBookId = useRef(bookId);
+  currentBookId.current = bookId;
   const { user, loading } = useAuth();
   const { language, t } = useLanguage();
   const [book, setBook] = useState(null);
@@ -51,29 +53,25 @@ export default function ReaderBookPage() {
     setBookmark(null);
     setBookmarkPage("");
     setBookmarkNote("");
-    Promise.all([getReaderLibraryBook(bookId), getReaderBookBookmark(bookId)])
-      .then(([result, savedBookmark]) => {
+    setBookmarkSaved(false);
+    setBookmarkLoading(false);
+    getReaderLibraryBook(bookId)
+      .then(async (result) => {
         if (!active) return;
         setBook(result);
-        setBookmark(savedBookmark);
-        if (savedBookmark) {
-          setBookmarkPage(String(savedBookmark.pageNumber));
-          setBookmarkNote(savedBookmark.note || "");
-        }
-      })
-      .catch(async (loadError) => {
-        if (!active) return;
-        if (loadError.status === 404) {
-          setError(t.readerAccessError);
-          return;
-        }
         try {
-          const result = await getReaderLibraryBook(bookId);
-          if (active) { setBook(result); setBookmarkError(t.readerBookmarkError); }
+          const savedBookmark = await getReaderBookBookmark(bookId);
+          if (!active) return;
+          setBookmark(savedBookmark);
+          if (savedBookmark) {
+            setBookmarkPage(String(savedBookmark.pageNumber));
+            setBookmarkNote(savedBookmark.note || "");
+          }
         } catch {
-          if (active) setError(t.readerAccessError);
+          if (active) setBookmarkError(t.readerBookmarkError);
         }
       })
+      .catch(() => { if (active) setError(t.readerAccessError); })
       .finally(() => { if (active) setPageLoading(false); });
     return () => { active = false; };
   }, [bookId, user?.id, t.readerAccessError, t.readerBookmarkError]);
@@ -84,16 +82,18 @@ export default function ReaderBookPage() {
     setBookmarkLoading(true);
     setBookmarkError("");
     setBookmarkSaved(false);
+    const requestBookId = bookId;
     try {
-      const saved = await saveReaderBookBookmark(bookId, { pageNumber: Number(bookmarkPage), note: bookmarkNote });
+      const saved = await saveReaderBookBookmark(requestBookId, { pageNumber: Number(bookmarkPage), note: bookmarkNote });
+      if (requestBookId !== currentBookId.current) return;
       setBookmark(saved);
       setBookmarkPage(String(saved.pageNumber));
       setBookmarkNote(saved.note || "");
       setBookmarkSaved(true);
     } catch {
-      setBookmarkError(t.readerBookmarkError);
+      if (requestBookId === currentBookId.current) setBookmarkError(t.readerBookmarkError);
     } finally {
-      setBookmarkLoading(false);
+      if (requestBookId === currentBookId.current) setBookmarkLoading(false);
     }
   }
 
@@ -102,15 +102,17 @@ export default function ReaderBookPage() {
     setBookmarkLoading(true);
     setBookmarkError("");
     setBookmarkSaved(false);
+    const requestBookId = bookId;
     try {
-      await deleteReaderBookBookmark(bookId);
+      await deleteReaderBookBookmark(requestBookId);
+      if (requestBookId !== currentBookId.current) return;
       setBookmark(null);
       setBookmarkPage("");
       setBookmarkNote("");
     } catch {
-      setBookmarkError(t.readerBookmarkError);
+      if (requestBookId === currentBookId.current) setBookmarkError(t.readerBookmarkError);
     } finally {
-      setBookmarkLoading(false);
+      if (requestBookId === currentBookId.current) setBookmarkLoading(false);
     }
   }
 
