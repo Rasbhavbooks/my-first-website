@@ -81,13 +81,10 @@ export function createReaderLibraryController({
         return response.status(404).json({ error: { code: "BOOK_NOT_FOUND", message: "Book not found." } });
       }
 
-      const [book, entitlement] = await Promise.all([
-        findBookById(bookId),
-        DigitalBookEntitlement.findOne({ readerId: request.reader._id, bookId }).select("_id").lean(),
-      ]);
+      const book = await findBookById(bookId);
       if (!book) return response.status(404).json({ error: { code: "BOOK_NOT_FOUND", message: "Book not found." } });
       const access = await resolveAccess({ bookId, readerId: request.reader._id });
-      if (!access || (access.kind === "purchased" && !entitlement)) {
+      if (!access) {
         return response.status(404).json({ error: { code: "BOOK_NOT_FOUND", message: "Book not found." } });
       }
 
