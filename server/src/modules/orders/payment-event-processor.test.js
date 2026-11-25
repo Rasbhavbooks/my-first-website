@@ -42,8 +42,8 @@ test("records a verified capture, then applies it inside a transaction", async (
   });
   assert.deepEqual(data.calls.map(([name]) => name), ["record", "transaction", "apply"]);
   assert.equal(data.calls[0][1].rawBody, input.rawBody);
-  assert.equal(data.calls[2][1].session.inTransaction(), true);
-  assert.equal(data.calls[2][1].session, data.transactionSession);
+  assert.equal(data.calls[2][2].session.inTransaction(), true);
+  assert.equal(data.calls[2][2].session, data.transactionSession);
 });
 
 test("does not open a transaction for ignored events", async () => {
