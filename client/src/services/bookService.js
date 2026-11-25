@@ -55,7 +55,7 @@ export async function getRelatedBooks(bookId, currentBook, limit = 4) {
 
 const CATALOGUE_PAGE_SIZE = 24;
 
-function filterFallbackBooks(allBooks, { category, query, bookLanguage, sort, language }) {
+function filterFallbackBooks(allBooks, { category, query, bookLanguage, priceType = "all", sort, language }) {
   const locale = { en: "en-IN", gu: "gu-IN", hi: "hi-IN" }[language] || "en-IN";
   const term = query.trim().toLocaleLowerCase(locale);
   const filtered = allBooks.filter((book) => {
@@ -68,8 +68,10 @@ function filterFallbackBooks(allBooks, { category, query, bookLanguage, sort, la
       book.isbn,
     ];
     const searchable = values.filter((value) => typeof value === "string").join(" ").toLocaleLowerCase(locale);
+    const matchesPrice = priceType === "free" ? book.price === 0 : priceType === "paid" ? book.price > 0 : true;
     return (category === "All" || book.category === category)
       && (!bookLanguage || book.language === bookLanguage)
+      && matchesPrice
       && searchable.includes(term);
   });
   if (sort === "title" || sort === "author") {
@@ -88,6 +90,7 @@ export async function getBooksPage(filters) {
     q: filters.query || "",
     category: filters.category || "All",
     bookLanguage: filters.bookLanguage || "",
+    priceType: filters.priceType || "all",
     sort: filters.sort || "featured",
     locale: filters.language || "en",
   });
