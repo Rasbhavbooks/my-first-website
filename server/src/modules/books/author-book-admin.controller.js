@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { inrPriceFromPaise, inrPriceToPaise } from "../../../../shared/money.js";
 import AuthorBook from "./author-book.model.js";
 
 function errorResponse(response, status, code, message) {
@@ -55,12 +56,17 @@ export async function reviewAuthorBook(request, response) {
   if (!["approved", "rejected"].includes(decision) || adminNote.length > 800) {
     return errorResponse(response, 400, "INVALID_BOOK_REVIEW", "Choose approve or reject and keep the note under 800 characters.");
   }
+  const pricePaise = inrPriceToPaise(request.body?.reviewedPrice);
+  const submittedAt = request.body?.submittedAt;
+  if (pricePaise === null || typeof submittedAt !== "string" || !Number.isFinite(Date.parse(submittedAt))) {
+    return errorResponse(response, 400, "INVALID_REVIEW_SNAPSHOT", "Refresh the submission and review the author's price.");
+  }
   const book = await AuthorBook.findOneAndUpdate(
-    { _id: request.params.bookId, status: "submitted" },
+    { _id: request.params.bookId, status: "submitted", price: inrPriceFromPaise(pricePaise), submittedAt: new Date(submittedAt) },
     { $set: { status: decision, adminNote, reviewedBy: request.reader._id, reviewedAt: new Date() } },
     { new: true, runValidators: true },
   );
-  if (!book) return errorResponse(response, 404, "AUTHOR_BOOK_NOT_REVIEWABLE", "This submitted book was already reviewed or no longer exists.");
+  if (!book) return errorResponse(response, 409, "STALE_BOOK_REVIEW", "Refresh the review list to see the current submission and price.");
   response.setHeader("Cache-Control", "no-store");
   return response.json({ data: { book: adminBookDto(book) } });
 }

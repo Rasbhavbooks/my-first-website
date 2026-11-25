@@ -94,11 +94,14 @@ export async function updateAdminCatalogueBook(request, response) {
   }
 
   const book = await Book.findOneAndUpdate(
-    { catalogueId },
-    { $set: { title: Object.fromEntries(FIELDS.map((field) => [field, body.title[field].trim()])), description: Object.fromEntries(FIELDS.map((field) => [field, body.description[field].trim()])), isbn, language: body.language, category: body.category, price, tone, badge } },
+    { catalogueId, price },
+    { $set: { title: Object.fromEntries(FIELDS.map((field) => [field, body.title[field].trim()])), description: Object.fromEntries(FIELDS.map((field) => [field, body.description[field].trim()])), isbn, language: body.language, category: body.category, tone, badge } },
     { new: true, runValidators: true },
   ).lean();
-  if (!book) return errorResponse(response, 404, "BOOK_NOT_FOUND", "Catalogue book not found.");
+  if (!book) {
+    if (await Book.exists({ catalogueId })) return errorResponse(response, 409, "PRICE_REVIEW_REQUIRED", "Catalogue edits must preserve the author price.");
+    return errorResponse(response, 404, "BOOK_NOT_FOUND", "Catalogue book not found.");
+  }
   response.setHeader("Cache-Control", "no-store");
   return response.json({ data: { book: bookDto(book) } });
 }

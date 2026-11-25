@@ -20,6 +20,8 @@ Phase 6 — admin and CMS is implemented; Phase 7 — Commerce & Membership is i
 
 Phase 7 groundwork now has provider-neutral order, payment-attempt and verified-payment-event models plus a balanced append-only ledger model. Razorpay is the selected provider; a server-only test-mode client can create a gateway order from an existing reader-owned order, and signed webhook notifications are verified on the server. There is no public reader order or checkout API, and no public ledger API. Initial sales scope: digital eBooks sold one book at a time. Print-on-demand and monthly reader membership are deferred. Checkout and paid access remain disabled until book pricing, author revenue share, tax/refund terms, and author-rights wording are approved.
 
+[ગુજરાતીમાં સાઇટ ચકાસવાની માર્ગદર્શિકા](docs/owner-check-gu.md)
+
 ## Run in GitHub Codespaces
 
 Node.js is installed in the Codespace; it is not required on your personal computer. The repository dev container starts the Node workspace and a private ClamAV service on an internal Docker network. ClamAV port 3310 is not forwarded or published to the internet. The first start may take a few minutes while ClamAV initializes its virus definitions.
