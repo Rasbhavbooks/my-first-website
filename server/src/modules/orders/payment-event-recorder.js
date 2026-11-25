@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import DigitalBookPaymentEvent from "./payment-event.model.js";
+import verifyRazorpayWebhook from "./razorpay-webhook.js";
 
 function fail(message, code = "INVALID_PAYMENT_EVENT") {
   const error = new Error(message);
@@ -105,7 +106,7 @@ export function createPaymentEventRecorder({
       return { event, replayed: false };
     } catch (error) {
       if (error?.code !== 11000) throw error;
-      const racedEvent = await findByProviderEventId(facts.provider, facts.eventId, { session });
+      const racedEvent = await findByProviderEventId(facts.provider, facts.eventId);
       if (!racedEvent) throw error;
       if (!eventFactsMatch(racedEvent, facts)) {
         throw fail("This provider event ID was already recorded with different signed facts.", "EVENT_ID_REUSED");
@@ -116,9 +117,7 @@ export function createPaymentEventRecorder({
 }
 
 const defaultRecorder = createPaymentEventRecorder({
-  verifyAndNormalize: async () => {
-    throw fail("No payment provider signature verifier is configured.", "PAYMENT_PROVIDER_NOT_CONFIGURED");
-  },
+  verifyAndNormalize: verifyRazorpayWebhook,
   findByProviderEventId: (provider, eventId) =>
     DigitalBookPaymentEvent.findOne({ provider, eventId }).select("+providerPaymentId"),
   createRecord: (facts) => new DigitalBookPaymentEvent(facts).save(),
