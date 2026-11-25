@@ -29,6 +29,8 @@ test("admin metrics returns only hourly aggregates and private no-store data", a
   assert.equal(response.headers["Cache-Control"], "no-store");
   assert.equal(filter.bucketStart.$gte instanceof Date, true);
   assert.equal(filter.bucketStart.$lte instanceof Date, true);
+  const currentHour = Math.floor(filter.bucketStart.$lte.getTime() / 3600000) * 3600000;
+  assert.equal(filter.bucketStart.$gte.getTime(), currentHour - 23 * 3600000);
   assert.deepEqual(response.body.data.totals, {
     loginSuccesses: 6,
     loginFailures: 4,
