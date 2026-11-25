@@ -7,6 +7,7 @@ import BookReview from "../books/book-review.model.js";
 import ReviewHelpfulVote from "../books/review-helpful-vote.model.js";
 import AuthorBook from "../books/author-book.model.js";
 import AuthorBookChapter from "../books/author-book-chapter.model.js";
+import ReaderBookActivity from "../orders/reader-book-activity.model.js";
 
 function unavailable(response) {
   return response.status(503).json({
@@ -38,6 +39,7 @@ export async function exportReaderAccountData(request, response) {
     authorProfile,
     authorBooks,
     chapters,
+    readingHistory,
   ] = await Promise.all([
     UserWishlistItem.find({ userId }).select("catalogueId createdAt -_id").sort({ createdAt: 1 }).lean(),
     AuthorFollow.find({ userId }).select("authorKey authorName authorProfileId createdAt -_id").sort({ createdAt: 1 }).lean(),
@@ -51,6 +53,7 @@ export async function exportReaderAccountData(request, response) {
       .select("authorName title description isbn language category price status adminNote assets.cover.fileName assets.cover.contentType assets.cover.size assets.cover.scanStatus assets.cover.uploadedAt assets.manuscript.fileName assets.manuscript.contentType assets.manuscript.size assets.manuscript.scanStatus assets.manuscript.uploadedAt submittedAt reviewedAt createdAt updatedAt").sort({ createdAt: 1 }).lean(),
     AuthorBookChapter.find({ authorId: userId })
       .select("bookId title content order createdAt updatedAt -_id").sort({ bookId: 1, order: 1, createdAt: 1 }).lean(),
+    ReaderBookActivity.find({ readerId: userId }).select("bookId lastOpenedAt -_id").sort({ lastOpenedAt: -1 }).lean(),
   ]);
 
   const bookTitles = new Map(authorBooks.map((book) => [String(book._id), book.title]));
@@ -74,6 +77,7 @@ export async function exportReaderAccountData(request, response) {
       followedAuthors,
       reviews,
       helpfulVotes: helpfulVotes.map((vote) => ({ reviewId: String(vote.reviewId), createdAt: vote.createdAt })),
+      readingHistory,
     },
     author: {
       application: authorApplication,
