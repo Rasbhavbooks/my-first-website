@@ -14,7 +14,15 @@ import {
   updateBookReview,
 } from "./reviews.controller.js";
 
+import readEbook from "./reading.controller.js";
+
 const router = Router();
+const ebookReadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 60,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+});
 const reviewWriteLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 5,
@@ -36,6 +44,7 @@ const reportLimiter = rateLimit({
 
 router.get("/", listBooks);
 router.get("/:bookId/related", getRelatedBooks);
+router.get("/:bookId/read", ebookReadLimiter, requireReader, readEbook);
 router.get("/:bookId/reviews", listBookReviews);
 router.get("/:bookId/reviews/mine", requireReader, getMyBookReview);
 router.get("/:bookId/reviews/helpful", requireReader, listMyHelpfulVotes);
