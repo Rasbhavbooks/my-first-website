@@ -45,6 +45,28 @@ export async function getAdminDashboardStats(_request, response) {
 }
 
 
+export function buildPlatformReadiness({
+  environment,
+  databaseConnected,
+  r2BucketReachable = null,
+  clamavReachable,
+}) {
+  return {
+    databaseConnected,
+    emailConfigured: environment.emailConfigured,
+    adminMfaKeyConfigured: environment.adminMfaConfigured,
+    r2CredentialsConfigured: environment.r2Configured,
+    r2BucketReachable,
+    clamavHostConfigured: environment.clamavConfigured,
+    clamavReachable,
+    razorpayConfigured: environment.razorpayConfigured,
+    razorpayWebhookConfigured: environment.razorpayWebhookConfigured,
+    razorpayMode: environment.razorpayMode,
+    publishingEnabled: false,
+    checkoutEnabled: false,
+  };
+}
+
 export async function getAdminPlatformReadiness(request, response) {
   const [clamavReachable, r2BucketReachable] = await Promise.all([
     isClamavReachable(),
@@ -53,16 +75,12 @@ export async function getAdminPlatformReadiness(request, response) {
   response.setHeader("Cache-Control", "no-store");
   return response.json({
     data: {
-      readiness: {
+      readiness: buildPlatformReadiness({
+        environment: env,
         databaseConnected: isDatabaseConnected(),
-        emailConfigured: env.emailConfigured,
-        adminMfaKeyConfigured: env.adminMfaConfigured,
-        r2CredentialsConfigured: env.r2Configured,
         r2BucketReachable,
-        clamavHostConfigured: env.clamavConfigured,
         clamavReachable,
-        publishingEnabled: false,
-      },
+      }),
     },
   });
 }

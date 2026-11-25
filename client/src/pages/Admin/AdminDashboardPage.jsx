@@ -124,6 +124,9 @@ export default function AdminDashboardPage() {
           {[
             ["databaseConnected", t.adminReadinessDatabase, t.adminReadinessDatabaseHint, "connected"],
             ["emailConfigured", t.adminReadinessEmail, t.adminReadinessEmailHint, "configured"],
+            ["razorpayConfigured", t.adminReadinessRazorpay, t.adminReadinessRazorpayHint, "configured"],
+            ["razorpayWebhookConfigured", t.adminReadinessRazorpayWebhook, t.adminReadinessRazorpayWebhookHint, "configured"],
+            ["checkoutEnabled", t.adminReadinessCheckout, t.adminReadinessCheckoutHint, "configured"],
             ["adminMfaKeyConfigured", t.adminReadinessMfa, t.adminReadinessMfaHint, "configured"],
             ["r2CredentialsConfigured", t.adminReadinessStorage, t.adminReadinessStorageHint, "configured"],
             ["r2BucketReachable", t.adminReadinessBucket, t.adminReadinessBucketHint, "connected"],
@@ -133,7 +136,7 @@ export default function AdminDashboardPage() {
           ].map(([key, label, hint, configuredState]) => {
             const enabled = readiness[key];
             const connectionCheck = key === "clamavReachable" || key === "r2BucketReachable";
-            const state = key === "publishingEnabled" && !enabled ? "disabled" : enabled === null ? "not-checked" : connectionCheck ? enabled ? "connected" : "unavailable" : enabled ? configuredState : "missing";
+            const state = ["publishingEnabled", "checkoutEnabled"].includes(key) && !enabled ? "disabled" : enabled === null ? "not-checked" : connectionCheck ? enabled ? "connected" : "unavailable" : enabled ? configuredState : "missing";
             const stateLabel = state === "disabled" ? t.adminReadinessDisabled : state === "not-checked" ? t.adminReadinessNotChecked : state === "unavailable" ? t.adminReadinessUnavailable : state === "missing" ? t.adminReadinessMissing : state === "connected" ? t.adminReadinessConnected : t.adminReadinessConfigured;
             return <article className="admin-readiness-card" key={key}>
               <strong>{label}</strong><span className="admin-readiness-status" data-state={state}>{stateLabel}</span><p>{hint}</p>
