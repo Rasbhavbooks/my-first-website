@@ -15,7 +15,12 @@ export async function getAdminDashboardStats() {
   return result.stats;
 }
 
-export async function getAdminPlatformReadiness({ probeR2 = false } = {}) {
-  const result = await adminDashboardRequest(`/readiness${probeR2 ? "?probeR2=true" : ""}`);
+export async function getAdminPlatformReadiness({ probeR2 = false, probeRazorpay = false } = {}) {
+  const query = new URLSearchParams();
+  if (probeR2) query.set("probeR2", "true");
+  if (probeRazorpay) query.set("probeRazorpay", "true");
+  const queryString = query.toString();
+  const suffix = queryString ? `?${queryString}` : "";
+  const result = await adminDashboardRequest(`/readiness${suffix}`);
   return result.readiness;
 }

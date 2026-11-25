@@ -56,3 +56,27 @@ test("rejects gateway responses whose amount or receipt differs", async () => {
   });
   await assert.rejects(client.createOrder(expected), { code: "RAZORPAY_ORDER_MISMATCH" });
 });
+
+test("checks Razorpay credentials with a read-only request and returns no order data", async () => {
+  const calls = [];
+  const client = createRazorpayClient({
+    keyId: "rzp_test_public",
+    keySecret: "sandbox-secret",
+    fetchImpl: async (url, options) => {
+      calls.push({ url, options });
+      return { ok: true, json: async () => ({ items: [{ id: "order_private", receipt: "private" }] }) };
+    },
+  });
+  assert.equal(await client.checkConnection(), true);
+  assert.equal(calls[0].url, "https://api.razorpay.com/v1/orders?count=1");
+  assert.equal(calls[0].options.method, "GET");
+});
+
+test("rejects an unsuccessful Razorpay API connection check", async () => {
+  const client = createRazorpayClient({
+    keyId: "rzp_test_public",
+    keySecret: "sandbox-secret",
+    fetchImpl: async () => ({ ok: false, json: async () => ({ error: { description: "private" } }) }),
+  });
+  await assert.rejects(client.checkConnection(), { code: "RAZORPAY_API_REJECTED" });
+});

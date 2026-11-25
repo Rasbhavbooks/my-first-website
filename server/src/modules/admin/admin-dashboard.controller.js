@@ -8,6 +8,7 @@ import { env } from "../../config/env.js";
 import { isDatabaseConnected } from "../../config/database.js";
 import { isClamavReachable } from "../../services/clamav.service.js";
 import { isR2BucketReachable } from "../../services/r2-storage.service.js";
+import razorpayClient from "../orders/razorpay-client.js";
 
 export async function getAdminDashboardStats(_request, response) {
   const [
@@ -50,6 +51,7 @@ export function buildPlatformReadiness({
   databaseConnected,
   r2BucketReachable = null,
   clamavReachable,
+  razorpayCredentialsReachable = null,
 }) {
   return {
     databaseConnected,
@@ -60,6 +62,7 @@ export function buildPlatformReadiness({
     clamavHostConfigured: environment.clamavConfigured,
     clamavReachable,
     razorpayConfigured: environment.razorpayConfigured,
+    razorpayCredentialsReachable,
     razorpayWebhookConfigured: environment.razorpayWebhookConfigured,
     razorpayMode: environment.razorpayMode,
     publishingEnabled: false,
@@ -68,9 +71,12 @@ export function buildPlatformReadiness({
 }
 
 export async function getAdminPlatformReadiness(request, response) {
-  const [clamavReachable, r2BucketReachable] = await Promise.all([
+  const [clamavReachable, r2BucketReachable, razorpayCredentialsReachable] = await Promise.all([
     isClamavReachable(),
     request.query.probeR2 === "true" ? isR2BucketReachable() : null,
+    request.query.probeRazorpay === "true" && env.razorpayConfigured
+      ? razorpayClient.checkConnection().catch(() => false)
+      : null,
   ]);
   response.setHeader("Cache-Control", "no-store");
   return response.json({
@@ -80,6 +86,7 @@ export async function getAdminPlatformReadiness(request, response) {
         databaseConnected: isDatabaseConnected(),
         r2BucketReachable,
         clamavReachable,
+        razorpayCredentialsReachable,
       }),
     },
   });

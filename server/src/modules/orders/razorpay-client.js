@@ -78,6 +78,14 @@ export function createRazorpayClient({
   }
 
   return {
+    async checkConnection() {
+      const body = await request("/orders?count=1", { method: "GET" });
+      if (!Array.isArray(body?.items)) {
+        throw fail("Razorpay returned an unexpected connection-check response.", "RAZORPAY_INVALID_RESPONSE");
+      }
+      return true;
+    },
+
     async createOrder(input) {
       validateOrderInput(input);
       const body = await request("/orders", {

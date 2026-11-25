@@ -23,6 +23,7 @@ test("reports Razorpay readiness as booleans without exposing any credential val
 
   assert.equal(readiness.razorpayConfigured, true);
   assert.equal(readiness.razorpayWebhookConfigured, false);
+  assert.equal(readiness.razorpayCredentialsReachable, null);
   assert.equal(readiness.razorpayMode, "test");
   assert.equal(readiness.checkoutEnabled, false);
   assert.equal(readiness.publishingEnabled, false);
