@@ -10,6 +10,8 @@ const r2AccessKeyId = process.env.R2_ACCESS_KEY_ID || "";
 const r2SecretAccessKey = process.env.R2_SECRET_ACCESS_KEY || "";
 const r2BucketName = process.env.R2_BUCKET_NAME || "";
 const adminMfaEncryptionKey = process.env.ADMIN_MFA_ENCRYPTION_KEY || "";
+const razorpayMode = process.env.RAZORPAY_MODE || "test";
+if (razorpayMode !== "test") throw new Error("RAZORPAY_MODE must remain test until launch approval.");
 if (adminMfaEncryptionKey && !/^[A-Fa-f0-9]{64}$/.test(adminMfaEncryptionKey)) {
   throw new Error("ADMIN_MFA_ENCRYPTION_KEY must be exactly 64 hexadecimal characters.");
 }
@@ -53,4 +55,9 @@ export const env = {
   clamavConfigured: Boolean(process.env.CLAMAV_HOST),
   adminMfaEncryptionKey,
   adminMfaConfigured: Boolean(adminMfaEncryptionKey),
+  razorpayMode,
+  razorpayKeyId: process.env.RAZORPAY_KEY_ID || "",
+  razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET || "",
+  razorpayWebhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || "",
+  razorpayWebhookConfigured: Boolean(process.env.RAZORPAY_WEBHOOK_SECRET),
 };
