@@ -300,7 +300,8 @@ export default function AuthorBooksPage() {
                   <span className="author-book-hint">{form.assets?.manuscript ? `${form.assets.manuscript.fileName} · ${t.assetScanClean}` : uploadSizeHint}</span>
                 </label>
                 <label className="author-book-field">{t.bookPriceInr}
-                  <input type="number" min="0" max="100000" step="0.01" value={form.price} disabled={!editable} onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))} />
+                  <input type="number" min="0" max="100000" step="0.01" required value={form.price} disabled={!editable} onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))} />
+                  <span className="author-book-hint">{t.freeBookPriceHelp}</span>
                 </label>
                 {editable && <div className="author-book-actions">
                   <button type="submit" disabled={busy}>{busy ? t.savingChanges : t.saveBookDraft}</button>
