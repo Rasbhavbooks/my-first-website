@@ -42,3 +42,18 @@ test("price review matches the displayed submission and never overwrites the aut
     assert.equal(Object.hasOwn(update.$set, "price"), false);
   }
 });
+
+test("an admin can approve a submitted free eBook at exactly zero rupees", async t => {
+  t.mock.method(AuthorBook, "findOneAndUpdate", async (filter, update) => {
+    assert.equal(filter.price, 0);
+    assert.equal(Object.hasOwn(update.$set, "price"), false);
+    return { id: bookId, price: 0, status: "approved" };
+  });
+  const res = response();
+  await reviewAuthorBook({
+    params: { bookId }, reader: { _id: bookId },
+    body: { decision: "approved", reviewedPrice: 0, submittedAt },
+  }, res);
+  assert.equal(res.statusCode ?? 200, 200);
+  assert.equal(res.body.data.book.price, 0);
+});
