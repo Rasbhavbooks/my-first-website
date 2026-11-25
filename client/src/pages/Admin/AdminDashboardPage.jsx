@@ -40,6 +40,7 @@ export default function AdminDashboardPage() {
   const [readiness, setReadiness] = useState(null);
   const [readinessError, setReadinessError] = useState("");
   const [r2Checking, setR2Checking] = useState(false);
+  const [razorpayChecking, setRazorpayChecking] = useState(false);
   useEffect(() => {
     let active = true;
     if (user?.role !== "admin") return () => { active = false; };
@@ -68,6 +69,19 @@ export default function AdminDashboardPage() {
       setReadinessError(t.adminReadinessError);
     } finally {
       setR2Checking(false);
+    }
+  }
+
+  async function checkRazorpayConnection() {
+    setRazorpayChecking(true);
+    try {
+      const result = await getAdminPlatformReadiness({ probeRazorpay: true });
+      setReadiness(result);
+      setReadinessError("");
+    } catch {
+      setReadinessError(t.adminReadinessError);
+    } finally {
+      setRazorpayChecking(false);
     }
   }
 
@@ -126,6 +140,7 @@ export default function AdminDashboardPage() {
             ["emailConfigured", t.adminReadinessEmail, t.adminReadinessEmailHint, "configured"],
             ["razorpayConfigured", t.adminReadinessRazorpay, t.adminReadinessRazorpayHint, "configured"],
             ["razorpayWebhookConfigured", t.adminReadinessRazorpayWebhook, t.adminReadinessRazorpayWebhookHint, "configured"],
+            ["razorpayCredentialsReachable", t.adminReadinessRazorpayConnection, t.adminReadinessRazorpayConnectionHint, "connected"],
             ["checkoutEnabled", t.adminReadinessCheckout, t.adminReadinessCheckoutHint, "configured"],
             ["adminMfaKeyConfigured", t.adminReadinessMfa, t.adminReadinessMfaHint, "configured"],
             ["r2CredentialsConfigured", t.adminReadinessStorage, t.adminReadinessStorageHint, "configured"],
@@ -135,7 +150,7 @@ export default function AdminDashboardPage() {
             ["publishingEnabled", t.adminReadinessPublishing, t.adminReadinessPublishingHint, "configured"],
           ].map(([key, label, hint, configuredState]) => {
             const enabled = readiness[key];
-            const connectionCheck = key === "clamavReachable" || key === "r2BucketReachable";
+            const connectionCheck = key === "clamavReachable" || key === "r2BucketReachable" || key === "razorpayCredentialsReachable";
             const state = ["publishingEnabled", "checkoutEnabled"].includes(key) && !enabled ? "disabled" : enabled === null ? "not-checked" : connectionCheck ? enabled ? "connected" : "unavailable" : enabled ? configuredState : "missing";
             const stateLabel = state === "disabled" ? t.adminReadinessDisabled : state === "not-checked" ? t.adminReadinessNotChecked : state === "unavailable" ? t.adminReadinessUnavailable : state === "missing" ? t.adminReadinessMissing : state === "connected" ? t.adminReadinessConnected : t.adminReadinessConfigured;
             return <article className="admin-readiness-card" key={key}>
@@ -149,6 +164,12 @@ export default function AdminDashboardPage() {
           onClick={checkR2Storage}
           disabled={r2Checking || !readiness.r2CredentialsConfigured}
         >{r2Checking ? t.adminReadinessChecking : t.adminReadinessCheckR2}</button>}
+        {readiness && <button
+          className="admin-readiness-action"
+          type="button"
+          onClick={checkRazorpayConnection}
+          disabled={razorpayChecking || !readiness.razorpayConfigured}
+        >{razorpayChecking ? t.adminReadinessRazorpayChecking : t.adminReadinessCheckRazorpay}</button>}
       </section>
       <div className="admin-home-grid">
         {sections.map(([label, path]) => <Link className="admin-home-card" key={path} to={path}><strong>{label}</strong><span>{t.openAdminSection} ↗</span></Link>)}
