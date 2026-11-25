@@ -9,7 +9,7 @@ const objectId = (value) => mongoose.isObjectIdOrHexString(value);
 
 export function createReadingAccessService({ findBook, findApprovedSource, findEntitlement, findPaidOrder }) {
   return async function resolveReadingAccess({ bookId, readerId }) {
-    if (typeof bookId !== "string" || !bookId || bookId.length > 64 || bookId !== bookId.trim()) return null;
+    if (!objectId(readerId) || typeof bookId !== "string" || !bookId || bookId.length > 64 || bookId !== bookId.trim()) return null;
 
     const book = await findBook(bookId);
     if (!book || !objectId(book.readingSourceId)) return null;
@@ -21,7 +21,6 @@ export function createReadingAccessService({ findBook, findApprovedSource, findE
     if (!source || inrPriceToPaise(source.price) !== pricePaise) return null;
     const access = { sourceId: String(book.readingSourceId), kind: "free" };
     if (pricePaise === 0) return access;
-    if (!objectId(readerId)) return null;
 
     const entitlement = await findEntitlement(readerId, bookId);
     if (!objectId(entitlement?.orderId)) return null;

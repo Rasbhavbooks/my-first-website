@@ -54,7 +54,7 @@ Broader platform settings, server-rendered SEO metadata and root-level sitemap/r
 - Razorpay is the selected payment provider. The backend has test-mode order creation, checkout-signature verification, and webhook verification. Checkout signatures are matched against the server-stored order and reader-owned attempt; signature verification alone does not mark an order paid. No Razorpay API keys are committed; server secrets must be configured outside source control. Public order creation and reader checkout remain unavailable until prices, platform/author revenue split, tax/refund rules, and author-rights wording are approved.
 - Checkout and paid access stay disabled until book prices, platform/author revenue split, tax and refund policies, and author-rights wording are approved. Razorpay is the selected test-mode provider.
 
-- An internal reading access check requires a catalogue book linked to an approved, scanned PDF source with a matching approved price. A linked ₹0 book needs no payment. A priced book requires the reader’s matching entitlement and an order in the paid state. The check returns an internal source ID and never returns the storage key. No publication path sets the source link, and no reader route serves the manuscript.
+- An internal reading access check requires a catalogue book linked to an approved, scanned PDF source with a matching approved price. Reading requires a signed-in account. A linked ₹0 book needs no payment. A priced book requires the reader’s matching entitlement and an order in the paid state. The check returns an internal source ID and never returns the storage key. No publication path sets the source link, and no reader route serves the manuscript.
 
 ## Next phase
 

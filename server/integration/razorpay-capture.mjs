@@ -106,8 +106,9 @@ test("signed capture updates a book order and posts one receipt and grants one e
   await paid.save();
   assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId }), null);
   await Book.updateOne({ _id: catalogue._id }, { $set: { price: 0 } });
-  assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId }), null);
+  assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId }), null);
   await AuthorBook.updateOne({ _id: source._id }, { $set: { price: 0 } });
-  assert.deepEqual(await resolveReadingAccess({ bookId: catalogue.catalogueId }),
+  assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId }), null);
+  assert.deepEqual(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId: otherReaderId }),
     { sourceId: String(source._id), kind: "free" });
 });
