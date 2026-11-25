@@ -35,6 +35,12 @@ const helpfulVoteLimiter = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
 });
+const reviewReadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 120,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+});
 const reportLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 5,
@@ -45,7 +51,7 @@ const reportLimiter = rateLimit({
 router.get("/", listBooks);
 router.get("/:bookId/related", getRelatedBooks);
 router.get("/:bookId/read", ebookReadLimiter, requireReader, readEbook);
-router.get("/:bookId/reviews", listBookReviews);
+router.get("/:bookId/reviews", reviewReadLimiter, listBookReviews);
 router.get("/:bookId/reviews/mine", requireReader, getMyBookReview);
 router.get("/:bookId/reviews/helpful", requireReader, listMyHelpfulVotes);
 router.post("/:bookId/reviews", requireReader, reviewWriteLimiter, createBookReview);
