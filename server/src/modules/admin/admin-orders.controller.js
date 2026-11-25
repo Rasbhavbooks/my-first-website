@@ -1,4 +1,6 @@
 import { isDatabaseConnected } from "../../config/database.js";
+import DigitalBookEntitlement from "../orders/book-entitlement.model.js";
+import LedgerTransaction from "../orders/ledger-transaction.model.js";
 import DigitalBookOrder from "../orders/order.model.js";
 
 const allowedStatuses = new Set(["pending_payment", "paid", "cancelled", "refund_pending", "refunded"]);
@@ -16,7 +18,20 @@ function parsePositiveInteger(value, fallback, maximum) {
   return Number.isSafeInteger(parsed) && parsed >= 1 && parsed <= maximum ? parsed : null;
 }
 
-export function serializeAdminOrder(order) {
+export function checkPaidOrderRecords(order, receipts, grant) {
+  if (order.status !== "paid") return null;
+  if (!receipts.length) return "missing_receipt";
+  if (receipts.length > 1 || receipts[0].currency !== order.currency) return "inconsistent";
+  if (!grant) return "missing_entitlement";
+  const matches = String(grant.readerId) === String(order.buyerId)
+    && grant.bookId === order.bookId
+    && grant.amountPaise === order.amountPaise
+    && grant.currency === order.currency
+    && String(grant.sourceLedgerId) === String(receipts[0]._id);
+  return matches ? "linked" : "inconsistent";
+}
+
+export function serializeAdminOrder(order, recordStatus = null) {
   return {
     id: String(order._id),
     bookId: order.bookId,
@@ -29,6 +44,7 @@ export function serializeAdminOrder(order) {
     amountPaise: order.amountPaise,
     currency: order.currency,
     status: order.status,
+    recordStatus,
     createdAt: order.createdAt,
     paidAt: order.paidAt || null,
     cancelledAt: order.cancelledAt || null,
@@ -62,12 +78,31 @@ export async function listAdminOrders(request, response) {
       .sort({ createdAt: -1, _id: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .select("_id bookId bookTitle authorName amountPaise currency status createdAt paidAt cancelledAt refundedAt")
+      .select("_id buyerId bookId bookTitle authorName amountPaise currency status createdAt paidAt cancelledAt refundedAt")
       .lean(),
   ]);
+  const paidIds = orders.filter((order) => order.status === "paid").map((order) => order._id);
+  const [receipts, grants] = paidIds.length ? await Promise.all([
+    LedgerTransaction.find({ orderId: { $in: paidIds }, eventType: "order_payment", sourceType: "payment_event" })
+      .select("_id orderId currency").lean(),
+    DigitalBookEntitlement.find({ orderId: { $in: paidIds } })
+      .select("orderId readerId bookId amountPaise currency +sourceLedgerId").lean(),
+  ]) : [[], []];
+  const receiptsByOrder = new Map();
+  for (const receipt of receipts) {
+    const id = String(receipt.orderId);
+    const rows = receiptsByOrder.get(id) ?? [];
+    rows.push(receipt);
+    receiptsByOrder.set(id, rows);
+  }
+  const grantByOrder = new Map(grants.map((grant) => [String(grant.orderId), grant]));
   return response.json({
     data: {
-      orders: orders.map(serializeAdminOrder),
+      orders: orders.map((order) => {
+        const id = String(order._id);
+        const recordStatus = checkPaidOrderRecords(order, receiptsByOrder.get(id) ?? [], grantByOrder.get(id));
+        return serializeAdminOrder(order, recordStatus);
+      }),
       page,
       limit,
       total,

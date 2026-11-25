@@ -90,7 +90,7 @@ export default function AdminOrdersPage() {
           <thead><tr>
             <th scope="col">{t.adminOrderBook}</th><th scope="col">{t.adminOrderCreated}</th>
             <th scope="col">{t.adminOrderAmount}</th><th scope="col">{t.adminOrderStatus}</th>
-            <th scope="col">{t.adminOrderPaidAt}</th><th scope="col">{t.adminOrderId}</th>
+            <th scope="col">{t.adminOrderPaidAt}</th><th scope="col">{t.adminOrderRecordStatus}</th><th scope="col">{t.adminOrderId}</th>
           </tr></thead>
           <tbody>{orders.map((order) => <tr key={order.id}>
             <td><div className="admin-orders-book"><strong>{order.bookTitle?.[language] || order.bookTitle?.en || order.bookId}</strong><small>{order.authorName}</small></div></td>
@@ -98,6 +98,7 @@ export default function AdminOrdersPage() {
             <td>{formatInr(order.amountPaise / 100, language)}</td>
             <td><span className="admin-orders-status" data-status={order.status}>{t[`adminOrderStatus_${order.status}`] || order.status}</span></td>
             <td>{formatTimestamp(order.paidAt, language)}</td>
+            <td>{order.recordStatus ? t[`adminOrderRecord_${order.recordStatus}`] : "—"}</td>
             <td><code>{order.id}</code></td>
           </tr>)}</tbody>
         </table>
