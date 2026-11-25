@@ -3,6 +3,7 @@ import Book from "../books/book.model.js";
 import resolveReadingAccess from "../books/reading-access.service.js";
 import DigitalBookEntitlement from "./book-entitlement.model.js";
 import ReaderBookActivity from "./reader-book-activity.model.js";
+import ReaderBookBookmark from "./reader-bookmark.model.js";
 
 const PAGE_SIZE = 20;
 const CURSOR_PATTERN = /^[a-f0-9]{24}$/i;
@@ -32,6 +33,7 @@ export function createReaderLibraryController({
   findBookById,
   resolveAccess,
   findProgress = async () => [],
+  findBookmarks = async () => [],
   findRecentActivities = async () => [],
   deleteRecentActivities = async () => {},
 }) {
@@ -42,9 +44,21 @@ export function createReaderLibraryController({
     }));
     const accessible = results.filter(Boolean);
     if (!accessible.length) return accessible;
-    const progress = await findProgress(readerId, accessible.map((book) => book.id));
+    const bookIds = accessible.map((book) => book.id);
+    const [progress, bookmarks] = await Promise.all([
+      findProgress(readerId, bookIds),
+      findBookmarks(readerId, bookIds),
+    ]);
     const openedAt = new Map(progress.map((item) => [item.bookId, item.lastOpenedAt?.toISOString?.() || null]));
-    return accessible.map((book) => ({ ...book, lastOpenedAt: openedAt.get(book.id) || null }));
+    const bookmarkById = new Map(bookmarks.map((item) => [item.bookId, {
+      pageNumber: item.pageNumber,
+      note: item.note || "",
+    }]));
+    return accessible.map((book) => ({
+      ...book,
+      lastOpenedAt: openedAt.get(book.id) || null,
+      bookmark: bookmarkById.get(book.id) || null,
+    }));
   }
 
   return {
@@ -87,13 +101,24 @@ export function createReaderLibraryController({
       const activities = await findRecentActivities(request.reader._id, 8);
       const books = await findBooksByIds([...new Set(activities.map((activity) => activity.bookId))]);
       const booksById = new Map(books.map((book) => [book.catalogueId, book]));
-      const recentBooks = (await Promise.all(activities.map(async (activity) => {
+      const accessibleRecentBooks = (await Promise.all(activities.map(async (activity) => {
         const book = booksById.get(activity.bookId);
         if (!book) return null;
         const access = await resolveAccess({ bookId: book.catalogueId, readerId: request.reader._id });
         if (!access) return null;
         return { ...serializeLibraryBook(book, access.kind), lastOpenedAt: activity.lastOpenedAt?.toISOString?.() || null };
       }))).filter(Boolean);
+      const recentBookmarks = accessibleRecentBooks.length
+        ? await findBookmarks(request.reader._id, accessibleRecentBooks.map((book) => book.id))
+        : [];
+      const bookmarkById = new Map(recentBookmarks.map((item) => [item.bookId, {
+        pageNumber: item.pageNumber,
+        note: item.note || "",
+      }]));
+      const recentBooks = accessibleRecentBooks.map((book) => ({
+        ...book,
+        bookmark: bookmarkById.get(book.id) || null,
+      }));
       response.setHeader("Cache-Control", "private, no-store");
       return response.json({ data: { books: recentBooks } });
     },
@@ -141,6 +166,8 @@ const controller = createReaderLibraryController({
   resolveAccess: resolveReadingAccess,
   findProgress: (readerId, bookIds) => ReaderBookActivity.find({ readerId, bookId: { $in: bookIds } })
     .select("bookId lastOpenedAt -_id").lean(),
+  findBookmarks: (readerId, bookIds) => ReaderBookBookmark.find({ readerId, bookId: { $in: bookIds } })
+    .select("bookId pageNumber note -_id").lean(),
   findRecentActivities: (readerId, limit) => ReaderBookActivity.find({ readerId })
     .sort({ lastOpenedAt: -1, _id: -1 }).limit(limit).select("bookId lastOpenedAt -_id").lean(),
   deleteRecentActivities: (readerId) => ReaderBookActivity.deleteMany({ readerId }),
