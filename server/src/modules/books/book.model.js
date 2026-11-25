@@ -35,6 +35,12 @@ const bookSchema = new mongoose.Schema(
         message: "Book prices must be INR values with no more than two decimal places.",
       },
     },
+    readingSourceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "AuthorBook",
+      default: null,
+      select: false,
+    },
     availableForSale: { type: Boolean, default: false, select: false },
     tone: { type: String, required: true, trim: true },
     badge: { type: String, required: true, trim: true, maxlength: 40 },
