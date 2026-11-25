@@ -21,6 +21,7 @@ export default function Header() {
       <nav className={open ? "main-nav is-open" : "main-nav"} aria-label="Main navigation">
         {navigation.map((item, index) => <Link key={`${item.href}-${index}`} to={item.href} onClick={() => setOpen(false)}>{item.label?.[language] || item.label?.en}</Link>)}
         <Link to="/wishlist" onClick={() => setOpen(false)}>{t.wishlist}{savedBookIds.length > 0 && <span className="wishlist-count">{savedBookIds.length}</span>}</Link>
+        {!loading && user && <Link to="/library" onClick={() => setOpen(false)}>{t.libraryTitle}</Link>}
         {!loading && (user
           ? <Link to="/account" onClick={() => setOpen(false)}>{t.accountPage}</Link>
           : <><Link to="/login" onClick={() => setOpen(false)}>{t.signIn}</Link><Link to="/register" onClick={() => setOpen(false)}>{t.createAccount}</Link></>)}

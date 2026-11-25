@@ -3,6 +3,8 @@ import AdminMfaGuard from "../components/auth/AdminMfaGuard.jsx";
 import PublicLayout from "../layouts/PublicLayout.jsx";
 import HomePage from "../pages/Home/HomePage.jsx";
 import BookDetailsPage from "../pages/BookDetails/BookDetailsPage.jsx";
+import ReaderLibraryPage from "../pages/Reader/ReaderLibraryPage.jsx";
+import ReaderBookPage from "../pages/Reader/ReaderBookPage.jsx";
 import CategoryPage from "../pages/Categories/CategoryPage.jsx";
 import WishlistPage from "../pages/Wishlist/WishlistPage.jsx";
 import RegisterPage from "../pages/Auth/RegisterPage.jsx";
@@ -46,6 +48,8 @@ export default function AppRoutes() {
         <Route path="books/:bookId" element={<BookDetailsPage />} />
         <Route path="categories/:categoryKey" element={<CategoryPage />} />
         <Route path="wishlist" element={<WishlistPage />} />
+        <Route path="library" element={<ReaderLibraryPage />} />
+        <Route path="read/:bookId" element={<ReaderBookPage />} />
         <Route path="register" element={<RegisterPage />} />
         <Route path="verify-email" element={<VerifyEmailPage />} />
         <Route path="login" element={<LoginPortalPage />} />
