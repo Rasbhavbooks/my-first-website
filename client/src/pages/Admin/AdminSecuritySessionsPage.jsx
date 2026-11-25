@@ -74,7 +74,7 @@ export default function AdminSecuritySessionsPage() {
       </div>}
       {error && <p className="admin-security-error" role="alert">{error}</p>}
       <h2>{t.adminSecuritySessionsTitle}</h2>
-      {loadingSessions && <p role="status">{t.adminSecuritySessionsLoading}</p>
+      {loadingSessions && <p role="status">{t.adminSecuritySessionsLoading}</p>}
       {!loadingSessions && !error && sessions.length === 0 && <p className="admin-security-empty">{t.adminSecuritySessionsEmpty}</p>}
       {!error && sessions.length > 0 && <div className="admin-security-table-wrap">
         <table className="admin-security-table">
