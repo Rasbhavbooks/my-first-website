@@ -19,7 +19,7 @@ const styles = `
 .library-card-cover strong{font:500 16px/1.12 var(--serif);overflow-wrap:anywhere}
 .library-card-copy{display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-width:0}
 .library-card-copy h3{margin:0;font:500 19px/1.2 var(--serif);overflow-wrap:anywhere;color:#30252c}
-.library-card-author{margin:0;color:#77716a;font-size:11px}.library-card-last-opened{margin:0;color:#77716a;font-size:10px}
+.library-card-author{margin:0;color:#77716a;font-size:11px}.library-card-last-opened{margin:0;color:#77716a;font-size:10px}.library-card-bookmark{margin:0;color:#635951;font-size:10px;line-height:1.5;overflow-wrap:anywhere}
 .library-card-tag{color:#316342;font-size:10px;letter-spacing:.06em;text-transform:uppercase}
 .library-read-link{display:inline-flex;align-items:center;gap:6px;margin-top:auto;padding:8px 10px;background:#30252c;color:#fff;text-decoration:none;font-size:10px}
 .library-more{display:block;margin:17px auto 0;min-height:40px;padding:0 18px;border:1px solid #b8aa97;background:#fffdfa;color:#30252c;font:inherit;font-size:11px;cursor:pointer}
@@ -45,6 +45,7 @@ function BookSection({ title, books, cursor, onMore, loadingMore, onClear, clear
                 <p className="library-card-author">{t.by} {book.author}</p>
                 <span className="library-card-tag">{book.accessKind === "free" ? t.libraryFreeLabel : t.libraryPurchasedLabel}</span>
                 {book.lastOpenedAt && <p className="library-card-last-opened">{t.libraryLastOpened}: {new Intl.DateTimeFormat(language === "gu" ? "gu-IN" : language === "hi" ? "hi-IN" : "en-IN", { dateStyle: "medium" }).format(new Date(book.lastOpenedAt))}</p>}
+                {book.bookmark && <p className="library-card-bookmark">{t.libraryBookmarkPage}: {book.bookmark.pageNumber}{book.bookmark.note ? ` · ${t.libraryBookmarkNote}: ${book.bookmark.note}` : ""}</p>}
                 <Link className="library-read-link" to={`/read/${encodeURIComponent(book.id)}`}>{t.libraryReadBook}<ArrowUpRight size={14} /></Link>
               </div>
             </article>
