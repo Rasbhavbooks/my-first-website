@@ -44,7 +44,7 @@ const reportLimiter = rateLimit({
 
 router.get("/", listBooks);
 router.get("/:bookId/related", getRelatedBooks);
-router.get("/:bookId/read", requireReader, ebookReadLimiter, readEbook);
+router.get("/:bookId/read", ebookReadLimiter, requireReader, readEbook);
 router.get("/:bookId/reviews", listBookReviews);
 router.get("/:bookId/reviews/mine", requireReader, getMyBookReview);
 router.get("/:bookId/reviews/helpful", requireReader, listMyHelpfulVotes);
