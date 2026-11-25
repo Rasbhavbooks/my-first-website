@@ -4,6 +4,7 @@ import { createPaymentEventRecorder } from "./payment-event-recorder.js";
 
 const eventId = "event-captured-1";
 const orderId = "507f1f77bcf86cd799439011";
+const paymentAttemptId = "507f1f77bcf86cd799439012";
 const rawBody = Buffer.from("{\"id\":\"event-captured-1\"}");
 const headers = { "x-example-signature": "verified-by-adapter" };
 const verifiedFacts = {
@@ -13,6 +14,8 @@ const verifiedFacts = {
   eventId,
   eventType: "payment.captured",
   providerPaymentId: "payment-123",
+  providerOrderId: "order_test123",
+  paymentAttemptId,
   orderId,
   amountPaise: 4900,
   currency: "inr",
@@ -127,6 +130,8 @@ test("rejects non-INR, fractional paise, malformed order, and unsigned timestamp
     ["non-INR", { currency: "USD" }],
     ["fractional paise", { amountPaise: 49.5 }],
     ["invalid order", { orderId: "not-an-object-id" }],
+    ["invalid attempt", { paymentAttemptId: "not-an-object-id" }],
+    ["missing provider order", { providerOrderId: "" }],
     ["missing verification time", { signatureVerifiedAt: null }],
   ];
   for (const [label, facts] of cases) {

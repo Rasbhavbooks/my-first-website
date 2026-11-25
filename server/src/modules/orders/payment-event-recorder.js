@@ -25,6 +25,8 @@ function normalizeVerifiedFacts(verified) {
   const providerPaymentId = String(verified?.providerPaymentId ?? "").trim();
   const signatureVerifiedAt = verified?.signatureVerifiedAt;
   const orderId = verified?.orderId;
+  const paymentAttemptId = verified?.paymentAttemptId;
+  const providerOrderId = String(verified?.providerOrderId ?? "").trim();
   const amountPaise = verified?.amountPaise;
   const currency = String(verified?.currency ?? "").trim().toUpperCase();
 
@@ -43,6 +45,12 @@ function normalizeVerifiedFacts(verified) {
   if (!mongoose.isValidObjectId(orderId)) {
     throw fail("The verified event must map to an existing order ID.");
   }
+  if (!mongoose.isValidObjectId(paymentAttemptId)) {
+    throw fail("The verified event must map to an exact payment attempt ID.");
+  }
+  if (!providerOrderId || providerOrderId.length > 160) {
+    throw fail("The verified event must include its trusted provider order reference.");
+  }
   if (!Number.isSafeInteger(amountPaise) || amountPaise < 1 || currency !== "INR") {
     throw fail("Only positive whole-paise INR payment events can be recorded.");
   }
@@ -54,6 +62,8 @@ function normalizeVerifiedFacts(verified) {
   const outcome = eventType === "payment.captured" ? "applied" : "ignored";
   return {
     orderId,
+    paymentAttemptId,
+    providerOrderId,
     provider,
     eventId,
     eventType,
@@ -69,6 +79,7 @@ export function createPaymentEventRecorder({
   verifyAndNormalize,
   findByProviderEventId,
   createRecord,
+  linkLegacyEvent,
 }) {
   if (
     typeof verifyAndNormalize !== "function"
@@ -76,6 +87,21 @@ export function createPaymentEventRecorder({
     || typeof createRecord !== "function"
   ) {
     throw new TypeError("Payment event recorder requires a signature verifier and persistence adapters.");
+  }
+
+  async function replay(existing, facts) {
+    if (!eventFactsMatch(existing, facts)) {
+      throw fail("This provider event ID was already recorded with different signed facts.", "EVENT_ID_REUSED");
+    }
+    // A fresh verified delivery can fill the two fields missing from pre-linkage records.
+    if (existing.paymentAttemptId == null && existing.providerOrderId == null && linkLegacyEvent) {
+      existing = await linkLegacyEvent(existing._id, facts);
+    }
+    if (!existing || String(existing.paymentAttemptId) !== String(facts.paymentAttemptId)
+      || existing.providerOrderId !== facts.providerOrderId) {
+      throw fail("The provider event is linked to another attempt.", "EVENT_ID_REUSED");
+    }
+    return { event: existing, replayed: true };
   }
 
   return async function recordPaymentEvent({ rawBody, headers }) {
@@ -94,12 +120,7 @@ export function createPaymentEventRecorder({
     }
     const facts = normalizeVerifiedFacts(verified);
     const existing = await findByProviderEventId(facts.provider, facts.eventId);
-    if (existing) {
-      if (!eventFactsMatch(existing, facts)) {
-        throw fail("This provider event ID was already recorded with different signed facts.", "EVENT_ID_REUSED");
-      }
-      return { event: existing, replayed: true };
-    }
+    if (existing) return replay(existing, facts);
 
     try {
       const event = await createRecord(facts);
@@ -108,10 +129,7 @@ export function createPaymentEventRecorder({
       if (error?.code !== 11000) throw error;
       const racedEvent = await findByProviderEventId(facts.provider, facts.eventId);
       if (!racedEvent) throw error;
-      if (!eventFactsMatch(racedEvent, facts)) {
-        throw fail("This provider event ID was already recorded with different signed facts.", "EVENT_ID_REUSED");
-      }
-      return { event: racedEvent, replayed: true };
+      return replay(racedEvent, facts);
     }
   };
 }
@@ -119,7 +137,15 @@ export function createPaymentEventRecorder({
 const defaultRecorder = createPaymentEventRecorder({
   verifyAndNormalize: verifyRazorpayWebhook,
   findByProviderEventId: (provider, eventId) =>
-    DigitalBookPaymentEvent.findOne({ provider, eventId }).select("+providerPaymentId"),
+    DigitalBookPaymentEvent.findOne({ provider, eventId }).select("+providerPaymentId +providerOrderId"),
+  linkLegacyEvent: async (id, { paymentAttemptId, providerOrderId }) => {
+    // Raw update permits only this one-time backfill of immutable schema paths.
+    await DigitalBookPaymentEvent.collection.updateOne(
+      { _id: id, paymentAttemptId: { $exists: false }, providerOrderId: { $exists: false } },
+      { $set: { paymentAttemptId: new mongoose.Types.ObjectId(String(paymentAttemptId)), providerOrderId } },
+    );
+    return DigitalBookPaymentEvent.findById(id).select("+providerPaymentId +providerOrderId");
+  },
   createRecord: (facts) => new DigitalBookPaymentEvent(facts).save(),
 });
 

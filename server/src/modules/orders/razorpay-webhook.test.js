@@ -5,6 +5,7 @@ import { createRazorpayWebhookVerifier } from "./razorpay-webhook.js";
 
 const secret = "test-webhook-secret";
 const providerOrderId = "order_test_123";
+const attemptId = "507f1f77bcf86cd799439012";
 const rawBody = Buffer.from(JSON.stringify({
   event: "payment.captured",
   payload: { payment: { entity: {
@@ -21,7 +22,7 @@ test("verifies raw bytes and maps a captured Razorpay event to its local attempt
   const verifier = createRazorpayWebhookVerifier({
     webhookSecret: secret,
     findAttemptByProviderOrderId: async (id) => id === providerOrderId
-      ? { orderId: "507f1f77bcf86cd799439011" }
+      ? { _id: attemptId, orderId: "507f1f77bcf86cd799439011", providerOrderId }
       : null,
   });
 
@@ -31,6 +32,8 @@ test("verifies raw bytes and maps a captured Razorpay event to its local attempt
   assert.equal(result.eventId, "evt_test_123");
   assert.equal(result.eventType, "payment.captured");
   assert.equal(result.orderId, "507f1f77bcf86cd799439011");
+  assert.equal(String(result.paymentAttemptId), attemptId);
+  assert.equal(result.providerOrderId, providerOrderId);
   assert.equal(result.providerPaymentId, "pay_test_123");
   assert.equal(result.amountPaise, 1250);
   assert.equal(result.currency, "INR");
@@ -40,7 +43,7 @@ test("verifies raw bytes and maps a captured Razorpay event to its local attempt
 test("rejects a signature that does not match the original request bytes", async () => {
   const verifier = createRazorpayWebhookVerifier({
     webhookSecret: secret,
-    findAttemptByProviderOrderId: async () => ({ orderId: "507f1f77bcf86cd799439011" }),
+    findAttemptByProviderOrderId: async () => ({ _id: attemptId, orderId: "507f1f77bcf86cd799439011", providerOrderId }),
   });
 
   await assert.rejects(

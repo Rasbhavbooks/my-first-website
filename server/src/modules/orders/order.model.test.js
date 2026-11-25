@@ -129,6 +129,8 @@ test("digital book orders reject non-INR currency and unknown states", async () 
 test("payment event requires a verified signature timestamp and a valid INR amount", async () => {
   const event = new DigitalBookPaymentEvent({
     orderId: new mongoose.Types.ObjectId(),
+    paymentAttemptId: new mongoose.Types.ObjectId(),
+    providerOrderId: "order_test123",
     provider: "example-gateway",
     eventId: "event-123",
     eventType: "payment.captured",
@@ -142,6 +144,8 @@ test("payment event requires a verified signature timestamp and a valid INR amou
 
   const unverifiedEvent = new DigitalBookPaymentEvent({
     orderId: new mongoose.Types.ObjectId(),
+    paymentAttemptId: new mongoose.Types.ObjectId(),
+    providerOrderId: "order_test123",
     provider: "example-gateway",
     eventId: "event-124",
     eventType: "payment.captured",
@@ -154,6 +158,8 @@ test("payment event requires a verified signature timestamp and a valid INR amou
 test("payment events reject fractional amounts and invalid provider names", async () => {
   const event = new DigitalBookPaymentEvent({
     orderId: new mongoose.Types.ObjectId(),
+    paymentAttemptId: new mongoose.Types.ObjectId(),
+    providerOrderId: "order_test123",
     provider: "Example Gateway",
     eventId: "event-125",
     eventType: "payment.captured",
@@ -170,6 +176,8 @@ test("verified payment facts are immutable and provider references stay private"
     "provider",
     "eventId",
     "eventType",
+    "providerOrderId",
+    "paymentAttemptId",
     "providerPaymentId",
     "amountPaise",
     "currency",

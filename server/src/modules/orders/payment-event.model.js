@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 const paymentEventSchema = new mongoose.Schema(
   {
     orderId: { type: mongoose.Schema.Types.ObjectId, ref: "DigitalBookOrder", required: true, immutable: true },
+    paymentAttemptId: { type: mongoose.Schema.Types.ObjectId, ref: "DigitalBookPaymentAttempt", required: true, immutable: true },
     provider: {
       type: String,
       required: true,
@@ -14,6 +15,7 @@ const paymentEventSchema = new mongoose.Schema(
     },
     eventId: { type: String, required: true, trim: true, maxlength: 160, immutable: true },
     eventType: { type: String, required: true, trim: true, maxlength: 100, immutable: true },
+    providerOrderId: { type: String, required: true, trim: true, maxlength: 160, select: false, immutable: true },
     providerPaymentId: { type: String, trim: true, maxlength: 160, default: "", select: false, immutable: true },
     amountPaise: {
       type: Number,
