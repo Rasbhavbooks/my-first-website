@@ -22,6 +22,10 @@ test("catalogue fallback shows only zero-price books when free filter is selecte
     category: "All", query: "", bookLanguage: "", priceType: "free", sort: "featured", language: "en",
   });
   assert.deepEqual(results.map((book) => book.id), ["free-book"]);
+  const paidResults = filterFallbackBooks(sample, {
+    category: "All", query: "", bookLanguage: "", priceType: "paid", sort: "featured", language: "en",
+  });
+  assert.deepEqual(paidResults.map((book) => book.id), ["paid-book"]);
 });
 
 test("catalogue page sends the selected price filter to the API", async () => {
