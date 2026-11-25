@@ -50,3 +50,36 @@ export async function clearReaderReadingHistory() {
   }
   return result.data?.cleared === true;
 }
+
+async function readerBookmarkRequest(bookId, method = "GET", payload) {
+  const response = await fetch("/api/v1/reader/library/" + encodeURIComponent(bookId) + "/bookmark", {
+    method,
+    credentials: "include",
+    cache: "no-store",
+    headers: { Accept: "application/json", ...(payload ? { "Content-Type": "application/json" } : {}) },
+    ...(payload ? { body: JSON.stringify(payload) } : {}),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(result.error?.message || "Could not update your bookmark.");
+    error.code = result.error?.code || "REQUEST_FAILED";
+    error.status = response.status;
+    throw error;
+  }
+  return result.data;
+}
+
+export async function getReaderBookBookmark(bookId) {
+  const result = await readerBookmarkRequest(bookId);
+  return result.bookmark;
+}
+
+export async function saveReaderBookBookmark(bookId, { pageNumber, note = "" }) {
+  const result = await readerBookmarkRequest(bookId, "PUT", { pageNumber, note });
+  return result.bookmark;
+}
+
+export async function deleteReaderBookBookmark(bookId) {
+  const result = await readerBookmarkRequest(bookId, "DELETE");
+  return result.removed === true;
+}

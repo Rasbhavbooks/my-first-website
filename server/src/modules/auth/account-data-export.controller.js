@@ -8,6 +8,7 @@ import ReviewHelpfulVote from "../books/review-helpful-vote.model.js";
 import AuthorBook from "../books/author-book.model.js";
 import AuthorBookChapter from "../books/author-book-chapter.model.js";
 import ReaderBookActivity from "../orders/reader-book-activity.model.js";
+import ReaderBookBookmark from "../orders/reader-bookmark.model.js";
 
 function unavailable(response) {
   return response.status(503).json({
@@ -40,6 +41,7 @@ export async function exportReaderAccountData(request, response) {
     authorBooks,
     chapters,
     readingHistory,
+    readingBookmarks,
   ] = await Promise.all([
     UserWishlistItem.find({ userId }).select("catalogueId createdAt -_id").sort({ createdAt: 1 }).lean(),
     AuthorFollow.find({ userId }).select("authorKey authorName authorProfileId createdAt -_id").sort({ createdAt: 1 }).lean(),
@@ -54,6 +56,7 @@ export async function exportReaderAccountData(request, response) {
     AuthorBookChapter.find({ authorId: userId })
       .select("bookId title content order createdAt updatedAt -_id").sort({ bookId: 1, order: 1, createdAt: 1 }).lean(),
     ReaderBookActivity.find({ readerId: userId }).select("bookId lastOpenedAt -_id").sort({ lastOpenedAt: -1 }).lean(),
+    ReaderBookBookmark.find({ readerId: userId }).select("bookId pageNumber note updatedAt -_id").sort({ updatedAt: -1 }).lean(),
   ]);
 
   const bookTitles = new Map(authorBooks.map((book) => [String(book._id), book.title]));
@@ -78,6 +81,7 @@ export async function exportReaderAccountData(request, response) {
       reviews,
       helpfulVotes: helpfulVotes.map((vote) => ({ reviewId: String(vote.reviewId), createdAt: vote.createdAt })),
       readingHistory,
+      bookmarks: readingBookmarks,
     },
     author: {
       application: authorApplication,
