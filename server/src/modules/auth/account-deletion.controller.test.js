@@ -19,12 +19,21 @@ import ReaderBookBookmark from "../orders/reader-bookmark.model.js";
 import DigitalBookEntitlement from "../orders/book-entitlement.model.js";
 import { removePrivateRecords } from "./account-deletion.controller.js";
 
-function findQuery(value) {
-  return { select() { return this; }, session() { return this; }, lean: async () => value };
+function findQuery(value, expectedSession) {
+  return {
+    select() { return this; },
+    session(actualSession) { assert.equal(actualSession, expectedSession); return this; },
+    lean: async () => value,
+  };
 }
 
-function deleteQuery() {
-  return { session: async () => ({ deletedCount: 1 }) };
+function deleteQuery(expectedSession) {
+  return {
+    session: async actualSession => {
+      assert.equal(actualSession, expectedSession);
+      return { deletedCount: 1 };
+    },
+  };
 }
 
 test("private account cleanup deletes the user's profile, drafts, activity, reviews, and access records", async t => {
@@ -37,15 +46,15 @@ test("private account cleanup deletes the user's profile, drafts, activity, revi
 
   t.mock.method(AuthorProfile, "find", (filter) => {
     assert.deepEqual(filter, { userId });
-    return findQuery([{ _id: profileId }]);
+    return findQuery([{ _id: profileId }], session);
   });
   t.mock.method(AuthorBook, "find", (filter) => {
     assert.deepEqual(filter, { authorId: userId });
-    return findQuery([{ _id: bookId }]);
+    return findQuery([{ _id: bookId }], session);
   });
   t.mock.method(BookReview, "find", (filter) => {
     assert.deepEqual(filter, { userId });
-    return findQuery([{ _id: reviewId }]);
+    return findQuery([{ _id: reviewId }], session);
   });
 
   const models = [
@@ -57,7 +66,7 @@ test("private account cleanup deletes the user's profile, drafts, activity, revi
   for (const model of models) {
     t.mock.method(model, "deleteMany", filter => {
       deleted.set(model.modelName, filter);
-      return deleteQuery();
+      return deleteQuery(session);
     });
   }
 
