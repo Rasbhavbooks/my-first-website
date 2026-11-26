@@ -76,15 +76,46 @@ export function createCapturedPaymentApplicationService({
       throw fail("The verified payment does not match its payment attempt and order.");
     }
 
-    if (order.status === "paid" && attempt.status === "captured") {
-      if (
-        attempt.providerPaymentId !== event.providerPaymentId
-        || order.paymentProvider !== event.provider
-        || order.paymentReference !== event.providerPaymentId
-      ) {
-        throw fail("The paid order is linked to a different captured payment.");
+    if (order.status === "paid") {
+      if (order.paymentProvider !== event.provider) {
+        throw fail("The duplicate payment provider does not match the original order payment.");
       }
-      return { applied: true, replayed: true };
+      if (
+        attempt.status === "captured"
+        && attempt.providerPaymentId === event.providerPaymentId
+        && order.paymentReference === event.providerPaymentId
+      ) {
+        return { applied: true, replayed: true };
+      }
+      if (
+        ["refund_pending", "refunded"].includes(attempt.status)
+        && attempt.providerPaymentId === event.providerPaymentId
+        && order.paymentReference !== event.providerPaymentId
+      ) {
+        return { applied: false, replayed: true, duplicatePayment: true };
+      }
+      if (
+        order.paymentReference !== event.providerPaymentId
+        && ["created", "pending", "authorized"].includes(attempt.status)
+        && !attempt.providerPaymentId
+      ) {
+        // A separate captured payment for an already-paid order is a duplicate.
+        // Record the captured payment privately and flag this attempt for refund.
+        // The original order and entitlement remain paid; an external refund call
+        // must happen later, outside this database transaction.
+        attempt.attachProviderPaymentId(event.providerPaymentId);
+        attempt.transitionTo("captured", now);
+        await attempt.save({ session });
+        attempt.transitionTo("refund_pending", now);
+        await attempt.save({ session });
+        return {
+          applied: false,
+          replayed: false,
+          duplicatePayment: true,
+          refundAmountPaise: event.amountPaise,
+        };
+      }
+      throw fail("The paid order is linked to a different captured payment.");
     }
 
     if (order.status !== "pending_payment") {
