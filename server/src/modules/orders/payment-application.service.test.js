@@ -175,3 +175,24 @@ test("a second captured attempt is marked for refund while the original order st
     "attempt-save",
   ]);
 });
+
+
+test("a second capture on the original provider attempt is classified for refund without replacing its payment ID", async () => {
+  const data = fixture({
+    event: { eventId: "evt-duplicate", providerPaymentId: "pay-duplicate" },
+    order: { status: "paid", paymentProvider: "example-gateway", paymentReference: "pay-1" },
+    attempt: { status: "captured", providerPaymentId: "pay-1" },
+  });
+  const result = await data.service(id, { session: data.session, now });
+  assert.deepEqual(result, {
+    applied: false,
+    replayed: false,
+    duplicatePayment: true,
+    refundAmountPaise: 4900,
+  });
+  assert.equal(data.order.status, "paid");
+  assert.equal(data.order.paymentReference, "pay-1");
+  assert.equal(data.attempt.status, "captured");
+  assert.equal(data.attempt.providerPaymentId, "pay-1");
+  assert.equal(data.calls.some(([name]) => name.endsWith("-save")), false);
+});
