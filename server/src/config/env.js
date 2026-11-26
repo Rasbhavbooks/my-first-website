@@ -73,7 +73,7 @@ export const env = {
   clamavConfigured: Boolean(process.env.CLAMAV_HOST),
   adminMfaEncryptionKey,
   adminMfaConfigured: Boolean(adminMfaEncryptionKey),
-  testGstRateBps,\n  testGatewayRateBps,\n  razorpayMode,
+  testGstRateBps,  testGatewayRateBps,  razorpayMode,
   razorpayKeyId,
   razorpayKeySecret,
   razorpayWebhookSecret,
