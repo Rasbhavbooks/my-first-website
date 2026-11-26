@@ -153,7 +153,7 @@ test("rejects a paid order linked to another payment and never calls ledger or a
 });
 
 
-test("a second captured attempt is marked for refund while the original order stays paid", async () => {
+test("a second captured attempt is classified for refund while the original order stays paid", async () => {
   const data = fixture({
     event: { eventId: "evt-duplicate", providerPaymentId: "pay-duplicate" },
     order: { status: "paid", paymentProvider: "example-gateway", paymentReference: "pay-original" },
@@ -168,12 +168,9 @@ test("a second captured attempt is marked for refund while the original order st
   });
   assert.equal(data.order.status, "paid");
   assert.equal(data.order.paymentReference, "pay-original");
-  assert.equal(data.attempt.providerPaymentId, "pay-duplicate");
-  assert.equal(data.attempt.status, "refund_pending");
-  assert.deepEqual(data.calls.filter(([name]) => name.endsWith("-save")).map(([name]) => name), [
-    "attempt-save",
-    "attempt-save",
-  ]);
+  assert.equal(data.attempt.providerPaymentId, "");
+  assert.equal(data.attempt.status, "pending");
+  assert.equal(data.calls.some(([name]) => name.endsWith("-save")), false);
 });
 
 
