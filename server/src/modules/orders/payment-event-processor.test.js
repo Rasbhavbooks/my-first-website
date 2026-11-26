@@ -83,6 +83,8 @@ test("propagates capture-application failures after the immutable event is recor
   const data = fixture({ applicationError: new Error("transaction failed") });
   await assert.rejects(data.processor(input), /transaction failed/);
   assert.deepEqual(data.calls.map(([name]) => name), ["record", "transaction", "apply", "queue-refund"]);
+  assert.equal(data.calls[3][1], persistedEventId);
+  assert.equal(data.calls[3][2].session, data.transactionSession);
 });
 
 test("rejects a recorder result that is not a persisted event", async (t) => {
