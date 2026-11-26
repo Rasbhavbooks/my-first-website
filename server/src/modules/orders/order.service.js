@@ -16,11 +16,19 @@ function orderMatchesBook(order, bookId) {
   return order.bookId === bookId;
 }
 
-export function createPendingOrderService({  findAvailableBook, findExistingOrder, createOrder,  resolveReferral = async () => null,  gstRateBps = env.testGstRateBps,  gatewayRateBps = env.testGatewayRateBps,}) {
+export function createPendingOrderService({
+  findAvailableBook,
+  findExistingOrder,
+  createOrder,
+  resolveReferral = async () => null,
+  gstRateBps = env.testGstRateBps,
+  gatewayRateBps = env.testGatewayRateBps,
+}) {
   if (
     typeof findAvailableBook !== "function"
     || typeof findExistingOrder !== "function"
-    || typeof createOrder !== "function"    || typeof resolveReferral !== "function"
+    || typeof createOrder !== "function"
+    || typeof resolveReferral !== "function"
   ) {
     throw new TypeError("Pending order service requires book lookup, order lookup, and order creation.");
   }
