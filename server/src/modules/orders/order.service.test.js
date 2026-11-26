@@ -36,26 +36,47 @@ function makeStore(availableBook = book) {
   };
 }
 
-function makeService(store) {
+function makeService(store, resolveReferral) {
   return createPendingOrderService({
     findAvailableBook: store.findBook,
     findExistingOrder: store.findOrder,
     createOrder: store.create,
+    ...(resolveReferral ? { resolveReferral } : {}),
   });
 }
 
-test("creates a pending one-book INR order using the catalogue price in exact paise", async () => {
+test("creates a pending one-book INR order using the customer total and immutable price split", async () => {
   const store = makeStore();
   const result = await makeService(store)({ buyerId, bookId, idempotencyKey: key });
 
   assert.equal(result.replayed, false);
-  assert.equal(result.order.amountPaise, 29);
+  assert.equal(result.order.amountPaise, 41);
+  assert.equal(result.order.authorPricePaise, 29);
+  assert.equal(result.order.platformCommissionPaise, 9);
+  assert.equal(result.order.referrerRewardPaise, 0);
+  assert.equal(result.order.gstPaise, 2);
+  assert.equal(result.order.gatewayFeePaise, 1);
   assert.equal(result.order.bookId, bookId);
   assert.equal(result.order.currency, "INR");
   assert.equal(result.order.status, "pending_payment");
   assert.equal(result.order.idempotencyKey, undefined);
   assert.match(result.order.idempotencyKeyHash, /^[a-f0-9]{64}$/);
   assert.equal(store.createCount, 1);
+});
+
+test("snapshots a valid referral and keeps the same reader price", async () => {
+  const store = makeStore();
+  const referrerId = "64c0ffee0000000000000002";
+  const service = makeService(store, async () => ({ readerId: referrerId }));
+  const result = await service({ buyerId, bookId, idempotencyKey: key, referralCode: "reader-share" });
+
+  assert.equal(result.order.amountPaise, 41);
+  assert.equal(result.order.authorPricePaise, 29);
+  assert.equal(result.order.platformCommissionPaise, 6);
+  assert.equal(result.order.referrerRewardPaise, 3);
+  assert.equal(String(result.order.referrerId), referrerId);
+  assert.equal(result.order.gstPaise, 2);
+  assert.equal(result.order.gatewayFeePaise, 1);
 });
 
 test("refuses books that are not explicitly enabled for sale", async () => {
