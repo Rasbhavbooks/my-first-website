@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 import mongoose from "mongoose";
 import { inrPriceToPaise } from "../../../../shared/money.js";
+import { calculateEbookQuote } from "../../../../shared/commerce-pricing.js";
+import { env } from "../../config/env.js";
 import Book from "../books/book.model.js";
 import DigitalBookOrder from "./order.model.js";
 
@@ -14,16 +16,16 @@ function orderMatchesBook(order, bookId) {
   return order.bookId === bookId;
 }
 
-export function createPendingOrderService({ findAvailableBook, findExistingOrder, createOrder }) {
+export function createPendingOrderService({\n  findAvailableBook, findExistingOrder, createOrder,\n  resolveReferral = async () => null,\n  gstRateBps = env.testGstRateBps,\n  gatewayRateBps = env.testGatewayRateBps,\n}) {
   if (
     typeof findAvailableBook !== "function"
     || typeof findExistingOrder !== "function"
-    || typeof createOrder !== "function"
+    || typeof createOrder !== "function"\n    || typeof resolveReferral !== "function"
   ) {
     throw new TypeError("Pending order service requires book lookup, order lookup, and order creation.");
   }
 
-  return async function createPendingBookOrder({ buyerId, bookId, idempotencyKey }, { session } = {}) {
+  return async function createPendingBookOrder({ buyerId, bookId, idempotencyKey, referralCode }, { session } = {}) {
     if (!mongoose.isValidObjectId(buyerId)) {
       throw error("A valid signed-in reader is required.", "INVALID_BUYER");
     }
@@ -52,10 +54,26 @@ export function createPendingOrderService({ findAvailableBook, findExistingOrder
     if (!book) {
       throw error("This book is not currently available for purchase.", "BOOK_NOT_FOR_SALE");
     }
-    const amountPaise = inrPriceToPaise(book.price);
-    if (amountPaise === null || amountPaise < 1) {
+    const authorPricePaise = inrPriceToPaise(book.price);
+    if (authorPricePaise === null || authorPricePaise < 1) {
       throw error("This book does not have a valid paid price.", "INVALID_BOOK_PRICE");
     }
+    if (referralCode !== undefined && (
+      typeof referralCode !== "string" || referralCode.length > 80 || referralCode.trim() !== referralCode
+    )) {
+      throw error("The referral code is invalid.", "INVALID_REFERRAL_CODE");
+    }
+    const attribution = referralCode ? await resolveReferral({ referralCode, buyerId, bookId: book.catalogueId, session }) : null;
+    const referrerId = attribution?.readerId ?? null;
+    if (referrerId && (!mongoose.isValidObjectId(referrerId) || String(referrerId) === String(buyerId))) {
+      throw error("The referral beneficiary is invalid.", "INVALID_REFERRAL");
+    }
+    const quote = calculateEbookQuote({
+      authorPricePaise,
+      gstRateBps,
+      gatewayRateBps,
+      referralValid: Boolean(referrerId),
+    });
 
     const orderData = {
       buyerId,
@@ -63,7 +81,17 @@ export function createPendingOrderService({ findAvailableBook, findExistingOrder
       bookId: book.catalogueId,
       bookTitle: book.title,
       authorName: book.author,
-      amountPaise,
+      amountPaise: quote.totalPaise,
+      authorPricePaise: quote.authorPricePaise,
+      commissionRateBps: quote.commissionRateBps,
+      platformCommissionPaise: quote.platformCommissionPaise,
+      referralRateBps: quote.referralRateBps,
+      referrerRewardPaise: quote.referrerRewardPaise,
+      referrerId,
+      gstRateBps: quote.gstRateBps,
+      gstPaise: quote.gstPaise,
+      gatewayRateBps: quote.gatewayRateBps,
+      gatewayFeePaise: quote.gatewayFeePaise,
       currency: "INR",
       status: "pending_payment",
     };
