@@ -26,6 +26,7 @@ export function createPaymentEventProcessor({
   applyCapturedPayment,
   postLedger,
   grantEntitlement,
+  queueDuplicateRefund,
 }) {
   if (
     typeof recordEvent !== "function"
