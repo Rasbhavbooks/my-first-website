@@ -98,7 +98,8 @@ export function createCapturedPaymentApplicationService({
       ) {
         return { applied: false, replayed: true, duplicatePayment: true };
       }
-      if (order.paymentReference !== event.providerPaymentId) {
+      if (order.paymentReference !== event.providerPaymentId
+        && (!attempt.providerPaymentId || attempt.providerPaymentId === order.paymentReference)) {
         // The signed capture is a second payment for an already-paid order.
         // The event stays private and the processor queues a separate refund
         // request; the original order, payment attempt, and entitlement stay intact.
