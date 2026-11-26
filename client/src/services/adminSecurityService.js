@@ -13,3 +13,19 @@ export async function getAdminSecuritySessions() {
   }
   return result.data;
 }
+
+export async function getAdminLoginSecurityMetrics() {
+  const response = await fetch("/api/v1/admin/security/login-attempts", {
+    credentials: "include",
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(result?.error?.message || "Could not load login activity.");
+    error.code = result?.error?.code || "REQUEST_FAILED";
+    error.status = response.status;
+    throw error;
+  }
+  return result.data;
+}

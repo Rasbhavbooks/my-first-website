@@ -7,6 +7,7 @@ import { env } from "../../config/env.js";
 import AdminMfa from "./admin-mfa.model.js";
 import { decryptAdminMfaSecret, hashRecoveryCode, verifyAdminMfaCode } from "./admin-mfa.service.js";
 import { sendPasswordResetEmail, sendVerificationEmail } from "../../services/email.service.js";
+import { recordLoginSecurityMetric } from "./login-security-metric.service.js";
 
 const VERIFICATION_TTL_MS = 30 * 60 * 1000;
 
@@ -219,6 +220,7 @@ export async function loginReader(request, response) {
   const email = typeof request.body?.email === "string" ? request.body.email.trim().toLowerCase() : "";
   const password = typeof request.body?.password === "string" ? request.body.password : "";
   if (!email || email.length > 254 || !password || password.length > 128) {
+    await recordLoginSecurityMetric({ outcome: "failure" });
     return response.status(400).json({
       error: { code: "INVALID_CREDENTIALS", message: "Enter a valid email and password." },
     });
@@ -227,11 +229,13 @@ export async function loginReader(request, response) {
   const user = await User.findOne({ email }).select("+passwordHash +avatarAssetKey +avatarAssetContentType +avatarAssetSize +avatarUploadedAt");
   const passwordMatches = user ? await user.verifyPassword(password) : false;
   if (!user || !passwordMatches) {
+    await recordLoginSecurityMetric({ outcome: "failure", knownAccount: Boolean(user) });
     return response.status(401).json({
       error: { code: "INVALID_CREDENTIALS", message: "Email or password is incorrect." },
     });
   }
   if (user.accountStatus !== "active") {
+    await recordLoginSecurityMetric({ outcome: "failure", knownAccount: true });
     return response.status(403).json({
       error: { code: user.accountStatus === "pending_verification" ? "EMAIL_NOT_VERIFIED" : "ACCOUNT_UNAVAILABLE",
         message: user.accountStatus === "pending_verification" ? "Verify your email before signing in." : "This account is unavailable." },
@@ -280,6 +284,7 @@ export async function loginReader(request, response) {
         }
       }
       if (!verified) {
+        await recordLoginSecurityMetric({ outcome: "failure", knownAccount: true });
         return response.status(401).json({
           error: { code: "INVALID_MFA_CODE", message: "The authenticator or recovery code is invalid." },
         });
@@ -299,6 +304,7 @@ export async function loginReader(request, response) {
   await session.save();
   response.setHeader("Cache-Control", "no-store");
   response.cookie(SESSION_COOKIE, token, sessionCookieOptions());
+  await recordLoginSecurityMetric({ outcome: "success" });
   return response.json({ data: { user: safeUser(user), expiresAt: session.expiresAt } });
 }
 
