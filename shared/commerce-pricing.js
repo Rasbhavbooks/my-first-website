@@ -104,3 +104,37 @@ export function buildFullRefundLedgerEntries(quote) {
   }
   return entries.filter((entry) => entry.amountPaise > 0);
 }
+
+
+/** Plans a test-only refund for a second captured payment of the same order. */
+export function planDuplicatePaymentRefund({ orderAmountPaise, originalCapturePaise, duplicateCapturePaise } = {}) {
+  for (const [name, value] of Object.entries({ orderAmountPaise, originalCapturePaise, duplicateCapturePaise })) {
+    if (!Number.isSafeInteger(value) || value < 1) {
+      throw new RangeError(`${name} must be a positive whole-paise amount.`);
+    }
+  }
+  if (originalCapturePaise !== orderAmountPaise || duplicateCapturePaise !== orderAmountPaise) {
+    throw new RangeError("Both test captures must match the authorized order amount.");
+  }
+  return Object.freeze({
+    refundAmountPaise: duplicateCapturePaise,
+    retainedPaymentPaise: originalCapturePaise,
+    orderStatus: "paid",
+    entitlement: "active",
+  });
+}
+
+/** Plans the local state changes for a confirmed full refund; no provider call is made. */
+export function planFullRefund(quote) {
+  return Object.freeze({
+    refundAmountPaise: quote.totalPaise,
+    ledgerEntries: buildFullRefundLedgerEntries(quote),
+    orderStatus: "refunded",
+    entitlement: "revoked",
+    authorPayableReversalPaise: quote.authorPricePaise,
+    platformCommissionReversalPaise: quote.platformCommissionPaise,
+    referralRewardReversalPaise: quote.referrerRewardPaise,
+    gstReversalPaise: quote.gstPaise,
+    gatewayFeeExpensePaise: quote.gatewayFeePaise,
+  });
+}
