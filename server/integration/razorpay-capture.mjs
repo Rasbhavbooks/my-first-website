@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createHmac, randomBytes } from "node:crypto";
+import { reviewAuthorBook } from "../src/modules/books/author-book-admin.controller.js";
 import { once } from "node:events";
 import test from "node:test";
 import mongoose from "mongoose";
@@ -24,6 +25,36 @@ test("signed capture updates a book order and posts one receipt and grants one e
     try { await mongoose.connection.dropDatabase(); } finally { await mongoose.disconnect(); }
   });
   await Promise.all([Order.init(), Attempt.init(), PaymentEvent.init(), Ledger.init(), Entitlement.init(), Book.init(), AuthorBook.init()]);
+
+  const unpublishedAuthorName = "Rights gate test " + randomBytes(4).toString("hex");
+  const unlistedDraft = await AuthorBook.create({
+    authorId: new mongoose.Types.ObjectId(),
+    authorName: unpublishedAuthorName,
+    title: { en: "Private review draft", gu: "ખાનગી સમીક્ષા ડ્રાફ્ટ", hi: "निजी समीक्षा ड्राफ्ट" },
+    description: { en: "Integration test draft.", gu: "ઇન્ટિગ્રેશન ટેસ્ટ ડ્રાફ્ટ.", hi: "इंटीग्रेशन परीक्षण ड्राफ्ट।" },
+    language: "English",
+    category: "Novel",
+    price: 0,
+    status: "submitted",
+    submittedAt: new Date(),
+  });
+  const reviewResponse = {
+    statusCode: 200,
+    status(code) { this.statusCode = code; return this; },
+    setHeader() {},
+    json(body) { this.body = body; return this; },
+  };
+  await reviewAuthorBook({
+    params: { bookId: String(unlistedDraft._id) },
+    reader: { _id: new mongoose.Types.ObjectId() },
+    body: { decision: "approved", reviewedPrice: 0, submittedAt: unlistedDraft.submittedAt.toISOString() },
+  }, reviewResponse);
+  assert.equal(reviewResponse.statusCode, 200);
+  assert.equal(reviewResponse.body.data.book.status, "approved");
+  assert.equal(reviewResponse.body.data.book.price, 0);
+  assert.equal(await Book.countDocuments({ author: unpublishedAuthorName }), 0);
+  assert.equal(await resolveReadingAccess({ bookId: String(unlistedDraft._id), readerId: unlistedDraft.authorId }), null);
+
   const order = await Order.create({
     buyerId: new mongoose.Types.ObjectId(), idempotencyKeyHash: "a".repeat(64),
     bookId: "quiet-river", bookTitle: { en: "Quiet River", gu: "શાંત નદી", hi: "शांत नदी" },
