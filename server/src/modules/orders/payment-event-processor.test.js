@@ -133,5 +133,5 @@ test("does not duplicate ledger or access when a second capture is queued for re
     duplicatePayment: true,
     refundStatus: "pending",
   });
-  assert.deepEqual(data.calls.map(([name]) => name), ["record", "transaction", "apply"]);
+  assert.deepEqual(data.calls.map(([name]) => name), ["record", "transaction", "apply", "queue-refund"]);
 });
