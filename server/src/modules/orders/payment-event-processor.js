@@ -63,12 +63,17 @@ export function createPaymentEventProcessor({
       }
       return result;
     });
-    return {
+    const result = {
       recorded: true,
       replayed: recorded.replayed === true,
       paymentApplied: application?.applied === true,
       applicationReplayed: application?.replayed === true,
     };
+    if (application?.duplicatePayment === true) {
+      result.duplicatePayment = true;
+      result.refundStatus = "pending";
+    }
+    return result;
   };
 }
 
