@@ -151,3 +151,27 @@ test("rejects a paid order linked to another payment and never calls ledger or a
   await assert.rejects(data.service(id, { session: data.session }));
   assert.equal(data.calls.some(([name]) => name.includes("ledger") || name.includes("entitlement")), false);
 });
+
+
+test("a second captured attempt is marked for refund while the original order stays paid", async () => {
+  const data = fixture({
+    event: { eventId: "evt-duplicate", providerPaymentId: "pay-duplicate" },
+    order: { status: "paid", paymentProvider: "example-gateway", paymentReference: "pay-original" },
+    attempt: { status: "pending", providerPaymentId: "" },
+  });
+  const result = await data.service(id, { session: data.session, now });
+  assert.deepEqual(result, {
+    applied: false,
+    replayed: false,
+    duplicatePayment: true,
+    refundAmountPaise: 4900,
+  });
+  assert.equal(data.order.status, "paid");
+  assert.equal(data.order.paymentReference, "pay-original");
+  assert.equal(data.attempt.providerPaymentId, "pay-duplicate");
+  assert.equal(data.attempt.status, "refund_pending");
+  assert.deepEqual(data.calls.filter(([name]) => name.endsWith("-save")).map(([name]) => name), [
+    "attempt-save",
+    "attempt-save",
+  ]);
+});
