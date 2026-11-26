@@ -14,12 +14,20 @@ function serializeBook(record) {
     ...book
   } = record;
   const authorPricePaise = inrPriceToPaise(book.price);
-  const customerPricePaise = authorPricePaise === null ? null : calculateEbookQuote({
+  const quote = authorPricePaise === null ? null : calculateEbookQuote({
     authorPricePaise,
     gstRateBps: env.testGstRateBps,
     gatewayRateBps: env.testGatewayRateBps,
-  }).totalPaise;
-  return { ...book, customerPricePaise, id: catalogueId };
+  });
+  const customerPricePaise = quote?.totalPaise ?? null;
+  const priceBreakdownPaise = quote ? {
+    authorPrice: quote.authorPricePaise,
+    platformCommission: quote.commissionPaise,
+    gst: quote.gstPaise,
+    gatewayFee: quote.gatewayFeePaise,
+    total: quote.totalPaise,
+  } : null;
+  return { ...book, customerPricePaise, priceBreakdownPaise, id: catalogueId };
 }
 
 function databaseUnavailable(response) {
