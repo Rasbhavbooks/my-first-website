@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { Link, useParams } from "react-router";
+import { Link, useParams, useSearchParams } from "react-router";
 import { getBookTitle } from "../../data/books.js";
 import BookReviews from "../../components/books/BookReviews.jsx";
 import RelatedBooks from "../../components/books/RelatedBooks.jsx";
@@ -16,6 +16,8 @@ import { getReaderLibraryBook } from "../../services/readerLibraryService.js";
 export default function BookDetailsPage() {
   const { bookId } = useParams();
   const { language, t } = useLanguage();
+  const [params] = useSearchParams();
+  const previewLabel = { gu: "ટેસ્ટ ચેકઆઉટ", hi: "टेस्ट चेकआउट", en: "Test checkout" }[language] || "Test checkout";
   const { getCategoryLabel } = useCategories();
   const { user, loading: authLoading } = useAuth();
   const [book, setBook] = useState(null);
@@ -73,6 +75,20 @@ export default function BookDetailsPage() {
   if (loading) return <main className="detail-state" aria-live="polite">{t.loading}</main>;
   if (!book) return <main className="detail-state"><h1>{t.notFound}</h1><Link className="button button-dark" to="/">{t.backHome}</Link></main>;
 
+  if (params.get("checkout") === "preview" && customerPrice > 0 && book.priceBreakdownPaise) {
+    return (
+      <main className="detail-state">
+        <h1>{previewLabel}</h1>
+        <h2>{title}</h2>
+        <p>{t.priceGst} · {formatInr(book.priceBreakdownPaise.gst / 100, language)}</p>
+        <p>{t.priceGateway} · {formatInr(book.priceBreakdownPaise.gatewayFee / 100, language)}</p>
+        <strong>{t.priceBreakdownTitle} · {formatInr(customerPrice, language)}</strong>
+        <p>{t.testPriceDisclaimer}</p>
+        <Link to={`/books/${encodeURIComponent(bookId)}`}>{title}</Link>
+      </main>
+    );
+  }
+
   return (
     <main className="detail-page">
       <style>{`.detail-reading-action{display:inline-flex;align-items:center;justify-content:center;min-height:42px;margin:4px 0 8px;padding:0 18px;background:#30252c;color:#fff;text-decoration:none;font-size:10px;letter-spacing:.04em}.detail-access-note{margin:5px 0 14px;color:#77716a;font-size:11px;line-height:1.7}.detail-access-error{color:#863d32}.detail-price-breakdown{margin:2px 0 16px;color:#655c57;font-size:12px}.detail-price-breakdown summary{cursor:pointer;font-weight:600}.detail-price-breakdown dl{max-width:310px;margin:10px 0}.detail-price-breakdown dl div{display:flex;justify-content:space-between;gap:20px;padding:4px 0}.detail-price-breakdown dd{margin:0;font-variant-numeric:tabular-nums}.detail-price-breakdown-total{border-top:1px solid #d8d1ca;font-weight:700}.detail-price-breakdown p{max-width:380px;font-size:11px;line-height:1.5}` }</style>
@@ -87,6 +103,7 @@ export default function BookDetailsPage() {
           <p className="detail-author">{t.by} <strong>{book.author}</strong></p>
           <AuthorFollowButton authorName={book.author} />
           <div className="detail-price">{customerPrice === 0 ? t.freeBookPrice : formatInr(customerPrice, language)}</div>
+          {customerPrice > 0 && book.priceBreakdownPaise && <Link className="detail-reading-action" to="?checkout=preview">{previewLabel}</Link>}
           {customerPrice > 0 && book.priceBreakdownPaise && (
             <details className="detail-price-breakdown">
               <summary>{t.priceBreakdownTitle}</summary>
