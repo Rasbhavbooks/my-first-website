@@ -32,6 +32,10 @@ function fixture({ recorded = {}, application = { applied: true, replayed: false
     grantEntitlement: async (id, options) => {
       calls.push(["grant", id, options]);
     },
+    queueDuplicateRefund: async (eventId, options) => {
+      calls.push(["queue-refund", eventId, options]);
+      return { replayed: false };
+    },
     applyCapturedPayment: async (eventId, options) => {
       calls.push(["apply", eventId, options]);
       if (applicationError) throw applicationError;
@@ -78,7 +82,7 @@ test("does not open a transaction for ignored events", async () => {
 test("propagates capture-application failures after the immutable event is recorded", async () => {
   const data = fixture({ applicationError: new Error("transaction failed") });
   await assert.rejects(data.processor(input), /transaction failed/);
-  assert.deepEqual(data.calls.map(([name]) => name), ["record", "transaction", "apply"]);
+  assert.deepEqual(data.calls.map(([name]) => name), ["record", "transaction", "apply", "queue-refund"]);
 });
 
 test("rejects a recorder result that is not a persisted event", async (t) => {
