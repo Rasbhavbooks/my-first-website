@@ -26,12 +26,12 @@ test("refund request snapshots a private provider payment and positive whole-pai
 });
 
 test("refund request rejects fractional money and unknown reason", async () => {
-  await assert.rejects(validRequest({ amountPaise: 139.29 }).validate(), /whole-paise/);
+  await assert.rejects(validRequest({ amountPaise: 139.29 }).validate(), /whole paise/);
   await assert.rejects(validRequest({ reason: "anything" }).validate());
 });
 
 test("refund request permits only guarded lifecycle transitions", async () => {
-  const request = RefundRequest.hydrate(validRequest().toObject());
+  const request = validRequest();\n  request.$isNew = false;\n  request.$locals.persistedStatus = "pending";
   request.transitionTo("submitted");
   await request.validate();
   assert.equal(request.status, "submitted");
