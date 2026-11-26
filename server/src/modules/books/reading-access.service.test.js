@@ -8,20 +8,32 @@ const sourceId = new mongoose.Types.ObjectId();
 
 function makeService(overrides = {}) {
   const calls = [];
-  const service = createReadingAccessService({
-    findBook: async () => { calls.push("book"); return { price: 0, readingSourceId: sourceId }; },
-    findApprovedSource: async () => { calls.push("source"); return { price: 0 }; },
-    findEntitlement: async () => { calls.push("entitlement"); return { orderId: new mongoose.Types.ObjectId(), currency: "INR", amountPaise: 100 }; },
-    findPaidOrder: async () => { calls.push("order"); return { currency: "INR", amountPaise: 100 }; },
-    ...overrides,
-  });
-  return { service, calls };
+  const defaults = {
+    findBook: async () => ({ price: 0, readingSourceId: sourceId }),
+    findApprovedSource: async () => ({ price: 0 }),
+    findEntitlement: async () => ({ orderId: new mongoose.Types.ObjectId(), currency: "INR", amountPaise: 100 }),
+    findPaidOrder: async () => ({ currency: "INR", amountPaise: 100 }),
+  };
+  const callNames = {
+    findBook: "book",
+    findApprovedSource: "source",
+    findEntitlement: "entitlement",
+    findPaidOrder: "order",
+  };
+  const dependencies = Object.fromEntries(Object.entries(defaults).map(([name, fallback]) => [
+    name,
+    async (...args) => {
+      calls.push(callNames[name]);
+      return (overrides[name] ?? fallback)(...args);
+    },
+  ]));
+  return { service: createReadingAccessService(dependencies), calls };
 }
 
 test("a linked approved free eBook grants reading access without a paid order or entitlement", async () => {
   const { service, calls } = makeService({
-    findEntitlement: async () => { calls.push("entitlement"); throw new Error("free books must not require payment"); },
-    findPaidOrder: async () => { calls.push("order"); throw new Error("free books must not require payment"); },
+    findEntitlement: async () => { throw new Error("free books must not require payment"); },
+    findPaidOrder: async () => { throw new Error("free books must not require payment"); },
   });
 
   const result = await service({ bookId: "free-book", readerId });
@@ -31,27 +43,25 @@ test("a linked approved free eBook grants reading access without a paid order or
 });
 
 test("free reading is denied when there is no approved linked source or its price changed", async () => {
-  const noSource = makeService({ findBook: async () => { calls.push("book"); return { price: 0, readingSourceId: null }; } });
+  const noSource = makeService({ findBook: async () => ({ price: 0, readingSourceId: null }) });
   assert.equal(await noSource.service({ bookId: "free-book", readerId }), null);
   assert.deepEqual(noSource.calls, ["book"]);
 
-  const changedPrice = makeService({ findApprovedSource: async () => { calls.push("source"); return { price: 1 }; } });
+  const changedPrice = makeService({ findApprovedSource: async () => ({ price: 1 }) });
   assert.equal(await changedPrice.service({ bookId: "free-book", readerId }), null);
   assert.deepEqual(changedPrice.calls, ["book", "source"]);
 });
 
 test("paid reading requires a matching INR entitlement and paid order", async () => {
   const { service, calls } = makeService({
-    findBook: async () => { calls.push("book"); return { price: 25, readingSourceId: sourceId }; },
-    findApprovedSource: async () => { calls.push("source"); return { price: 25 }; },
+    findBook: async () => ({ price: 25, readingSourceId: sourceId }),
+    findApprovedSource: async () => ({ price: 25 }),
     findEntitlement: async (owner, book) => {
-      calls.push("entitlement");
       assert.equal(owner, readerId);
       assert.equal(book, "paid-book");
       return { orderId: new mongoose.Types.ObjectId(), currency: "INR", amountPaise: 2500 };
     },
-    findPaidOrder: async (orderId, owner, book) => {
-      calls.push("order");
+    findPaidOrder: async (_orderId, owner, book) => {
       assert.equal(owner, readerId);
       assert.equal(book, "paid-book");
       return { currency: "INR", amountPaise: 2500 };
