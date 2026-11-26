@@ -14,6 +14,18 @@ const razorpayMode = process.env.RAZORPAY_MODE || "test";
 const razorpayKeyId = process.env.RAZORPAY_KEY_ID || "";
 const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET || "";
 const razorpayWebhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || "";
+function readTestRate(name, fallback, maximum) {
+  const raw = process.env[name];
+  if (raw === undefined || raw === "") return fallback;
+  if (!/^\\d+$/.test(raw)) throw new Error(`${name} must be a whole-number basis-point rate.`);
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value < 0 || value > maximum) {
+    throw new Error(`${name} must be between 0 and ${maximum} basis points.`);
+  }
+  return value;
+}
+const testGstRateBps = readTestRate("TEST_GST_RATE_BPS", 500, 10000);
+const testGatewayRateBps = readTestRate("TEST_GATEWAY_RATE_BPS", 200, 5000);
 if (razorpayMode !== "test") throw new Error("RAZORPAY_MODE must remain test until launch approval.");
 if (razorpayKeyId && !razorpayKeyId.startsWith("rzp_test_")) {
   throw new Error("RAZORPAY_KEY_ID must be a Razorpay test-mode key while RAZORPAY_MODE is test.");
@@ -61,7 +73,7 @@ export const env = {
   clamavConfigured: Boolean(process.env.CLAMAV_HOST),
   adminMfaEncryptionKey,
   adminMfaConfigured: Boolean(adminMfaEncryptionKey),
-  razorpayMode,
+  testGstRateBps,\n  testGatewayRateBps,\n  razorpayMode,
   razorpayKeyId,
   razorpayKeySecret,
   razorpayWebhookSecret,
