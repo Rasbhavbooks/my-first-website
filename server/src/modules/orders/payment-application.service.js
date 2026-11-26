@@ -71,7 +71,11 @@ export function createCapturedPaymentApplicationService({
       || attempt.providerOrderId !== event.providerOrderId
       || attempt.amountPaise !== event.amountPaise
       || attempt.currency !== event.currency
-      || (attempt.providerPaymentId && attempt.providerPaymentId !== event.providerPaymentId)
+      || (attempt.providerPaymentId
+        && attempt.providerPaymentId !== event.providerPaymentId
+        && !(order.status === "paid"
+          && order.paymentReference !== event.providerPaymentId
+          && attempt.providerPaymentId === order.paymentReference))
     ) {
       throw fail("The verified payment does not match its payment attempt and order.");
     }
@@ -93,6 +97,17 @@ export function createCapturedPaymentApplicationService({
         && order.paymentReference !== event.providerPaymentId
       ) {
         return { applied: false, replayed: true, duplicatePayment: true };
+      }
+      if (
+        order.paymentReference !== event.providerPaymentId
+        && attempt.providerPaymentId === order.paymentReference
+      ) {
+        return {
+          applied: false,
+          replayed: false,
+          duplicatePayment: true,
+          refundAmountPaise: event.amountPaise,
+        };
       }
       if (
         order.paymentReference !== event.providerPaymentId
