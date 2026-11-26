@@ -17,7 +17,7 @@ const razorpayWebhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || "";
 function readTestRate(name, fallback, maximum) {
   const raw = process.env[name];
   if (raw === undefined || raw === "") return fallback;
-  if (!/^\\d+$/.test(raw)) throw new Error(`${name} must be a whole-number basis-point rate.`);
+  if (!/^\d+$/.test(raw)) throw new Error(`${name} must be a whole-number basis-point rate.`);
   const value = Number(raw);
   if (!Number.isSafeInteger(value) || value < 0 || value > maximum) {
     throw new Error(`${name} must be between 0 and ${maximum} basis points.`);
