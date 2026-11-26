@@ -4,6 +4,8 @@ import {
   buildFullRefundLedgerEntries,
   buildSaleLedgerEntries,
   calculateEbookQuote,
+  planDuplicatePaymentRefund,
+  planFullRefund,
 } from "../../../../shared/commerce-pricing.js";
 
 const direct = { authorPricePaise: 10000, gstRateBps: 500, gatewayRateBps: 200 };
@@ -66,4 +68,36 @@ test("prices and rates reject invalid paise values and rates", () => {
   assert.throws(() => calculateEbookQuote({ authorPricePaise: 10000.5 }));
   assert.throws(() => calculateEbookQuote({ authorPricePaise: 10000, gstRateBps: 10001 }));
   assert.throws(() => calculateEbookQuote({ authorPricePaise: 10000, gatewayRateBps: 5001 }));
+});
+
+
+test("a duplicate captured payment refunds only the second charge and retains the original purchase", () => {
+  const quote = calculateEbookQuote(direct);
+  const plan = planDuplicatePaymentRefund({
+    orderAmountPaise: quote.totalPaise,
+    originalCapturePaise: quote.totalPaise,
+    duplicateCapturePaise: quote.totalPaise,
+  });
+  assert.equal(plan.refundAmountPaise, 13929);
+  assert.equal(plan.retainedPaymentPaise, 13929);
+  assert.equal(plan.orderStatus, "paid");
+  assert.equal(plan.entitlement, "active");
+  assert.throws(() => planDuplicatePaymentRefund({
+    orderAmountPaise: 13929, originalCapturePaise: 13929, duplicateCapturePaise: 10000,
+  }));
+});
+
+test("a confirmed full refund reverses allocation and revokes access", () => {
+  const quote = calculateEbookQuote(referral);
+  const plan = planFullRefund(quote);
+  assert.equal(plan.refundAmountPaise, 13929);
+  assert.equal(plan.orderStatus, "refunded");
+  assert.equal(plan.entitlement, "revoked");
+  assert.equal(plan.authorPayableReversalPaise, 10000);
+  assert.equal(plan.platformCommissionReversalPaise, 2000);
+  assert.equal(plan.referralRewardReversalPaise, 1000);
+  assert.equal(plan.gstReversalPaise, 650);
+  assert.equal(plan.gatewayFeeExpensePaise, 279);
+  assert.equal(plan.ledgerEntries.filter((entry) => entry.direction === "debit")
+    .reduce((total, entry) => total + entry.amountPaise, 0), 13929);
 });
