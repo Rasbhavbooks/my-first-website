@@ -5,7 +5,7 @@ import { inrPriceToPaise } from "../../../../shared/money.js";
 import { calculateEbookQuote } from "../../../../shared/commerce-pricing.js";
 import { env } from "../../config/env.js";
 
-function serializeBook(record) {
+export function serializeBook(record) {
   const {
     _id,
     catalogueId,
