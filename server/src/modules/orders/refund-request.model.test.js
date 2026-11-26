@@ -31,7 +31,9 @@ test("refund request rejects fractional money and unknown reason", async () => {
 });
 
 test("refund request permits only guarded lifecycle transitions", async () => {
-  const request = validRequest();\n  request.$isNew = false;\n  request.$locals.persistedStatus = "pending";
+  const request = validRequest();
+  request.$isNew = false;
+  request.$locals.persistedStatus = "pending";
   request.transitionTo("submitted");
   await request.validate();
   assert.equal(request.status, "submitted");
