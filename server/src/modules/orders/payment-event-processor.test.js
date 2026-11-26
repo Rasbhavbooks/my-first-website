@@ -110,3 +110,24 @@ test("a ledger failure rejects the capture transaction", async () => {
   await assert.rejects(data.processor(input), /ledger unavailable/);
   assert.equal(data.calls.at(-1)[0], "ledger");
 });
+
+
+test("does not duplicate ledger or access when a second capture is queued for refund", async () => {
+  const data = fixture({
+    application: {
+      applied: false,
+      replayed: false,
+      duplicatePayment: true,
+      refundAmountPaise: 4900,
+    },
+  });
+  assert.deepEqual(await data.processor(input), {
+    recorded: true,
+    replayed: false,
+    paymentApplied: false,
+    applicationReplayed: false,
+    duplicatePayment: true,
+    refundStatus: "pending",
+  });
+  assert.deepEqual(data.calls.map(([name]) => name), ["record", "transaction", "apply"]);
+});
