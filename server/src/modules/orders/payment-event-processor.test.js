@@ -32,6 +32,10 @@ function fixture({ recorded = {}, application = { applied: true, replayed: false
     grantEntitlement: async (id, options) => {
       calls.push(["grant", id, options]);
     },
+    queueDuplicateRefund: async (eventId, options) => {
+      calls.push(["queue-refund", eventId, options]);
+      return { replayed: false };
+    },
     applyCapturedPayment: async (eventId, options) => {
       calls.push(["apply", eventId, options]);
       if (applicationError) throw applicationError;
@@ -109,4 +113,27 @@ test("a ledger failure rejects the capture transaction", async () => {
   const data = fixture({ ledgerError: new Error("ledger unavailable") });
   await assert.rejects(data.processor(input), /ledger unavailable/);
   assert.equal(data.calls.at(-1)[0], "ledger");
+});
+
+
+test("does not duplicate ledger or access when a second capture is queued for refund", async () => {
+  const data = fixture({
+    application: {
+      applied: false,
+      replayed: false,
+      duplicatePayment: true,
+      refundAmountPaise: 4900,
+    },
+  });
+  assert.deepEqual(await data.processor(input), {
+    recorded: true,
+    replayed: false,
+    paymentApplied: false,
+    applicationReplayed: false,
+    duplicatePayment: true,
+    refundStatus: "pending",
+  });
+  assert.deepEqual(data.calls.map(([name]) => name), ["record", "transaction", "apply", "queue-refund"]);
+  assert.equal(data.calls[3][1], persistedEventId);
+  assert.equal(data.calls[3][2].session, data.transactionSession);
 });

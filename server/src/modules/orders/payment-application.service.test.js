@@ -151,3 +151,45 @@ test("rejects a paid order linked to another payment and never calls ledger or a
   await assert.rejects(data.service(id, { session: data.session }));
   assert.equal(data.calls.some(([name]) => name.includes("ledger") || name.includes("entitlement")), false);
 });
+
+
+test("a second captured attempt is classified for refund while the original order stays paid", async () => {
+  const data = fixture({
+    event: { eventId: "evt-duplicate", providerPaymentId: "pay-duplicate" },
+    order: { status: "paid", paymentProvider: "example-gateway", paymentReference: "pay-original" },
+    attempt: { status: "pending", providerPaymentId: "" },
+  });
+  const result = await data.service(id, { session: data.session, now });
+  assert.deepEqual(result, {
+    applied: false,
+    replayed: false,
+    duplicatePayment: true,
+    refundAmountPaise: 4900,
+  });
+  assert.equal(data.order.status, "paid");
+  assert.equal(data.order.paymentReference, "pay-original");
+  assert.equal(data.attempt.providerPaymentId, "");
+  assert.equal(data.attempt.status, "pending");
+  assert.equal(data.calls.some(([name]) => name.endsWith("-save")), false);
+});
+
+
+test("a second capture on the original provider attempt is classified for refund without replacing its payment ID", async () => {
+  const data = fixture({
+    event: { eventId: "evt-duplicate", providerPaymentId: "pay-duplicate" },
+    order: { status: "paid", paymentProvider: "example-gateway", paymentReference: "pay-1" },
+    attempt: { status: "captured", providerPaymentId: "pay-1" },
+  });
+  const result = await data.service(id, { session: data.session, now });
+  assert.deepEqual(result, {
+    applied: false,
+    replayed: false,
+    duplicatePayment: true,
+    refundAmountPaise: 4900,
+  });
+  assert.equal(data.order.status, "paid");
+  assert.equal(data.order.paymentReference, "pay-1");
+  assert.equal(data.attempt.status, "captured");
+  assert.equal(data.attempt.providerPaymentId, "pay-1");
+  assert.equal(data.calls.some(([name]) => name.endsWith("-save")), false);
+});

@@ -12,6 +12,7 @@ import Attempt from "../src/modules/orders/payment-attempt.model.js";
 import PaymentEvent from "../src/modules/orders/payment-event.model.js";
 import Entitlement from "../src/modules/orders/book-entitlement.model.js";
 import Ledger from "../src/modules/orders/ledger-transaction.model.js";
+import RefundRequest from "../src/modules/orders/refund-request.model.js";
 
 test("signed capture updates a book order and posts one receipt and grants one entitlement across retries", async (t) => {
   const secret = randomBytes(32).toString("hex");
@@ -24,7 +25,7 @@ test("signed capture updates a book order and posts one receipt and grants one e
   t.after(async () => {
     try { await mongoose.connection.dropDatabase(); } finally { await mongoose.disconnect(); }
   });
-  await Promise.all([Order.init(), Attempt.init(), PaymentEvent.init(), Ledger.init(), Entitlement.init(), Book.init(), AuthorBook.init()]);
+  await Promise.all([Order.init(), Attempt.init(), PaymentEvent.init(), Ledger.init(), Entitlement.init(), RefundRequest.init(), Book.init(), AuthorBook.init()]);
 
   const unpublishedAuthorName = "Rights gate test " + randomBytes(4).toString("hex");
   const unlistedDraft = await AuthorBook.create({
@@ -101,6 +102,25 @@ test("signed capture updates a book order and posts one receipt and grants one e
     assert.equal(result.status, 200, await result.text());
   }
   assert.equal((await Order.findById(order._id)).status, "paid");
+  const duplicateBody = JSON.stringify({ event: "payment.captured", payload: { payment: { entity: {
+    id: "pay_duplicate1", order_id: "order_capture1", amount: 4900, currency: "INR",
+  } } } });
+  const duplicateSignature = createHmac("sha256", secret).update(duplicateBody).digest("hex");
+  const duplicateResponse = await fetch(url, { method: "POST", body: duplicateBody, headers: {
+    "content-type": "application/json", "x-razorpay-event-id": "evt_duplicate", "x-razorpay-signature": duplicateSignature,
+  } });
+  assert.equal(duplicateResponse.status, 200, await duplicateResponse.text());
+  const duplicateEvent = await PaymentEvent.findOne({ provider: "razorpay", eventId: "evt_duplicate" }).select("+providerPaymentId");
+  assert.ok(duplicateEvent);
+  assert.equal(duplicateEvent.providerPaymentId, "pay_duplicate1");
+  const duplicateRefund = await RefundRequest.findOne({ sourcePaymentEventId: duplicateEvent._id }).select("+providerPaymentId");
+  assert.ok(duplicateRefund);
+  assert.equal(duplicateRefund.status, "pending");
+  assert.equal(duplicateRefund.amountPaise, 4900);
+  assert.equal(duplicateRefund.providerPaymentId, "pay_duplicate1");
+  assert.equal((await Order.findById(order._id)).status, "paid");
+  assert.equal(await Ledger.countDocuments({ orderId: order._id }), 1);
+  assert.equal(await Entitlement.countDocuments({ orderId: order._id }), 1);
   const captured = await Attempt.findById(attempt._id).select("+providerPaymentId");
   assert.equal(captured.status, "captured");
   assert.equal(captured.providerPaymentId, "pay_capture1");

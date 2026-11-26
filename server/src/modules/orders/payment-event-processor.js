@@ -3,6 +3,7 @@ import grantPaidBookEntitlement from "./book-entitlement.service.js";
 import applyCapturedPayment from "./payment-application.service.js";
 import postVerifiedPaymentLedger from "./ledger-writer.js";
 import recordPaymentEvent from "./payment-event-recorder.js";
+import queueDuplicatePaymentRefund from "./refund-request.service.js";
 
 function fail(message, code = "INVALID_PAYMENT_EVENT") {
   const error = new Error(message);
@@ -25,6 +26,7 @@ export function createPaymentEventProcessor({
   applyCapturedPayment,
   postLedger,
   grantEntitlement,
+  queueDuplicateRefund,
 }) {
   if (
     typeof recordEvent !== "function"
@@ -32,8 +34,9 @@ export function createPaymentEventProcessor({
     || typeof applyCapturedPayment !== "function"
     || typeof postLedger !== "function"
     || typeof grantEntitlement !== "function"
+    || typeof queueDuplicateRefund !== "function"
   ) {
-    throw new TypeError("Payment event processor requires event recording, transaction, capture, ledger, and entitlement services.");
+    throw new TypeError("Payment event processor requires event recording, transaction, capture, ledger, entitlement, and refund-queue services.");
   }
 
   return async function processPaymentEvent({ rawBody, headers }) {
@@ -55,7 +58,9 @@ export function createPaymentEventProcessor({
 
     const application = await withTransaction(async (session) => {
       const result = await applyCapturedPayment(eventId, { session });
-      if (result.applied && !result.replayed) {
+      if (result.duplicatePayment === true) {
+        await queueDuplicateRefund(eventId, { session });
+      } else if (result.applied && !result.replayed) {
         // The writer derives the itemized author, platform, tax, gateway, and referral
         // allocations from the persisted order snapshot; callers cannot choose recipients.
         await postLedger({ paymentEventId: eventId }, { session });
@@ -63,12 +68,17 @@ export function createPaymentEventProcessor({
       }
       return result;
     });
-    return {
+    const result = {
       recorded: true,
       replayed: recorded.replayed === true,
       paymentApplied: application?.applied === true,
       applicationReplayed: application?.replayed === true,
     };
+    if (application?.duplicatePayment === true) {
+      result.duplicatePayment = true;
+      result.refundStatus = "pending";
+    }
+    return result;
   };
 }
 
@@ -77,6 +87,7 @@ const defaultProcessor = createPaymentEventProcessor({
   applyCapturedPayment,
   postLedger: postVerifiedPaymentLedger,
   grantEntitlement: grantPaidBookEntitlement,
+  queueDuplicateRefund: queueDuplicatePaymentRefund,
 });
 
 export default defaultProcessor;

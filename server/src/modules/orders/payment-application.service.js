@@ -71,20 +71,46 @@ export function createCapturedPaymentApplicationService({
       || attempt.providerOrderId !== event.providerOrderId
       || attempt.amountPaise !== event.amountPaise
       || attempt.currency !== event.currency
-      || (attempt.providerPaymentId && attempt.providerPaymentId !== event.providerPaymentId)
+      || (attempt.providerPaymentId
+        && attempt.providerPaymentId !== event.providerPaymentId
+        && !(order.status === "paid"
+          && order.paymentReference !== event.providerPaymentId
+          && attempt.providerPaymentId === order.paymentReference))
     ) {
       throw fail("The verified payment does not match its payment attempt and order.");
     }
 
-    if (order.status === "paid" && attempt.status === "captured") {
-      if (
-        attempt.providerPaymentId !== event.providerPaymentId
-        || order.paymentProvider !== event.provider
-        || order.paymentReference !== event.providerPaymentId
-      ) {
-        throw fail("The paid order is linked to a different captured payment.");
+    if (order.status === "paid") {
+      if (order.paymentProvider !== event.provider) {
+        throw fail("The duplicate payment provider does not match the original order payment.");
       }
-      return { applied: true, replayed: true };
+      if (
+        attempt.status === "captured"
+        && attempt.providerPaymentId === event.providerPaymentId
+        && order.paymentReference === event.providerPaymentId
+      ) {
+        return { applied: true, replayed: true };
+      }
+      if (
+        ["refund_pending", "refunded"].includes(attempt.status)
+        && attempt.providerPaymentId === event.providerPaymentId
+        && order.paymentReference !== event.providerPaymentId
+      ) {
+        return { applied: false, replayed: true, duplicatePayment: true };
+      }
+      if (order.paymentReference !== event.providerPaymentId
+        && (!attempt.providerPaymentId || attempt.providerPaymentId === order.paymentReference)) {
+        // The signed capture is a second payment for an already-paid order.
+        // The event stays private and the processor queues a separate refund
+        // request; the original order, payment attempt, and entitlement stay intact.
+        return {
+          applied: false,
+          replayed: false,
+          duplicatePayment: true,
+          refundAmountPaise: event.amountPaise,
+        };
+      }
+      throw fail("The paid order is linked to a different captured payment.");
     }
 
     if (order.status !== "pending_payment") {
