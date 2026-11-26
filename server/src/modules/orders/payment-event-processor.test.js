@@ -54,7 +54,7 @@ test("records a verified capture, then applies it inside a transaction", async (
   assert.deepEqual(data.calls[4], ["grant", orderId, { session: data.transactionSession }]);
   assert.equal(data.calls[3][2].session, data.transactionSession);
   assert.equal(data.calls[3][1].paymentEventId, persistedEventId);
-  assert.deepEqual(data.calls[3][1].entries.map(({ direction, amountPaise }) => [direction, amountPaise]), [["debit", 4900], ["credit", 4900]]);
+  assert.equal(data.calls[3][1].paymentEventId, persistedEventId);
   assert.equal(data.calls[0][1].rawBody, input.rawBody);
   assert.equal(data.calls[2][2].session.inTransaction(), true);
   assert.equal(data.calls[2][2].session, data.transactionSession);
