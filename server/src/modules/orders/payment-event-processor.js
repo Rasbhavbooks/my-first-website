@@ -56,15 +56,9 @@ export function createPaymentEventProcessor({
     const application = await withTransaction(async (session) => {
       const result = await applyCapturedPayment(eventId, { session });
       if (result.applied && !result.replayed) {
-        // Both sides record the gross receipt. Royalties and fees are separate transactions.
-        const amountPaise = event.amountPaise;
-        await postLedger({
-          paymentEventId: eventId,
-          entries: [
-            { accountCode: "gateway_clearing", direction: "debit", amountPaise },
-            { accountCode: "unallocated_book_receipts", direction: "credit", amountPaise },
-          ],
-        }, { session });
+        // The writer derives the itemized author, platform, tax, gateway, and referral
+        // allocations from the persisted order snapshot; callers cannot choose recipients.
+        await postLedger({ paymentEventId: eventId }, { session });
         await grantEntitlement(String(event.orderId), { session });
       }
       return result;
