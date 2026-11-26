@@ -40,6 +40,16 @@ const orderSchema = new mongoose.Schema(
       },
       immutable: true,
     },
+    authorPricePaise: { type: Number, min: 0, validate: Number.isSafeInteger, immutable: true },
+    commissionRateBps: { type: Number, min: 0, max: 10000, validate: Number.isSafeInteger, immutable: true },
+    platformCommissionPaise: { type: Number, min: 0, validate: Number.isSafeInteger, immutable: true },
+    referralRateBps: { type: Number, min: 0, max: 10000, validate: Number.isSafeInteger, immutable: true },
+    referrerRewardPaise: { type: Number, min: 0, validate: Number.isSafeInteger, immutable: true },
+    referrerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null, select: false, immutable: true },
+    gstRateBps: { type: Number, min: 0, max: 10000, validate: Number.isSafeInteger, immutable: true },
+    gstPaise: { type: Number, min: 0, validate: Number.isSafeInteger, immutable: true },
+    gatewayRateBps: { type: Number, min: 0, max: 5000, validate: Number.isSafeInteger, immutable: true },
+    gatewayFeePaise: { type: Number, min: 0, validate: Number.isSafeInteger, immutable: true },
     currency: { type: String, enum: ["INR"], required: true, default: "INR", immutable: true },
     status: {
       type: String,
@@ -78,6 +88,25 @@ orderSchema.pre("validate", function validateOrderTransition() {
       || this.refundedAt
     ) {
       this.invalidate("status", "New orders must start as pending payment without payment or lifecycle metadata.");
+    }
+    if (this.authorPricePaise !== undefined) {
+      const quoteValues = [
+        this.authorPricePaise,
+        this.platformCommissionPaise,
+        this.referrerRewardPaise,
+        this.gstPaise,
+        this.gatewayFeePaise,
+      ];
+      if (quoteValues.some((value) => !Number.isSafeInteger(value) || value < 0)
+        || !Number.isSafeInteger(this.amountPaise)
+        || BigInt(this.authorPricePaise) + BigInt(this.platformCommissionPaise)
+          + BigInt(this.referrerRewardPaise) + BigInt(this.gstPaise) + BigInt(this.gatewayFeePaise)
+          !== BigInt(this.amountPaise)) {
+        this.invalidate("amountPaise", "The customer amount must equal the immutable pricing and allocation snapshot.");
+      }
+      if ((this.referrerRewardPaise > 0) !== Boolean(this.referrerId)) {
+        this.invalidate("referrerId", "A referral payout requires a private referral beneficiary.");
+      }
     }
     return;
   }

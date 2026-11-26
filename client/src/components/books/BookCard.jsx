@@ -10,6 +10,9 @@ export default function BookCard({ book, language, t }) {
   const { savedBookIds, toggleWishlist } = useWishlist();
   const { getCategoryLabel } = useCategories();
   const isSaved = savedBookIds.includes(book.id);
+  const customerPrice = Number.isSafeInteger(book.customerPricePaise)
+    ? book.customerPricePaise / 100
+    : book.price;
 
   return (
     <article className="book-card">
@@ -20,7 +23,7 @@ export default function BookCard({ book, language, t }) {
         <div className="book-meta">
           <div className="book-labels"><span>{getCategoryLabel(book.category)}</span><span>{book.language}</span></div>
           <h3>{title}</h3><p>{t.by} {book.author}</p>
-          <div className="book-bottom"><strong>{book.price === 0 ? t.freeBookPrice : formatInr(book.price, language)}</strong><span className="icon-button" aria-hidden="true"><ArrowUpRight size={17} /></span></div>
+          <div className="book-bottom"><strong>{customerPrice === 0 ? t.freeBookPrice : formatInr(customerPrice, language)}</strong><span className="icon-button" aria-hidden="true"><ArrowUpRight size={17} /></span></div>
         </div>
       </Link>
       <button

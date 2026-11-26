@@ -111,7 +111,7 @@ test("immutable order snapshots cannot be changed after creation", async () => {
   order.bookId = "different-book";
   assert.equal(order.amountPaise, 12500);
   assert.equal(order.bookId, "quiet-river");
-  for (const field of ["buyerId", "idempotencyKeyHash", "bookId", "bookTitle", "authorName", "amountPaise", "currency"]) {
+  for (const field of ["buyerId", "idempotencyKeyHash", "bookId", "bookTitle", "authorName", "amountPaise", "authorPricePaise", "commissionRateBps", "platformCommissionPaise", "referralRateBps", "referrerRewardPaise", "referrerId", "gstRateBps", "gstPaise", "gatewayRateBps", "gatewayFeePaise", "currency"]) {
     assert.equal(DigitalBookOrder.schema.path(field).options.immutable, true, field);
   }
 });

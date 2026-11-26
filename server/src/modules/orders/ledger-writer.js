@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import DigitalBookOrder from "./order.model.js";
 import DigitalBookPaymentEvent from "./payment-event.model.js";
 import LedgerTransaction from "./ledger-transaction.model.js";
+import { buildSaleLedgerEntries } from "../../../../shared/commerce-pricing.js";
 
 function fail(message, code = "INVALID_LEDGER_INPUT") {
   const error = new Error(message);
@@ -53,7 +54,7 @@ export function createLedgerWriter({ createRecord, findBySourceKeyHash, findPaym
     throw new TypeError("Ledger writer requires record creation and authoritative payment-event, order, and source-key lookups.");
   }
 
-  return async function postVerifiedPaymentLedger({ paymentEventId, entries }, { session } = {}) {
+  return async function postVerifiedPaymentLedger({ paymentEventId }, { session } = {}) {
     if (typeof paymentEventId !== "string" || !/^[a-f0-9]{24}$/i.test(paymentEventId)) {
       throw fail("A persisted payment event ID is required.");
     }
@@ -87,7 +88,21 @@ export function createLedgerWriter({ createRecord, findBySourceKeyHash, findPaym
       throw fail("The verified payment amount and currency must match the paid order.");
     }
 
-    const normalizedEntries = canonicalEntries(entries);
+    if (!Number.isSafeInteger(order.authorPricePaise)
+      || !Number.isSafeInteger(order.platformCommissionPaise)
+      || !Number.isSafeInteger(order.referrerRewardPaise)
+      || !Number.isSafeInteger(order.gstPaise)
+      || !Number.isSafeInteger(order.gatewayFeePaise)) {
+      throw fail("The paid order is missing its immutable pricing allocation snapshot.");
+    }
+    const normalizedEntries = canonicalEntries(buildSaleLedgerEntries({
+      totalPaise: order.amountPaise,
+      authorPricePaise: order.authorPricePaise,
+      platformCommissionPaise: order.platformCommissionPaise,
+      referrerRewardPaise: order.referrerRewardPaise,
+      gstPaise: order.gstPaise,
+      gatewayFeePaise: order.gatewayFeePaise,
+    }));
     const totalDebits = ledgerTotal(normalizedEntries, "debit");
     const totalCredits = ledgerTotal(normalizedEntries, "credit");
     if (totalDebits !== BigInt(order.amountPaise) || totalCredits !== BigInt(order.amountPaise)) {

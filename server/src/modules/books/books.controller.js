@@ -1,6 +1,9 @@
 import { isDatabaseConnected } from "../../config/database.js";
 import Book from "./book.model.js";
 import { cataloguePriceFilter } from "./catalogue-query.js";
+import { inrPriceToPaise } from "../../../../shared/money.js";
+import { calculateEbookQuote } from "../../../../shared/commerce-pricing.js";
+import { env } from "../../config/env.js";
 
 function serializeBook(record) {
   const {
@@ -10,7 +13,13 @@ function serializeBook(record) {
     updatedAt,
     ...book
   } = record;
-  return { ...book, id: catalogueId };
+  const authorPricePaise = inrPriceToPaise(book.price);
+  const customerPricePaise = authorPricePaise === null ? null : calculateEbookQuote({
+    authorPricePaise,
+    gstRateBps: env.testGstRateBps,
+    gatewayRateBps: env.testGatewayRateBps,
+  }).totalPaise;
+  return { ...book, customerPricePaise, id: catalogueId };
 }
 
 function databaseUnavailable(response) {

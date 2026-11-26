@@ -52,6 +52,9 @@ export default function BookDetailsPage() {
   }, [book?.id, user?.id, authLoading]);
 
   const title = book ? getBookTitle(book, language) : "";
+  const customerPrice = book && Number.isSafeInteger(book.customerPricePaise)
+    ? book.customerPricePaise / 100
+    : book?.price;
   usePageMetadata({
     title: book ? `${title} — ${book.author} | Rasbhav Books` : "",
     description: book?.description?.[language] || book?.description?.en || "",
@@ -83,7 +86,7 @@ export default function BookDetailsPage() {
           <h1>{title}</h1>
           <p className="detail-author">{t.by} <strong>{book.author}</strong></p>
           <AuthorFollowButton authorName={book.author} />
-          <div className="detail-price">{book.price === 0 ? t.freeBookPrice : formatInr(book.price, language)}</div>
+          <div className="detail-price">{customerPrice === 0 ? t.freeBookPrice : formatInr(customerPrice, language)}</div>
           {readerAccess.status === "available" ? (
             <Link className="detail-reading-action" to={`/read/${encodeURIComponent(book.id)}`}>{t.readEbook}</Link>
           ) : book.price === 0 && readerAccess.status === "guest" ? (
