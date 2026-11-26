@@ -75,7 +75,7 @@ export default function BookDetailsPage() {
 
   return (
     <main className="detail-page">
-      <style>{`.detail-reading-action{display:inline-flex;align-items:center;justify-content:center;min-height:42px;margin:4px 0 8px;padding:0 18px;background:#30252c;color:#fff;text-decoration:none;font-size:10px;letter-spacing:.04em}.detail-access-note{margin:5px 0 14px;color:#77716a;font-size:11px;line-height:1.7}.detail-access-error{color:#863d32}`}</style>
+      <style>{`.detail-reading-action{display:inline-flex;align-items:center;justify-content:center;min-height:42px;margin:4px 0 8px;padding:0 18px;background:#30252c;color:#fff;text-decoration:none;font-size:10px;letter-spacing:.04em}.detail-access-note{margin:5px 0 14px;color:#77716a;font-size:11px;line-height:1.7}.detail-access-error{color:#863d32}.detail-price-breakdown{margin:2px 0 16px;color:#655c57;font-size:12px}.detail-price-breakdown summary{cursor:pointer;font-weight:600}.detail-price-breakdown dl{max-width:310px;margin:10px 0}.detail-price-breakdown dl div{display:flex;justify-content:space-between;gap:20px;padding:4px 0}.detail-price-breakdown dd{margin:0;font-variant-numeric:tabular-nums}.detail-price-breakdown-total{border-top:1px solid #d8d1ca;font-weight:700}.detail-price-breakdown p{max-width:380px;font-size:11px;line-height:1.5}` }</style>
       <Link to="/#discover" className="back-link"><ArrowLeft size={16} />{t.backToCatalogue}</Link>
       <div className="detail-grid">
         <div className={`book-cover detail-cover cover-${book.tone}`}>
@@ -87,6 +87,19 @@ export default function BookDetailsPage() {
           <p className="detail-author">{t.by} <strong>{book.author}</strong></p>
           <AuthorFollowButton authorName={book.author} />
           <div className="detail-price">{customerPrice === 0 ? t.freeBookPrice : formatInr(customerPrice, language)}</div>
+          {customerPrice > 0 && book.priceBreakdownPaise && (
+            <details className="detail-price-breakdown">
+              <summary>{t.priceBreakdownTitle}</summary>
+              <dl>
+                <div><dt>{t.priceAuthorShare}</dt><dd>{formatInr(book.priceBreakdownPaise.authorPrice / 100, language)}</dd></div>
+                <div><dt>{t.pricePlatformPool}</dt><dd>{formatInr(book.priceBreakdownPaise.platformCommission / 100, language)}</dd></div>
+                <div><dt>{t.priceGst}</dt><dd>{formatInr(book.priceBreakdownPaise.gst / 100, language)}</dd></div>
+                <div><dt>{t.priceGateway}</dt><dd>{formatInr(book.priceBreakdownPaise.gatewayFee / 100, language)}</dd></div>
+                <div className="detail-price-breakdown-total"><dt>{t.priceBreakdownTitle}</dt><dd>{formatInr(book.priceBreakdownPaise.total / 100, language)}</dd></div>
+              </dl>
+              <p>{t.testPriceDisclaimer}</p>
+            </details>
+          )}
           {readerAccess.status === "available" ? (
             <Link className="detail-reading-action" to={`/read/${encodeURIComponent(book.id)}`}>{t.readEbook}</Link>
           ) : book.price === 0 && readerAccess.status === "guest" ? (

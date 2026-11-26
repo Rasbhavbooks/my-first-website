@@ -1525,7 +1525,7 @@ Development must happen step by step.
 
 - Initial release: digital eBooks sold as separate one-time purchases.
 - Print-on-demand and monthly reader membership are deferred from the initial release.
-- Razorpay is the selected gateway. Keep checkout and paid access disabled until book prices, platform/author revenue split, tax/refund terms, and author-rights wording are approved.
+- Razorpay is the selected gateway. In test mode, author price is the author's share and a 30% commission is added, both calculated from the author price. For a valid referral, 10% of that author price is paid to the referring reader from the commission pool; Rasbhav Books keeps 20%. Direct and referred sales have the same customer total.\n- Test GST and Razorpay fee rates are configurable test fixtures (initially 5% GST and 2% gateway fee). The test GST is calculated on author price plus commission, and gateway fee is calculated on the final buyer total. These are not approved live rates.\n- Keep public checkout and paid access disabled until live GST/invoice details, the refund policy, and author-rights wording receive review and owner approval. Keep public publication of author drafts disabled pending author-rights legal review and approval.
 
 - Authors set the proposed price for their eBooks. An administrator approves the submitted price or returns the submission to the author for revision. A price of ₹0 offers the book for free after publication approval and does not enter Razorpay checkout.
 - Product and book pricing.
