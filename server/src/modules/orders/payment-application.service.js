@@ -98,31 +98,10 @@ export function createCapturedPaymentApplicationService({
       ) {
         return { applied: false, replayed: true, duplicatePayment: true };
       }
-      if (
-        order.paymentReference !== event.providerPaymentId
-        && attempt.providerPaymentId === order.paymentReference
-      ) {
-        return {
-          applied: false,
-          replayed: false,
-          duplicatePayment: true,
-          refundAmountPaise: event.amountPaise,
-        };
-      }
-      if (
-        order.paymentReference !== event.providerPaymentId
-        && ["created", "pending", "authorized"].includes(attempt.status)
-        && !attempt.providerPaymentId
-      ) {
-        // A separate captured payment for an already-paid order is a duplicate.
-        // Record the captured payment privately and flag this attempt for refund.
-        // The original order and entitlement remain paid; an external refund call
-        // must happen later, outside this database transaction.
-        attempt.attachProviderPaymentId(event.providerPaymentId);
-        attempt.transitionTo("captured", now);
-        await attempt.save({ session });
-        attempt.transitionTo("refund_pending", now);
-        await attempt.save({ session });
+      if (order.paymentReference !== event.providerPaymentId) {
+        // The signed capture is a second payment for an already-paid order.
+        // The event stays private and the processor queues a separate refund
+        // request; the original order, payment attempt, and entitlement stay intact.
         return {
           applied: false,
           replayed: false,
