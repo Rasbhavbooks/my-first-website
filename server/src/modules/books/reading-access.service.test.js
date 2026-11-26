@@ -31,19 +31,19 @@ test("a linked approved free eBook grants reading access without a paid order or
 });
 
 test("free reading is denied when there is no approved linked source or its price changed", async () => {
-  const noSource = makeService({ findBook: async () => ({ price: 0, readingSourceId: null }) });
+  const noSource = makeService({ findBook: async () => { calls.push("book"); return { price: 0, readingSourceId: null }; } });
   assert.equal(await noSource.service({ bookId: "free-book", readerId }), null);
   assert.deepEqual(noSource.calls, ["book"]);
 
-  const changedPrice = makeService({ findApprovedSource: async () => ({ price: 1 }) });
+  const changedPrice = makeService({ findApprovedSource: async () => { calls.push("source"); return { price: 1 }; } });
   assert.equal(await changedPrice.service({ bookId: "free-book", readerId }), null);
   assert.deepEqual(changedPrice.calls, ["book", "source"]);
 });
 
 test("paid reading requires a matching INR entitlement and paid order", async () => {
   const { service, calls } = makeService({
-    findBook: async () => ({ price: 25, readingSourceId: sourceId }),
-    findApprovedSource: async () => ({ price: 25 }),
+    findBook: async () => { calls.push("book"); return { price: 25, readingSourceId: sourceId }; },
+    findApprovedSource: async () => { calls.push("source"); return { price: 25 }; },
     findEntitlement: async (owner, book) => {
       calls.push("entitlement");
       assert.equal(owner, readerId);
