@@ -58,7 +58,9 @@ test("signed capture updates a book order and posts one receipt and grants one e
   const order = await Order.create({
     buyerId: new mongoose.Types.ObjectId(), idempotencyKeyHash: "a".repeat(64),
     bookId: "quiet-river", bookTitle: { en: "Quiet River", gu: "શાંત નદી", hi: "शांत नदी" },
-    authorName: "A. Writer", amountPaise: 4900,
+    authorName: "A. Writer", amountPaise: 4900, authorPricePaise: 3769, commissionRateBps: 3000,
+    platformCommissionPaise: 1131, referralRateBps: 0, referrerRewardPaise: 0,
+    referrerId: null, gstRateBps: 0, gstPaise: 0, gatewayRateBps: 0, gatewayFeePaise: 0,
   });
   const attempt = new Attempt({ orderId: order._id, attemptNumber: 1, provider: "razorpay",
     amountPaise: 4900, idempotencyKeyHash: "b".repeat(64) });
@@ -109,7 +111,7 @@ test("signed capture updates a book order and posts one receipt and grants one e
   assert.equal(String(grants[0].readerId), String(order.buyerId));
   assert.equal(grants[0].bookId, order.bookId);
   assert.equal(String(grants[0].sourceLedgerId), String(receipts[0]._id));
-  assert.deepEqual(receipts[0].entries.map(e => [e.direction, e.amountPaise]).sort(), [["credit", 4900], ["debit", 4900]]);
+  assert.deepEqual(receipts[0].entries.map(e => [e.direction, e.amountPaise]).sort(), [["credit", 1131], ["credit", 3769], ["debit", 4900]]);
   const readerId = order.buyerId;
   const otherReaderId = new mongoose.Types.ObjectId();
   const text = { en: "Quiet River", gu: "શાંત નદી", hi: "शांत नदी" };
