@@ -72,6 +72,8 @@ GitHub CIમાં Chromium સાથે રીડરનો ટેસ્ટ ચ�
 
 The MFA-protected Admin Orders page shows counts and INR totals across paid, refund-pending and fully refunded orders. The summary covers all pages regardless of the active table filter and counts each local order once.
 
+The private Author Studio includes the author share on paid orders after catalogue entries are linked to approved, scanned source manuscripts. An order snapshots the beneficiary from that link. Older unlinked orders are excluded from author reports; buyers and beneficiary IDs are not exposed. Full refunds remove the share from the author total.
+
 ## Phase 7 ચકાસવાની રીત
 
 ટેસ્ટ ડેટાબેઝ સાથે પ્રોજેક્ટના મૂળ ફોલ્ડરમાં નીચેનો કમાન્ડ ચલાવો.

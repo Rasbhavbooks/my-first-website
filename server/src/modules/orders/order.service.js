@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { inrPriceToPaise } from "../../../../shared/money.js";
 import { calculateEbookQuote } from "../../../../shared/commerce-pricing.js";
 import { env } from "../../config/env.js";
+import AuthorBook from "../books/author-book.model.js";
 import Book from "../books/book.model.js";
 import { resolveReaderReferral } from "./reader-referral.js";
 import DigitalBookOrder from "./order.model.js";
@@ -90,6 +91,7 @@ export function createPendingOrderService({
       bookId: book.catalogueId,
       bookTitle: book.title,
       authorName: book.author,
+      ...(book.authorBeneficiaryId && { authorBeneficiaryId: book.authorBeneficiaryId }),
       amountPaise: quote.totalPaise,
       authorPricePaise: quote.authorPricePaise,
       commissionRateBps: quote.commissionRateBps,
@@ -122,11 +124,19 @@ export function createPendingOrderService({
 
 const defaultService = createPendingOrderService({
   resolveReferral: resolveReaderReferral,
-  findAvailableBook: (catalogueId, { session } = {}) => {
+  findAvailableBook: async (catalogueId, { session } = {}) => {
     let query = Book.findOne({ catalogueId, availableForSale: true })
-      .select("catalogueId title author price");
+      .select("catalogueId title author price +readingSourceId");
     if (session) query = query.session(session);
-    return query.lean();
+    const book = await query.lean();
+    if (!book?.readingSourceId) return book;
+
+    const source = await AuthorBook.findOne({
+      _id: book.readingSourceId, status: "approved", price: book.price,
+      "assets.manuscript.scanStatus": "clean",
+    }).select("authorId").session(session ?? null).lean();
+    return { ...book, authorBeneficiaryId: source?.authorId };
+
   },
   findExistingOrder: (buyerId, idempotencyKeyHash, { session } = {}) => {
     let query = DigitalBookOrder.findOne({ buyerId, idempotencyKeyHash });

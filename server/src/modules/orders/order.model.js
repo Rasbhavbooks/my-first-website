@@ -29,6 +29,7 @@ const orderSchema = new mongoose.Schema(
     },
     bookId: { type: String, required: true, trim: true, maxlength: 64, immutable: true },
     bookTitle: { type: localizedTitleSchema, required: true, immutable: true },
+    authorBeneficiaryId: { type: mongoose.Schema.Types.ObjectId, ref: "User", immutable: true, select: false },
     authorName: { type: String, required: true, trim: true, maxlength: 120, immutable: true },
     amountPaise: {
       type: Number,
@@ -200,6 +201,9 @@ orderSchema.post("save", function rememberSavedStatus(document) {
 orderSchema.index({ buyerId: 1, idempotencyKeyHash: 1 }, { unique: true });
 orderSchema.index({ buyerId: 1, createdAt: -1 });
 orderSchema.index({ referrerId: 1, status: 1 }, { partialFilterExpression: { referrerId: { $type: "objectId" } } });
+orderSchema.index({ authorBeneficiaryId: 1, status: 1 }, {
+  partialFilterExpression: { authorBeneficiaryId: { $type: "objectId" } },
+});
 orderSchema.index({ status: 1, createdAt: -1 });
 
 const DigitalBookOrder = mongoose.models.DigitalBookOrder

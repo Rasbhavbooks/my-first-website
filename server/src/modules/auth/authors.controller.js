@@ -1,3 +1,4 @@
+import DigitalBookOrder from "../orders/order.model.js";
 import AuthorProfile from "./author-profile.model.js";
 import Book from "../books/book.model.js";
 import AuthorFollow from "./author-follow.model.js";
@@ -117,18 +118,29 @@ export async function getPublicAuthorProfile(request, response) {
   });
 }
 
+export async function getAuthorOrderShare(authorId) {
+  const [summary] = await DigitalBookOrder.aggregate([
+    { $match: { authorBeneficiaryId: authorId, currency: "INR", status: { $in: ["paid", "refund_pending"] } } },
+    { $group: { _id: null, amountPaise: { $sum: "$authorPricePaise" }, orderCount: { $sum: 1 } } },
+    { $project: { _id: 0, amountPaise: 1, orderCount: 1 } },
+  ]);
+  return summary ?? { amountPaise: 0, orderCount: 0 };
+}
+
 export async function getMyAuthorProfile(request, response) {
   const profile = await AuthorProfile.findOne({ userId: request.reader._id, status: "active" });
   if (!profile) {
     return response.status(404).json({ error: { code: "AUTHOR_PROFILE_NOT_FOUND", message: "Your author profile was not found." } });
   }
-  const [stats, catalogueBooks] = await Promise.all([getAuthorStats(profile), listAuthorCatalogueBooks(profile)]);
+  const [stats, catalogueBooks, orderShare] = await Promise.all([
+    getAuthorStats(profile), listAuthorCatalogueBooks(profile), getAuthorOrderShare(profile.userId),
+  ]);
   const availableBookIds = new Set(catalogueBooks.map((book) => book.id));
   const featuredBookIds = (profile.featuredBookIds || []).filter((id) => availableBookIds.has(id));
   response.setHeader("Cache-Control", "no-store");
   return response.json({
     data: {
-      author: { ...publicAuthorDto(profile), id: profile.id, featuredBookIds, ...stats },
+      author: { ...publicAuthorDto(profile), id: profile.id, featuredBookIds, ...stats, orderShare },
       catalogueBooks,
     },
   });
