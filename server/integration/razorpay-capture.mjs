@@ -510,5 +510,16 @@ async function verifyPurchase(t, referred) {
     { sourceId: String(source._id), kind: "free" });
 }
 
+test("private storage verification requires a non-production test invocation", async () => {
+  const script = fileURLToPath(new URL("../src/scripts/verifyPrivateStorage.js", import.meta.url));
+  await assert.rejects(
+    promisify(execFile)(process.execPath, [script, "--test-bucket"], {
+      env: { ...process.env, NODE_ENV: "production" },
+      timeout: 10000,
+    }),
+    error => error.code === 1 && error.stderr.includes("dedicated private test bucket"),
+  );
+});
+
 test("direct purchase retains its itemized receipt and access after a duplicate refund", t => verifyPurchase(t, false));
 test("referred purchase retains its itemized receipt and access after a duplicate refund", t => verifyPurchase(t, true));
