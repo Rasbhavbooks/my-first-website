@@ -60,12 +60,12 @@ test("signed capture updates a book order and posts one receipt and grants one e
   const order = await Order.create({
     buyerId: new mongoose.Types.ObjectId(), idempotencyKeyHash: "a".repeat(64),
     bookId: "quiet-river", bookTitle: { en: "Quiet River", gu: "શાંત નદી", hi: "शांत नदी" },
-    authorName: "A. Writer", amountPaise: 4900, authorPricePaise: 3769, commissionRateBps: 3000,
-    platformCommissionPaise: 1131, referralRateBps: 0, referrerRewardPaise: 0,
-    referrerId: null, gstRateBps: 0, gstPaise: 0, gatewayRateBps: 0, gatewayFeePaise: 0,
+    authorName: "A. Writer", amountPaise: 13929, authorPricePaise: 10000, commissionRateBps: 3000,
+    platformCommissionPaise: 3000, referralRateBps: 0, referrerRewardPaise: 0,
+    referrerId: null, gstRateBps: 500, gstPaise: 650, gatewayRateBps: 200, gatewayFeePaise: 279,
   });
   const attempt = new Attempt({ orderId: order._id, attemptNumber: 1, provider: "razorpay",
-    amountPaise: 4900, idempotencyKeyHash: "b".repeat(64) });
+    amountPaise: 13929, idempotencyKeyHash: "b".repeat(64) });
   attempt.attachProviderOrderId("order_capture1");
   attempt.transitionTo("pending");
   await attempt.save();
@@ -75,7 +75,7 @@ test("signed capture updates a book order and posts one receipt and grants one e
   t.after(() => new Promise((resolve) => server.close(resolve)));
   const url = "http://127.0.0.1:" + server.address().port + "/api/v1/payments/razorpay/webhook";
   const body = JSON.stringify({ event: "payment.captured", payload: { payment: { entity: {
-    id: "pay_capture1", order_id: "order_capture1", amount: 4900, currency: "INR",
+    id: "pay_capture1", order_id: "order_capture1", amount: 13929, currency: "INR",
   } } } });
   const signature = createHmac("sha256", secret).update(body).digest("hex");
   function notify(id, digest = signature) {
@@ -104,7 +104,7 @@ test("signed capture updates a book order and posts one receipt and grants one e
   }
   assert.equal((await Order.findById(order._id)).status, "paid");
   const duplicateBody = JSON.stringify({ event: "payment.captured", payload: { payment: { entity: {
-    id: "pay_duplicate1", order_id: "order_capture1", amount: 4900, currency: "INR",
+    id: "pay_duplicate1", order_id: "order_capture1", amount: 13929, currency: "INR",
   } } } });
   const duplicateSignature = createHmac("sha256", secret).update(duplicateBody).digest("hex");
   const duplicateResponse = await fetch(url, { method: "POST", body: duplicateBody, headers: {
@@ -117,7 +117,7 @@ test("signed capture updates a book order and posts one receipt and grants one e
   const duplicateRefund = await RefundRequest.findOne({ sourcePaymentEventId: duplicateEvent._id }).select("+providerPaymentId");
   assert.ok(duplicateRefund);
   assert.equal(duplicateRefund.status, "pending");
-  assert.equal(duplicateRefund.amountPaise, 4900);
+  assert.equal(duplicateRefund.amountPaise, 13929);
   assert.equal(duplicateRefund.providerPaymentId, "pay_duplicate1");
   let refundCalls = 0;
   const submitRefund = createRefundSubmissionService({
@@ -125,7 +125,7 @@ test("signed capture updates a book order and posts one receipt and grants one e
     findRefundRequestById: id => RefundRequest.findById(id).select("+providerPaymentId +providerRefundId"),
     refundCapturedPayment: async ({ paymentId, amountPaise, currency }) => {
       assert.equal(paymentId, "pay_duplicate1");
-      assert.equal(amountPaise, 4900);
+      assert.equal(amountPaise, 13929);
       assert.equal(currency, "INR");
       refundCalls += 1;
       return { status: "completed", refundId: "rfnd_duplicate1" };
@@ -148,17 +148,21 @@ test("signed capture updates a book order and posts one receipt and grants one e
   assert.equal(String(grants[0].readerId), String(order.buyerId));
   assert.equal(grants[0].bookId, order.bookId);
   assert.equal(String(grants[0].sourceLedgerId), String(receipts[0]._id));
-  assert.deepEqual(receipts[0].entries.map(e => [e.direction, e.amountPaise]).sort(), [["credit", 1131], ["credit", 3769], ["debit", 4900]]);
+  assert.deepEqual(receipts[0].entries.map(e => [e.accountCode, e.direction, e.amountPaise]).sort(), [
+    ["author_payable", "credit", 10000], ["gateway_clearing", "debit", 13929],
+    ["gateway_fee_payable", "credit", 279], ["platform_commission", "credit", 3000],
+    ["tax_payable", "credit", 650],
+  ]);
   const readerId = order.buyerId;
   const otherReaderId = new mongoose.Types.ObjectId();
   const text = { en: "Quiet River", gu: "શાંત નદી", hi: "शांत नदी" };
   const catalogue = await Book.create({
     catalogueId: order.bookId, title: text, description: text,
-    author: order.authorName, language: "English", category: "Novel", price: 49,
+    author: order.authorName, language: "English", category: "Novel", price: 100,
     tone: "blue", badge: "New",
   });
   const source = await AuthorBook.create({
-    authorId: otherReaderId, authorName: order.authorName, title: text, description: text, price: 49,
+    authorId: otherReaderId, authorName: order.authorName, title: text, description: text, price: 100,
     assets: { manuscript: { key: "private/test/reading.pdf", contentType: "application/pdf",
       fileName: "reading.pdf", size: 512, scanStatus: "clean" } },
   });
