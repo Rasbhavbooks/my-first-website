@@ -84,6 +84,7 @@ export default function ReaderLibraryPage() {
   const { user, loading } = useAuth();
   const { language, t } = useLanguage();
   const [recentBooks, setRecentBooks] = useState([]);
+  const [recommendationsRevision, setRecommendationsRevision] = useState(0);
   const [freeBooks, setFreeBooks] = useState([]);
   const [purchasedBooks, setPurchasedBooks] = useState([]);
   const [freeCursor, setFreeCursor] = useState(null);
@@ -159,8 +160,8 @@ export default function ReaderLibraryPage() {
       <div className="eyebrow"><i /><BookOpen size={15} />{t.readerSpace}</div>
       <h1>{t.libraryTitle}</h1>
       <p className="reader-library-intro">{t.libraryIntro}</p>
-      <ReadingChallengeSummary key={user.id} language={language} />
-      <RecommendedBooks key={user.id} language={language} t={t} />
+      <ReadingChallengeSummary key={user.id} language={language} onCompletionRemoved={() => setRecommendationsRevision(value => value + 1)} />
+      <RecommendedBooks key={user.id + ":" + recommendationsRevision} language={language} t={t} />
       {error && <p className="library-error" role="alert">{error}</p>}
       {pageLoading ? <p aria-live="polite">{t.libraryLoading}</p> : (
         <>

@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import Book from "../books/book.model.js";
 import resolveReadingAccess from "../books/reading-access.service.js";
 
 const schema = new mongoose.Schema({
@@ -19,11 +20,16 @@ export function challengeMonthStart(now) {
 }
 
 export async function getReadingChallenge(request, response) {
-  const completed = await Completion.countDocuments({
-    readerId: request.reader._id,
-    completedAt: { $gte: challengeMonthStart(new Date()) },
-  });
-  return response.set("Cache-Control", "no-store").json({ data: { completed, target } });
+  const filter = { readerId: request.reader._id, completedAt: { $gte: challengeMonthStart(new Date()) } };
+  const [completed, recent] = await Promise.all([
+    Completion.countDocuments(filter),
+    Completion.find(filter).sort({ completedAt: -1, _id: -1 }).limit(20).select("bookId completedAt -_id").lean(),
+  ]);
+  const catalogue = await Book.find({ catalogueId: { $in: recent.map(row => row.bookId) } })
+    .select("catalogueId title -_id").lean();
+  const titles = new Map(catalogue.map(book => [book.catalogueId, book.title]));
+  const books = recent.map(row => ({ ...row, title: titles.get(row.bookId) ?? null }));
+  return response.set("Cache-Control", "no-store").json({ data: { completed, target, books } });
 }
 
 function completionFilter(request) {
