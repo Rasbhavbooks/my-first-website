@@ -107,6 +107,18 @@ async function verifyCheckoutInBrowser(api, buyer, referrer) {
     await authorPage.goto(origin + "/author/books");
     await authorPage.getByRole("button", { name: new RegExp(title) }).click();
     const price = authorPage.locator(".author-book-form input[type=number]");
+    const upload = authorPage.waitForResponse(response =>
+      response.url().endsWith("/books/" + draft.id + "/assets/manuscript")
+      && response.request().method() === "PUT"
+    );
+    await authorPage.locator('input[type="file"][accept*="application/pdf"]').setInputFiles({
+      name: "invalid.pdf", mimeType: "application/pdf", buffer: Buffer.from("This is not a PDF."),
+    });
+    const rejectedUpload = await upload;
+    assert.equal(rejectedUpload.status(), 400);
+    assert.equal((await rejectedUpload.json()).error.code, "INVALID_FILE_TYPE");
+    const unchanged = await AuthorBook.findById(draft._id).lean();
+    assert.equal(unchanged.assets.manuscript.fileName, "book.pdf");
     await price.fill("100");
     await authorPage.locator(".author-book-actions button[type=button]").click();
     await price.locator("xpath=self::*[@disabled]").waitFor();
