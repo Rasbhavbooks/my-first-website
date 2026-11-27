@@ -459,6 +459,20 @@ async function verifyPurchase(t, referred) {
     { sourceId: String(source._id), kind: "purchased" });
   assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId: otherReaderId }), null);
   assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId }), null);
+  const { getReadingChallenge, saveReadingCompletion, deleteReadingCompletion, challengeMonthStart } =
+    await import("../src/modules/orders/reader-challenge.js");
+  assert.equal(challengeMonthStart(new Date("2026-11-30T18:30:00Z")).toISOString(), "2026-11-30T18:30:00.000Z");
+  const completionRequest = { reader: { _id: readerId }, params: { bookId: catalogue.catalogueId } };
+  const response = { set() { return this; }, status(value) { this.statusCode = value; return this; }, json(body) { return body.data; } };
+  await saveReadingCompletion({ ...completionRequest, reader: { _id: otherReaderId } }, response);
+  assert.equal(response.statusCode, 404);
+  assert.deepEqual(await saveReadingCompletion(completionRequest, response), { completed: true });
+  await saveReadingCompletion(completionRequest, response);
+  assert.deepEqual(await getReadingChallenge(completionRequest, response), { completed: 1, target: 3 });
+  assert.deepEqual(await getReadingChallenge({ reader: { _id: otherReaderId } }, response), { completed: 0, target: 3 });
+  await deleteReadingCompletion(completionRequest, response);
+  assert.deepEqual(await getReadingChallenge(completionRequest, response), { completed: 0, target: 3 });
+
   const startRefund = { mode: "test", orderId: order._id };
   assert.deepEqual(await startFullTestRefund(startRefund), { replayed: false });
   assert.deepEqual(await startFullTestRefund(startRefund), { replayed: true });
