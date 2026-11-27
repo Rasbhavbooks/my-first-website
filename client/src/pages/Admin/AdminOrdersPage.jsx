@@ -40,6 +40,11 @@ function formatTimestamp(value, language) {
 export default function AdminOrdersPage() {
   const { user, loading } = useAuth();
   const { t, language } = useLanguage();
+  const refundRecordLabels = {
+    gu: { refund_linked: "રિફંડનો હિસાબ મળે છે", missing_refund: "રિફંડની નોંધ ખૂટે છે" },
+    hi: { refund_linked: "रिफंड का हिसाब मेल खाता है", missing_refund: "रिफंड की प्रविष्टि नहीं मिली" },
+    en: { refund_linked: "Refund matches", missing_refund: "Missing refund entry" },
+  }[language];
   const [result, setResult] = useState(null);
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("all");
@@ -109,7 +114,7 @@ export default function AdminOrdersPage() {
             </td>
             <td><span className="admin-orders-status" data-status={order.status}>{t[`adminOrderStatus_${order.status}`] || order.status}</span></td>
             <td>{formatTimestamp(order.paidAt, language)}</td>
-            <td>{order.recordStatus ? t[`adminOrderRecord_${order.recordStatus}`] : "—"}</td>
+            <td>{order.recordStatus ? refundRecordLabels?.[order.recordStatus] || t[`adminOrderRecord_${order.recordStatus}`] : "—"}</td>
             <td><code>{order.id}</code></td>
           </tr>)}</tbody>
         </table>

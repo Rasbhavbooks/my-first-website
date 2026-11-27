@@ -1,3 +1,4 @@
+import { buildFullRefundLedgerEntries } from "../../../../shared/commerce-pricing.js";
 import { isDatabaseConnected } from "../../config/database.js";
 import DigitalBookEntitlement from "../orders/book-entitlement.model.js";
 import LedgerTransaction from "../orders/ledger-transaction.model.js";
@@ -19,7 +20,7 @@ function parsePositiveInteger(value, fallback, maximum) {
 }
 
 export function checkPaidOrderRecords(order, receipts, grant) {
-  if (order.status !== "paid") return null;
+  if (!["paid", "refund_pending", "refunded"].includes(order.status)) return null;
   if (!receipts.length) return "missing_receipt";
   if (receipts.length > 1 || receipts[0].currency !== order.currency) return "inconsistent";
   if (!grant) return "missing_entitlement";
@@ -29,6 +30,17 @@ export function checkPaidOrderRecords(order, receipts, grant) {
     && grant.currency === order.currency
     && String(grant.sourceLedgerId) === String(receipts[0]._id);
   return matches ? "linked" : "inconsistent";
+}
+
+function checkRefundRecords(order, reversals) {
+  if (!reversals.length) return "missing_refund";
+  if (reversals.length !== 1 || reversals[0].currency !== order.currency) return "inconsistent";
+  const entries = buildFullRefundLedgerEntries({ ...order, totalPaise: order.amountPaise });
+  const rowKey = entry => [entry.accountCode, entry.direction, entry.amountPaise].join(":");
+  const expected = entries.map(rowKey).sort();
+  const actual = reversals[0].entries.map(rowKey).sort();
+  return actual.length === expected.length && actual.every((entry, index) => entry === expected[index])
+    ? "refund_linked" : "inconsistent";
 }
 
 export function serializeAdminOrder(order, recordStatus = null) {
@@ -85,13 +97,16 @@ export async function listAdminOrders(request, response) {
       .select("_id buyerId bookId bookTitle authorName amountPaise authorPricePaise platformCommissionPaise referrerRewardPaise gstPaise gatewayFeePaise currency status createdAt paidAt cancelledAt refundedAt")
       .lean(),
   ]);
-  const paidIds = orders.filter((order) => order.status === "paid").map((order) => order._id);
-  const [receipts, grants] = paidIds.length ? await Promise.all([
+  const paidIds = orders.filter(order => ["paid", "refund_pending", "refunded"].includes(order.status)).map(order => order._id);
+  const refundedIds = orders.filter(order => order.status === "refunded").map(order => order._id);
+  const [receipts, grants, reversals] = paidIds.length ? await Promise.all([
     LedgerTransaction.find({ orderId: { $in: paidIds }, eventType: "order_payment", sourceType: "payment_event" })
       .select("_id orderId currency").lean(),
     DigitalBookEntitlement.find({ orderId: { $in: paidIds } })
       .select("orderId readerId bookId amountPaise currency +sourceLedgerId").lean(),
-  ]) : [[], []];
+    refundedIds.length ? LedgerTransaction.find({ orderId: { $in: refundedIds }, eventType: "refund", sourceType: "refund" })
+      .select("orderId currency entries").lean() : [],
+  ]) : [[], [], []];
   const receiptsByOrder = new Map();
   for (const receipt of receipts) {
     const id = String(receipt.orderId);
@@ -99,12 +114,22 @@ export async function listAdminOrders(request, response) {
     rows.push(receipt);
     receiptsByOrder.set(id, rows);
   }
+  const reversalsByOrder = new Map();
+  for (const reversal of reversals) {
+    const id = String(reversal.orderId);
+    const rows = reversalsByOrder.get(id) ?? [];
+    rows.push(reversal);
+    reversalsByOrder.set(id, rows);
+  }
   const grantByOrder = new Map(grants.map((grant) => [String(grant.orderId), grant]));
   return response.json({
     data: {
       orders: orders.map((order) => {
         const id = String(order._id);
-        const recordStatus = checkPaidOrderRecords(order, receiptsByOrder.get(id) ?? [], grantByOrder.get(id));
+        let recordStatus = checkPaidOrderRecords(order, receiptsByOrder.get(id) ?? [], grantByOrder.get(id));
+        if (order.status === "refunded" && recordStatus === "linked") {
+          recordStatus = checkRefundRecords(order, reversalsByOrder.get(id) ?? []);
+        }
         return serializeAdminOrder(order, recordStatus);
       }),
       page,
