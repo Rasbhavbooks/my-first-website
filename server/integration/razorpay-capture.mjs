@@ -15,8 +15,9 @@ import Ledger from "../src/modules/orders/ledger-transaction.model.js";
 import { createRefundSubmissionService } from "../src/modules/orders/refund-submission.service.js";
 import RefundRequest from "../src/modules/orders/refund-request.model.js";
 
-test("signed capture updates a book order and posts one receipt and grants one entitlement across retries", async (t) => {
-  const secret = randomBytes(32).toString("hex");
+const secret = randomBytes(32).toString("hex");
+
+async function verifyPurchase(t, referred) {
   process.env.RAZORPAY_WEBHOOK_SECRET = secret;
   const { default: app } = await import("../src/app.js");
   const database = "capture_test_" + randomBytes(8).toString("hex");
@@ -61,8 +62,8 @@ test("signed capture updates a book order and posts one receipt and grants one e
     buyerId: new mongoose.Types.ObjectId(), idempotencyKeyHash: "a".repeat(64),
     bookId: "quiet-river", bookTitle: { en: "Quiet River", gu: "શાંત નદી", hi: "शांत नदी" },
     authorName: "A. Writer", amountPaise: 13929, authorPricePaise: 10000, commissionRateBps: 3000,
-    platformCommissionPaise: 3000, referralRateBps: 0, referrerRewardPaise: 0,
-    referrerId: null, gstRateBps: 500, gstPaise: 650, gatewayRateBps: 200, gatewayFeePaise: 279,
+    platformCommissionPaise: referred ? 2000 : 3000, referralRateBps: referred ? 1000 : 0, referrerRewardPaise: referred ? 1000 : 0,
+    referrerId: referred ? new mongoose.Types.ObjectId() : null, gstRateBps: 500, gstPaise: 650, gatewayRateBps: 200, gatewayFeePaise: 279,
   });
   const attempt = new Attempt({ orderId: order._id, attemptNumber: 1, provider: "razorpay",
     amountPaise: 13929, idempotencyKeyHash: "b".repeat(64) });
@@ -150,7 +151,8 @@ test("signed capture updates a book order and posts one receipt and grants one e
   assert.equal(String(grants[0].sourceLedgerId), String(receipts[0]._id));
   assert.deepEqual(receipts[0].entries.map(e => [e.accountCode, e.direction, e.amountPaise]).sort(), [
     ["author_payable", "credit", 10000], ["gateway_clearing", "debit", 13929],
-    ["gateway_fee_payable", "credit", 279], ["platform_commission", "credit", 3000],
+    ["gateway_fee_payable", "credit", 279], ["platform_commission", "credit", referred ? 2000 : 3000],
+    ...(referred ? [["referrer_payable", "credit", 1000]] : []),
     ["tax_payable", "credit", 650],
   ]);
   const readerId = order.buyerId;
@@ -185,4 +187,7 @@ test("signed capture updates a book order and posts one receipt and grants one e
   assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId }), null);
   assert.deepEqual(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId: otherReaderId }),
     { sourceId: String(source._id), kind: "free" });
-});
+}
+
+test("direct purchase retains its itemized receipt and access after a duplicate refund", t => verifyPurchase(t, false));
+test("referred purchase retains its itemized receipt and access after a duplicate refund", t => verifyPurchase(t, true));
