@@ -49,11 +49,15 @@ export default function AppRoutes() {
     && new URLSearchParams(search).get("checkout") === "preview";
   const noIndex = isCheckout || !indexablePaths.some(pattern => matchPath(pattern, pathname));
   useEffect(() => {
-    if (!noIndex) return;
-    const directive = document.createElement("meta");
+    const existing = document.head.querySelector('meta[name="robots"][content="noindex"]');
+    if (!noIndex) {
+      existing?.remove();
+      return;
+    }
+    const directive = existing || document.createElement("meta");
     directive.name = "robots";
     directive.content = "noindex";
-    document.head.appendChild(directive);
+    if (!existing) document.head.appendChild(directive);
     return () => directive.remove();
   }, [noIndex]);
 
