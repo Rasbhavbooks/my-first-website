@@ -8,7 +8,7 @@ const schema = new mongoose.Schema({
 }, { versionKey: false });
 schema.index({ readerId: 1, bookId: 1 }, { unique: true });
 schema.index({ readerId: 1, completedAt: 1 });
-const Completion = mongoose.models.ReaderBookCompletion || mongoose.model("ReaderBookCompletion", schema);
+export const Completion = mongoose.models.ReaderBookCompletion || mongoose.model("ReaderBookCompletion", schema);
 
 const indiaOffsetMs = 330 * 60 * 1000;
 const target = 3;
