@@ -1,3 +1,4 @@
+import { ReadingCompletionButton } from "../../components/reader/ReadingChallenge.jsx";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Bookmark, ExternalLink, Trash2 } from "lucide-react";
 import { Link, Navigate, useParams } from "react-router";
@@ -152,6 +153,7 @@ export default function ReaderBookPage() {
             {bookmarkSaved && <p className="reader-bookmark-status" role="status">{t.readerBookmarkSaved}</p>}
             {bookmarkError && <p className="reader-bookmark-error" role="alert">{bookmarkError}</p>}
           </form>
+          <ReadingCompletionButton key={bookId} bookId={bookId} language={language} />
           <iframe key={bookmark?.pageNumber || "start"} className="reader-frame" src={bookmarkedSource} title={title || t.readerPageTitle} referrerPolicy="no-referrer" />
         </>
       )}

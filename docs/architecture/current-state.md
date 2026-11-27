@@ -82,6 +82,12 @@ The MFA-protected Admin Orders page shows counts and INR totals across paid, ref
 
 The private Author Studio includes the author share on paid orders after catalogue entries are linked to approved, scanned source manuscripts. An order snapshots the beneficiary from that link. Older unlinked orders are excluded from author reports; buyers and beneficiary IDs are not exposed. Full refunds remove the share from the author total.
 
+## માસિક વાંચન લક્ષ્ય
+
+લાઇબ્રેરીમાંથી પોતાની ઍક્સેસવાળી બુક ખોલો અને **વાંચી લીધું** દબાવો. લાઇબ્રેરી પર પાછા જતાં આ મહિનાની ગણતરી એકથી વધે છે. એ જ બુક ફરી નોંધવાથી ગણતરી ફરી વધતી નથી. ભૂલથી નોંધાઈ હોય તો બુક પર **વાંચ્યાની નોંધ દૂર કરો** પસંદ કરો.
+
+પ્રારંભિક લક્ષ્ય દર મહિને ત્રણ અલગ બુકનું છે અને નવો મહિનો ભારતીય સમય પ્રમાણે શરૂ થાય છે. વાંચ્યાની નોંધ ખાતામાં ખાનગી રહે છે અને ખાતાની માહિતી ડાઉનલોડ કરો ત્યારે તેમાં મળે છે.
+
 ## Phase 7 ચકાસવાની રીત
 
 ટેસ્ટ ડેટાબેઝ સાથે પ્રોજેક્ટના મૂળ ફોલ્ડરમાં નીચેનો કમાન્ડ ચલાવો.
