@@ -83,3 +83,19 @@ export async function deleteReaderBookBookmark(bookId) {
   const result = await readerBookmarkRequest(bookId, "DELETE");
   return result.removed === true;
 }
+export function getReadingChallenge() {
+  return readLibraryResponse("/api/v1/reader/library/challenge");
+}
+
+export async function getReadingCompletion(bookId) {
+  return readLibraryResponse("/api/v1/reader/library/" + encodeURIComponent(bookId) + "/completion");
+}
+
+export async function setReadingCompletion(bookId, completed) {
+  const response = await fetch("/api/v1/reader/library/" + encodeURIComponent(bookId) + "/completion", {
+    method: completed ? "PUT" : "DELETE",
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Could not save your reading progress.");
+  return (await response.json()).data;
+}
