@@ -12,6 +12,7 @@ import Attempt from "../src/modules/orders/payment-attempt.model.js";
 import PaymentEvent from "../src/modules/orders/payment-event.model.js";
 import Entitlement from "../src/modules/orders/book-entitlement.model.js";
 import Ledger from "../src/modules/orders/ledger-transaction.model.js";
+import { createRefundSubmissionService } from "../src/modules/orders/refund-submission.service.js";
 import RefundRequest from "../src/modules/orders/refund-request.model.js";
 
 test("signed capture updates a book order and posts one receipt and grants one entitlement across retries", async (t) => {
@@ -118,6 +119,22 @@ test("signed capture updates a book order and posts one receipt and grants one e
   assert.equal(duplicateRefund.status, "pending");
   assert.equal(duplicateRefund.amountPaise, 4900);
   assert.equal(duplicateRefund.providerPaymentId, "pay_duplicate1");
+  let refundCalls = 0;
+  const submitRefund = createRefundSubmissionService({
+    mode: "test",
+    findRefundRequestById: id => RefundRequest.findById(id).select("+providerPaymentId +providerRefundId"),
+    refundCapturedPayment: async ({ paymentId, amountPaise, currency }) => {
+      assert.equal(paymentId, "pay_duplicate1");
+      assert.equal(amountPaise, 4900);
+      assert.equal(currency, "INR");
+      refundCalls += 1;
+      return { status: "completed", refundId: "rfnd_duplicate1" };
+    },
+  });
+  assert.equal((await submitRefund(duplicateRefund.id)).completed, true);
+  assert.equal((await RefundRequest.findById(duplicateRefund._id)).status, "completed");
+  assert.equal((await submitRefund(duplicateRefund.id)).replayed, true);
+  assert.equal(refundCalls, 1);
   assert.equal((await Order.findById(order._id)).status, "paid");
   assert.equal(await Ledger.countDocuments({ orderId: order._id }), 1);
   assert.equal(await Entitlement.countDocuments({ orderId: order._id }), 1);

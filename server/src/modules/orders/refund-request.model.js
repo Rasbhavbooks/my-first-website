@@ -22,9 +22,9 @@ const refundRequestSchema = new mongoose.Schema({
     validate: { validator: Number.isSafeInteger, message: "Refund amounts must be whole paise values." },
     immutable: true,
   },
-  currency: { type: String, enum: ["INR"], required: true, default: "INR", immutable: true },
+  currency: { type: String, enum: ["INR"], required: true, default: function () { return this.isNew ? "INR" : undefined; }, immutable: true },
   status: { type: String, enum: ["pending", "submitted", "completed", "failed"], default: "pending", required: true },
-  requestedAt: { type: Date, required: true, default: Date.now, immutable: true },
+  requestedAt: { type: Date, required: true, default: function () { return this.isNew ? new Date() : undefined; }, immutable: true },
   completedAt: { type: Date, default: null },
 }, { timestamps: true, versionKey: false, strict: "throw" });
 
