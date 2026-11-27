@@ -1,3 +1,4 @@
+import { ReadingChallengeSummary } from "../../components/reader/ReadingChallenge.jsx";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowUpRight, BookOpen } from "lucide-react";
 import { Link, Navigate } from "react-router";
@@ -136,6 +137,7 @@ export default function ReaderLibraryPage() {
       <div className="eyebrow"><i /><BookOpen size={15} />{t.readerSpace}</div>
       <h1>{t.libraryTitle}</h1>
       <p className="reader-library-intro">{t.libraryIntro}</p>
+      <ReadingChallengeSummary key={user.id} language={language} />
       {error && <p className="library-error" role="alert">{error}</p>}
       {pageLoading ? <p aria-live="polite">{t.libraryLoading}</p> : (
         <>
