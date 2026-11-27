@@ -9,6 +9,7 @@ import mongoose from "mongoose";
 import Book from "../src/modules/books/book.model.js";
 import AuthorBook from "../src/modules/books/author-book.model.js";
 import resolveReadingAccess from "../src/modules/books/reading-access.service.js";
+import { listReaderOrders } from "../src/modules/orders/reader-orders.controller.js";
 import { getReaderReferralCode } from "../src/modules/orders/reader-referral.js";
 import User from "../src/modules/users/user.model.js";
 import Order from "../src/modules/orders/order.model.js";
@@ -150,6 +151,18 @@ async function verifyPurchase(t, referred) {
   assert.equal((await RefundRequest.findById(duplicateRefund._id)).status, "completed");
   assert.equal((await submitRefund(duplicateRefund.id)).replayed, true);
   assert.equal(refundCalls, 1);
+  async function historyFor(reader) {
+    return listReaderOrders({ reader, query: {} }, {
+      setHeader() {},
+      json(body) { return body.data; },
+    });
+  }
+  const referrerHistory = await historyFor(referrer);
+  assert.equal(referrerHistory.referralRewardPaise, referred ? 1000 : 0);
+  assert.deepEqual(referrerHistory.orders, []);
+  const buyerHistory = await historyFor(buyer);
+  assert.equal(buyerHistory.referralRewardPaise, 0);
+  assert.deepEqual(buyerHistory.orders[0].fees, { gstPaise: 650, gatewayFeePaise: 279 });
   assert.equal((await Order.findById(order._id)).status, "paid");
   assert.equal(await Ledger.countDocuments({ orderId: order._id }), 1);
   assert.equal(await Entitlement.countDocuments({ orderId: order._id }), 1);
@@ -210,6 +223,7 @@ async function verifyPurchase(t, referred) {
     ["tax_payable", "debit", 650],
   ]);
   assert.equal((await Order.findById(order._id)).status, "refunded");
+  assert.equal((await historyFor(referrer)).referralRewardPaise, 0);
   assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId }), null);
   await Book.updateOne({ _id: catalogue._id }, { $set: { price: 0 } });
   assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId }), null);
