@@ -1,4 +1,4 @@
-import { applyConfirmedTestRefund } from "../src/modules/orders/full-refund.service.js";
+import { applyConfirmedTestRefund, startFullTestRefund } from "../src/modules/orders/full-refund.service.js";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -434,9 +434,10 @@ async function verifyPurchase(t, referred) {
     { sourceId: String(source._id), kind: "purchased" });
   assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId: otherReaderId }), null);
   assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId }), null);
-  const paid = await Order.findById(order._id).select("+paymentReference");
-  paid.transitionTo("refund_pending");
-  await paid.save();
+  const startRefund = { mode: "test", orderId: order._id };
+  assert.deepEqual(await startFullTestRefund(startRefund), { replayed: false });
+  assert.deepEqual(await startFullTestRefund(startRefund), { replayed: true });
+  assert.equal((await Attempt.findById(attempt._id)).status, "refund_pending");
   assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId }), null);
   const fullRefund = {
     mode: "test", orderId: order._id,
@@ -459,6 +460,7 @@ async function verifyPurchase(t, referred) {
     ["tax_payable", "debit", 650],
   ]);
   assert.equal((await Order.findById(order._id)).status, "refunded");
+  assert.equal((await Attempt.findById(attempt._id)).status, "refunded");
   assert.equal((await historyFor(referrer)).referralRewardPaise, 0);
   assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId }), null);
   await Book.updateOne({ _id: catalogue._id }, { $set: { price: 0 } });
