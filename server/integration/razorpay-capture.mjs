@@ -77,6 +77,7 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
       await reader.save();
       const page = await browser.newPage();
       await page.goto(origin + "/" + reader.role + "/login");
+      await page.locator('head meta[name="robots"][content="noindex"]').waitFor({ state: "attached" });
       await page.locator('input[name="email"]').fill(reader.email);
       await page.locator('input[name="password"]').fill(password);
       await page.locator('button[type="submit"]').click();
@@ -99,9 +100,11 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
     await page.goto(link);
     const checkout = page.getByRole("link", { name: testCheckout });
     await checkout.waitFor();
+    await page.locator('head meta[name="robots"][content="noindex"]').waitFor({ state: "detached" });
     assert.match(await page.locator("main .detail-price").innerText(), /139\.29/);
     await checkout.click();
     await page.getByRole("heading", { name: testCheckout }).waitFor();
+    await page.locator('head meta[name="robots"][content="noindex"]').waitFor({ state: "attached" });
     const summary = await page.locator("main").innerText();
     for (const amount of ["139.29", "6.50", "2.79"]) assert.ok(summary.includes(amount), summary);
     assert.equal(new URL(page.url()).searchParams.get("ref"), code);
