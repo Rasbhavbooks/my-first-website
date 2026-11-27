@@ -44,7 +44,7 @@ test("paid order record check reports missing, conflicting, and linked records",
   const order = { status: "paid", buyerId: "reader", bookId: "book", amountPaise: 4900, currency: "INR" };
   const receipt = { _id: "receipt", currency: "INR" };
   const grant = { readerId: "reader", bookId: "book", amountPaise: 4900, currency: "INR", sourceLedgerId: "receipt" };
-  assert.equal(checkPaidOrderRecords({ ...order, status: "refunded" }, [], undefined), null);
+  assert.equal(checkPaidOrderRecords({ ...order, status: "refunded" }, [], undefined), "missing_receipt");
   assert.equal(checkPaidOrderRecords(order, [], undefined), "missing_receipt");
   assert.equal(checkPaidOrderRecords(order, [receipt], undefined), "missing_entitlement");
   assert.equal(checkPaidOrderRecords(order, [receipt, receipt], grant), "inconsistent");
