@@ -70,6 +70,8 @@ Broader platform settings, server-rendered SEO metadata and production-host rout
 
 GitHub CIમાં Chromium સાથે રીડરનો ટેસ્ટ ચેકઆઉટ અને રેફરલ, લેખકની ખાનગી રજૂઆત, તેમજ MFA પછી એડમિનની મંજૂરી ચકાસાય છે. અપલોડ ટેસ્ટ નમૂનાના સ્કેનરથી નકારાયેલી ફાઇલ અને સ્ટોરેજ વગર અટકતી ફાઇલ ચકાસે છે. વાસ્તવિક ClamAV અને R2 સાથે સફળ અપલોડ માટે ઉપરનું ત્રીજું પગલું ચલાવવું જરૂરી છે.
 
+The MFA-protected Admin Orders page shows counts and INR totals across paid, refund-pending and fully refunded orders. The summary covers all pages regardless of the active table filter and counts each local order once.
+
 ## Phase 7 ચકાસવાની રીત
 
 ટેસ્ટ ડેટાબેઝ સાથે પ્રોજેક્ટના મૂળ ફોલ્ડરમાં નીચેનો કમાન્ડ ચલાવો.
