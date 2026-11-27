@@ -99,3 +99,7 @@ export async function setReadingCompletion(bookId, completed) {
   if (!response.ok) throw new Error("Could not save your reading progress.");
   return (await response.json()).data;
 }
+
+export function getReaderRecommendations() {
+  return readLibraryResponse("/api/v1/reader/library/recommendations");
+}
