@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   frontend-and-api:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -34,8 +34,14 @@ jobs:
         run: npm run build
       - name: Test workspaces
         run: npm test
+      - name: Install checkout browser test tools
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
       - name: Check signed book payments against a MongoDB replica set
         timeout-minutes: 5
+        env:
+          VERIFY_CHECKOUT_BROWSER: 'true'
         run: |
           docker run -d --name capture-mongo -p 127.0.0.1:27018:27017 mongo:7 --replSet rs0 --bind_ip_all
           trap 'docker rm -f capture-mongo' EXIT

@@ -25,6 +25,41 @@ import RefundRequest from "../src/modules/orders/refund-request.model.js";
 
 const secret = randomBytes(32).toString("hex");
 
+async function verifyCheckoutInBrowser(api) {
+  const { chromium } = await import("playwright");
+  const { preview } = await import("vite");
+  const front = await preview({
+    configFile: false,
+    root: fileURLToPath(new URL("../../client", import.meta.url)),
+    preview: { host: "127.0.0.1", port: 0, proxy: { "/api": new URL(api).origin } },
+  });
+  let browser;
+  try {
+    browser = await chromium.launch();
+    const page = await browser.newPage();
+    const origin = "http://127.0.0.1:" + front.httpServer.address().port;
+    const testCheckout = /Test checkout|ટેસ્ટ ચેકઆઉટ|टेस्ट चेकआउट/;
+    const code = "a".repeat(32);
+    await page.goto(origin + "/books/phase7-review-paid?ref=" + code);
+    const checkout = page.getByRole("link", { name: testCheckout });
+    await checkout.waitFor();
+    assert.match(await page.locator("main .detail-price").innerText(), /139\.29/);
+    await checkout.click();
+    await page.getByRole("heading", { name: testCheckout }).waitFor();
+    const summary = await page.locator("main").innerText();
+    for (const amount of ["139.29", "6.50", "2.79"]) assert.ok(summary.includes(amount), summary);
+    assert.equal(new URL(page.url()).searchParams.get("ref"), code);
+
+    await page.goto(origin + "/books/phase7-review-free?checkout=preview");
+    const freePrice = page.locator("main .detail-price");
+    await freePrice.waitFor();
+    assert.match(await freePrice.innerText(), /free|મફત|मुफ़्त|मुफ्त|निःशुल्क/i);
+    assert.equal(await page.getByRole("link", { name: testCheckout }).count(), 0);
+  } finally {
+    try { await browser?.close(); } finally { await front.close(); }
+  }
+}
+
 async function verifyPurchase(t, referred) {
   process.env.RAZORPAY_WEBHOOK_SECRET = secret;
   const { default: createPendingBookOrder } = await import("../src/modules/orders/order.service.js");
@@ -115,6 +150,7 @@ async function verifyPurchase(t, referred) {
         assert.equal(data.priceBreakdownPaise.gatewayFee, 279);
       }
     }
+    if (process.env.VERIFY_CHECKOUT_BROWSER === "true") await verifyCheckoutInBrowser(api);
   }
   const body = JSON.stringify({ event: "payment.captured", payload: { payment: { entity: {
     id: "pay_capture1", order_id: "order_capture1", amount: 13929, currency: "INR",
