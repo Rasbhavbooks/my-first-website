@@ -43,7 +43,7 @@ export async function listReaderOrders(request, response) {
     .lean();
 
   const referralTotals = cursor ? [] : await DigitalBookOrder.aggregate([
-    { $match: { referrerId: request.reader._id, status: "paid", currency: "INR" } },
+    { $match: { referrerId: request.reader._id, status: { $in: ["paid", "refund_pending"] }, currency: "INR" } },
     { $group: { _id: null, total: { $sum: "$referrerRewardPaise" } } },
   ]);
   const hasMore = records.length > PAGE_SIZE;

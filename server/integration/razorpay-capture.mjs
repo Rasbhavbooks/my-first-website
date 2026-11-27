@@ -438,7 +438,9 @@ async function verifyPurchase(t, referred) {
   assert.deepEqual(await startFullTestRefund(startRefund), { replayed: false });
   assert.deepEqual(await startFullTestRefund(startRefund), { replayed: true });
   assert.equal((await Attempt.findById(attempt._id)).status, "refund_pending");
-  assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId }), null);
+  assert.deepEqual(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId }),
+    { sourceId: String(source._id), kind: "purchased" });
+  assert.equal((await historyFor(referrer)).referralRewardPaise, referred ? 1000 : 0);
   const fullRefund = {
     mode: "test", orderId: order._id,
     confirmation: { status: "completed", amountPaise: 13929, currency: "INR",
