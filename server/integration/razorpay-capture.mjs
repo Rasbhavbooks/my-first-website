@@ -9,7 +9,6 @@ import mongoose from "mongoose";
 import Book from "../src/modules/books/book.model.js";
 import AuthorBook from "../src/modules/books/author-book.model.js";
 import resolveReadingAccess from "../src/modules/books/reading-access.service.js";
-import createPendingBookOrder from "../src/modules/orders/order.service.js";
 import { getReaderReferralCode } from "../src/modules/orders/reader-referral.js";
 import User from "../src/modules/users/user.model.js";
 import Order from "../src/modules/orders/order.model.js";
@@ -24,6 +23,7 @@ const secret = randomBytes(32).toString("hex");
 
 async function verifyPurchase(t, referred) {
   process.env.RAZORPAY_WEBHOOK_SECRET = secret;
+  const { default: createPendingBookOrder } = await import("../src/modules/orders/order.service.js");
   const { default: app } = await import("../src/app.js");
   const database = "capture_test_" + randomBytes(8).toString("hex");
   await mongoose.connect("mongodb://127.0.0.1:27018/" + database + "?replicaSet=rs0&directConnection=true", {
