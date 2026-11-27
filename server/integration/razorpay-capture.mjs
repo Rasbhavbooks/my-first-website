@@ -10,6 +10,7 @@ import { once } from "node:events";
 import test from "node:test";
 import mongoose from "mongoose";
 import Book from "../src/modules/books/book.model.js";
+import AuthorProfile from "../src/modules/auth/author-profile.model.js";
 import AuthorBook from "../src/modules/books/author-book.model.js";
 import resolveReadingAccess from "../src/modules/books/reading-access.service.js";
 import { listReaderOrders } from "../src/modules/orders/reader-orders.controller.js";
@@ -44,11 +45,11 @@ async function verifyCheckoutInBrowser(api, buyer, referrer) {
       reader.emailVerifiedAt = new Date();
       await reader.save();
       const page = await browser.newPage();
-      await page.goto(origin + "/reader/login");
+      await page.goto(origin + "/" + reader.role + "/login");
       await page.locator('input[name="email"]').fill(reader.email);
       await page.locator('input[name="password"]').fill(password);
       await page.locator('button[type="submit"]').click();
-      await page.waitForURL(origin + "/");
+      await page.waitForURL(origin + (reader.role === "author" ? "/author/studio" : "/"));
       return page;
     }
     const sharingPage = await signIn(referrer);
@@ -74,6 +75,38 @@ async function verifyCheckoutInBrowser(api, buyer, referrer) {
     await freePrice.waitFor();
     assert.match(await freePrice.innerText(), /free|મફત|मुफ़्त|मुफ्त|निःशुल्क/i);
     assert.equal(await page.getByRole("link", { name: testCheckout }).count(), 0);
+
+    const author = await User.create({
+      displayName: "Browser test author", email: "author@example.test",
+      passwordHash: "unused-test-hash", accountStatus: "active", role: "author",
+    });
+    await AuthorProfile.create({
+      userId: author._id, slug: "browser-test-author", authorName: author.displayName,
+      catalogueAuthorName: author.displayName, writingLanguages: ["English"],
+      biography: "An author profile used to verify the book review workflow.",
+    });
+    const title = "Private browser test manuscript";
+    const draft = await AuthorBook.create({
+      authorId: author._id, authorName: author.displayName,
+      title: { en: title, gu: title, hi: title },
+      description: { en: "A manuscript used to verify the private submission workflow." },
+      category: "Novel", language: "English", price: 0,
+      assets: {
+        cover: { key: "test/cover.png", contentType: "image/png", fileName: "cover.png", size: 42, scanStatus: "clean" },
+        manuscript: { key: "test/book.pdf", contentType: "application/pdf", fileName: "book.pdf", size: 42, scanStatus: "clean" },
+      },
+    });
+    const authorPage = await signIn(author);
+    await authorPage.goto(origin + "/author/books");
+    await authorPage.getByRole("button", { name: new RegExp(title) }).click();
+    const price = authorPage.locator(".author-book-form input[type=number]");
+    await price.fill("100");
+    await authorPage.locator(".author-book-actions button[type=button]").click();
+    await price.locator("xpath=self::*[@disabled]").waitFor();
+    const submitted = await AuthorBook.findById(draft._id).lean();
+    assert.equal(submitted.status, "submitted");
+    assert.equal(submitted.price, 100);
+    assert.equal(await Book.exists({ author: author.displayName }), null);
   } finally {
     try { await browser?.close(); } finally { await front.close(); }
   }
