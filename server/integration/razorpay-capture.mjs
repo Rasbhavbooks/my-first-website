@@ -208,6 +208,7 @@ async function verifyPurchase(t, referred) {
   process.env.ADMIN_MFA_ENCRYPTION_KEY = integrationMfaKey;
   const scanner = !referred && process.env.VERIFY_CHECKOUT_BROWSER === "true" ? await startTestScanner(t) : null;
   const { default: createPendingBookOrder } = await import("../src/modules/orders/order.service.js");
+  if (scanner) process.env.SERVE_BUILT_FRONTEND = "true";
   const { default: app } = await import("../src/app.js");
   const database = "capture_test_" + randomBytes(8).toString("hex");
   const mongoUri = "mongodb://127.0.0.1:27018/" + database + "?replicaSet=rs0&directConnection=true";
@@ -307,7 +308,24 @@ async function verifyPurchase(t, referred) {
     assert.ok(xml.includes("/books/phase7-review-free</loc>"));
     assert.ok(!xml.includes(unlistedDraft.id));
     assert.ok(!xml.includes("/admin/"));
-    if (scanner) await verifyCheckoutInBrowser(api, buyer, referrer, scanner);
+    if (scanner) {
+      const publicBook = await fetch(origin + "/books/phase7-review-paid?ref=test");
+      assert.equal(publicBook.status, 200);
+      const html = await publicBook.text();
+      assert.ok(html.includes("<title>Test eBook ₹100 | Rasbhav Books</title>"));
+      assert.ok(html.includes('<link rel="canonical"'));
+      assert.equal(publicBook.headers.get("x-robots-tag"), null);
+
+      const checkout = await fetch(origin + "/books/phase7-review-paid?checkout=preview");
+      assert.equal(checkout.headers.get("x-robots-tag"), "noindex");
+      const privatePage = await fetch(origin + "/author/books");
+      assert.equal(privatePage.headers.get("x-robots-tag"), "noindex");
+      assert.ok(!(await privatePage.text()).includes("Private browser test manuscript"));
+      const missing = await fetch(origin + "/books/missing");
+      assert.equal(missing.status, 404);
+      assert.equal(missing.headers.get("x-robots-tag"), "noindex");
+      await verifyCheckoutInBrowser(api, buyer, referrer, scanner);
+    }
   }
   const body = JSON.stringify({ event: "payment.captured", payload: { payment: { entity: {
     id: "pay_capture1", order_id: "order_capture1", amount: 13929, currency: "INR",
