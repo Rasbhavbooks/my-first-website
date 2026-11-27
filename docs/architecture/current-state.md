@@ -59,6 +59,17 @@ Broader platform settings, server-rendered SEO metadata and root-level sitemap/r
 
 - An internal reading access check requires a catalogue book linked to an approved, scanned PDF source with a matching approved price. Reading requires a signed-in account. A linked ₹0 book needs no payment. A priced book requires the reader’s matching entitlement and an order in the paid state. The check returns an internal source ID and never returns the storage key. No publication path sets the source link. The authenticated read-stream route is implemented, but no catalogue entry can yet be linked to an approved source, so it cannot serve a public book.
 
+## ત્રણેય પેનલની ટેસ્ટ ચકાસણી
+
+1. GitHub Codespaceમાં નવીનતમ `main` પર `npm install` અને `npm run dev:all` ચલાવો. **Ports** માંથી 5173નું **Open in Browser** પસંદ કરો. સાઇટમાં બધા પાથ એ જ સરનામા પરથી ખોલો.
+2. **રીડર · `/reader/login`**. વેરિફાઇડ રીડર તરીકે લૉગિન કરો. નીચેની Phase 7 સૂચના પ્રમાણે ₹100ની અને મફત બુક ખોલો. ₹100ની બુકમાંથી રેફરલ લિંક બનાવો, પછી બીજા બ્રાઉઝર સેશનમાં અલગ રીડર તરીકે લૉગિન કરીને એ લિંક ખોલો. ટેસ્ટ ચેકઆઉટ સુધી લિંકમાં રેફરલ કોડ અને ₹139.29 બંને જળવાવાં જોઈએ.
+3. **લેખક · `/author/login`**. સક્રિય લેખક પ્રોફાઇલથી લૉગિન કરો અને `/author/books` ખોલો. ટેસ્ટ ડ્રાફ્ટમાં શીર્ષક, વર્ણન અને ₹100 ભાવ ભરો. JPEG, PNG અથવા WebP કવર અને PDF અપલોડ કરો. બંને ફાઇલ પાસે સ્કેન સફળ બતાવ્યા પછી ડ્રાફ્ટ સમીક્ષા માટે મોકલો.
+4. **એડમિન · `/admin/login`**. MFA ધરાવતા ટેસ્ટ એડમિન તરીકે લૉગિન કરો. `/admin/author-books` ખોલીને એ જ ડ્રાફ્ટ અને ₹100 ભાવ ચકાસો, પછી મંજૂર કરો. રીડરના કેટલોગમાં તે ખાનગી ડ્રાફ્ટ શોધો. પ્રકાશનની મંજૂરી બાકી હોવાથી તે દેખાવું જોઈએ નહીં.
+
+ફાઇલ અપલોડ પહેલાં એડમિન ડૅશબોર્ડમાં ClamAV અને ખાનગી Cloudflare R2ની સ્થિતિ ચકાસો. જરૂરી સર્વર સેટિંગ અને પ્રથમ એડમિન બનાવવાની રીત [README](../../README.md)માં છે. ચકાસણી માટે અલગ ટેસ્ટ ડેટાબેઝ અને ખાનગી ટેસ્ટ બકેટ વાપરો.
+
+GitHub CIમાં Chromium સાથે રીડરનો ટેસ્ટ ચેકઆઉટ અને રેફરલ, લેખકની ખાનગી રજૂઆત, તેમજ MFA પછી એડમિનની મંજૂરી ચકાસાય છે. અપલોડ ટેસ્ટ નમૂનાના સ્કેનરથી નકારાયેલી ફાઇલ અને સ્ટોરેજ વગર અટકતી ફાઇલ ચકાસે છે. વાસ્તવિક ClamAV અને R2 સાથે સફળ અપલોડ માટે ઉપરનું ત્રીજું પગલું ચલાવવું જરૂરી છે.
+
 ## Phase 7 ચકાસવાની રીત
 
 ટેસ્ટ ડેટાબેઝ સાથે પ્રોજેક્ટના મૂળ ફોલ્ડરમાં નીચેનો કમાન્ડ ચલાવો.
