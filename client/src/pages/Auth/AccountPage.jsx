@@ -391,6 +391,10 @@ export default function AccountPage() {
                   <strong>{title}</strong>
                   <span>{t.by} {order.authorName}</span>
                   <span>{t.ordersDate}: {formatSessionDate(order.createdAt, language)}</span>
+                  {order.fees && <>
+                    <span>{t.priceGst}: {formatInr(order.fees.gstPaise / 100, language)}</span>
+                    <span>{t.priceGateway}: {formatInr(order.fees.gatewayFeePaise / 100, language)}</span>
+                  </>}
                   <span>{t.ordersStatus}: {statusLabels[order.status] || order.status}</span>
                 </div>
                 <span className="account-order-amount">{formatInr(order.amountPaise / 100, language)}</span>
