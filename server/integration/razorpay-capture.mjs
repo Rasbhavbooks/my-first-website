@@ -7,6 +7,7 @@ import { promisify } from "node:util";
 import { createHmac, randomBytes } from "node:crypto";
 import { reviewAuthorBook } from "../src/modules/books/author-book-admin.controller.js";
 import { once } from "node:events";
+import { createServer } from "node:net";
 import test from "node:test";
 import mongoose from "mongoose";
 import Book from "../src/modules/books/book.model.js";
@@ -28,7 +29,35 @@ import RefundRequest from "../src/modules/orders/refund-request.model.js";
 const secret = randomBytes(32).toString("hex");
 const integrationMfaKey = randomBytes(32).toString("hex");
 
-async function verifyCheckoutInBrowser(api, buyer, referrer) {
+async function startTestScanner(t) {
+  const clean = Buffer.from("%PDF-1.7\nClean test input\n");
+  const flagged = Buffer.from("%PDF-1.7\nFlagged test input\n");
+  const seen = [];
+  const server = createServer(socket => {
+    let bytes = Buffer.alloc(0);
+    socket.on("data", chunk => {
+      bytes = Buffer.concat([bytes, chunk]);
+      for (const [fixture, response] of [[clean, "stream: OK\0"], [flagged, "stream: TestSignature FOUND\0"]]) {
+        const length = Buffer.alloc(4);
+        length.writeUInt32BE(fixture.length);
+        const expected = Buffer.concat([Buffer.from("zINSTREAM\0"), length, fixture, Buffer.alloc(4)]);
+        if (!bytes.equals(expected)) continue;
+        seen.push(fixture);
+        socket.end(response);
+        return;
+      }
+    });
+  });
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  process.env.CLAMAV_HOST = "127.0.0.1";
+  process.env.CLAMAV_PORT = String(server.address().port);
+  process.env.R2_ACCOUNT_ID = "";
+  return { clean, flagged, seen };
+}
+
+async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
   const { chromium } = await import("playwright");
   const { preview } = await import("vite");
   const front = await preview({
@@ -117,6 +146,22 @@ async function verifyCheckoutInBrowser(api, buyer, referrer) {
     const rejectedUpload = await upload;
     assert.equal(rejectedUpload.status(), 400);
     assert.equal((await rejectedUpload.json()).error.code, "INVALID_FILE_TYPE");
+    for (const [buffer, status, errorCode] of [
+      [scanner.flagged, 400, "MALWARE_DETECTED"],
+      [scanner.clean, 503, "STORAGE_NOT_CONFIGURED"],
+    ]) {
+      const uploadResult = authorPage.waitForResponse(response =>
+        response.url().endsWith("/books/" + draft.id + "/assets/manuscript")
+        && response.request().method() === "PUT"
+      );
+      await authorPage.locator('input[type="file"][accept*="application/pdf"]').setInputFiles({
+        name: "scan-test.pdf", mimeType: "application/pdf", buffer,
+      });
+      const result = await uploadResult;
+      assert.equal(result.status(), status);
+      assert.equal((await result.json()).error.code, errorCode);
+    }
+    assert.deepEqual(scanner.seen, [scanner.flagged, scanner.clean]);
     const unchanged = await AuthorBook.findById(draft._id).lean();
     assert.equal(unchanged.assets.manuscript.fileName, "book.pdf");
     await price.fill("100");
@@ -158,6 +203,7 @@ async function verifyCheckoutInBrowser(api, buyer, referrer) {
 async function verifyPurchase(t, referred) {
   process.env.RAZORPAY_WEBHOOK_SECRET = secret;
   process.env.ADMIN_MFA_ENCRYPTION_KEY = integrationMfaKey;
+  const scanner = !referred && process.env.VERIFY_CHECKOUT_BROWSER === "true" ? await startTestScanner(t) : null;
   const { default: createPendingBookOrder } = await import("../src/modules/orders/order.service.js");
   const { default: app } = await import("../src/app.js");
   const database = "capture_test_" + randomBytes(8).toString("hex");
@@ -246,7 +292,7 @@ async function verifyPurchase(t, referred) {
         assert.equal(data.priceBreakdownPaise.gatewayFee, 279);
       }
     }
-    if (process.env.VERIFY_CHECKOUT_BROWSER === "true") await verifyCheckoutInBrowser(api, buyer, referrer);
+    if (scanner) await verifyCheckoutInBrowser(api, buyer, referrer, scanner);
   }
   const body = JSON.stringify({ event: "payment.captured", payload: { payment: { entity: {
     id: "pay_capture1", order_id: "order_capture1", amount: 13929, currency: "INR",
