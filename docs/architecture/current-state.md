@@ -68,6 +68,14 @@ Broader platform settings, server-rendered SEO metadata and production-host rout
 
 ફાઇલ અપલોડ પહેલાં એડમિન ડૅશબોર્ડમાં ClamAV અને ખાનગી Cloudflare R2ની સ્થિતિ ચકાસો. જરૂરી સર્વર સેટિંગ અને પ્રથમ એડમિન બનાવવાની રીત [README](../../README.md)માં છે. ચકાસણી માટે અલગ ટેસ્ટ ડેટાબેઝ અને ખાનગી ટેસ્ટ બકેટ વાપરો.
 
+ખાનગી ટેસ્ટ બકેટ અને ClamAV ગોઠવ્યા પછી, એક નમૂનાની ફાઇલ સ્કેન કરવા અને R2માં લખી, વાંચી અને દૂર કરીને ચકાસવા માટે પ્રોજેક્ટના મૂળ ફોલ્ડરથી આ કમાન્ડ ચલાવો.
+
+```sh
+npm run verify:storage --workspace @rasbhav/server -- --test-bucket
+```
+
+આ કમાન્ડ માટે ટેસ્ટ બકેટમાં લખવા, વાંચવા અને દૂર કરવાની પરવાનગી જોઈએ. કમાન્ડ સફળ થાય પછી લેખક પેનલમાં કવર અને PDF અપલોડથી શરૂ થતી આખી પ્રક્રિયા ચકાસો.
+
 GitHub CIમાં Chromium સાથે રીડરનો ટેસ્ટ ચેકઆઉટ અને રેફરલ, લેખકની ખાનગી રજૂઆત, તેમજ MFA પછી એડમિનની મંજૂરી ચકાસાય છે. અપલોડ ટેસ્ટ નમૂનાના સ્કેનરથી નકારાયેલી ફાઇલ અને સ્ટોરેજ વગર અટકતી ફાઇલ ચકાસે છે. વાસ્તવિક ClamAV અને R2 સાથે સફળ અપલોડ માટે ઉપરનું ત્રીજું પગલું ચલાવવું જરૂરી છે.
 
 The MFA-protected Admin Orders page shows counts and INR totals across paid, refund-pending and fully refunded orders. The summary covers all pages regardless of the active table filter and counts each local order once.
