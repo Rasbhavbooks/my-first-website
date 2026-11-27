@@ -10,6 +10,7 @@ import { once } from "node:events";
 import test from "node:test";
 import mongoose from "mongoose";
 import Book from "../src/modules/books/book.model.js";
+import AdminMfa from "../src/modules/auth/admin-mfa.model.js";
 import AuthorProfile from "../src/modules/auth/author-profile.model.js";
 import AuthorBook from "../src/modules/books/author-book.model.js";
 import resolveReadingAccess from "../src/modules/books/reading-access.service.js";
@@ -25,6 +26,7 @@ import { createRefundSubmissionService } from "../src/modules/orders/refund-subm
 import RefundRequest from "../src/modules/orders/refund-request.model.js";
 
 const secret = randomBytes(32).toString("hex");
+const integrationMfaKey = randomBytes(32).toString("hex");
 
 async function verifyCheckoutInBrowser(api, buyer, referrer) {
   const { chromium } = await import("playwright");
@@ -40,7 +42,7 @@ async function verifyCheckoutInBrowser(api, buyer, referrer) {
     const origin = "http://127.0.0.1:" + front.httpServer.address().port;
     const testCheckout = /Test checkout|ટેસ્ટ ચેકઆઉટ|टेस्ट चेकआउट/;
     const password = randomBytes(24).toString("hex");
-    async function signIn(reader) {
+    async function signIn(reader, recoveryCode) {
       await reader.setPassword(password);
       reader.emailVerifiedAt = new Date();
       await reader.save();
@@ -49,7 +51,12 @@ async function verifyCheckoutInBrowser(api, buyer, referrer) {
       await page.locator('input[name="email"]').fill(reader.email);
       await page.locator('input[name="password"]').fill(password);
       await page.locator('button[type="submit"]').click();
-      await page.waitForURL(origin + (reader.role === "author" ? "/author/studio" : "/"));
+      if (recoveryCode) {
+        await page.locator('input[name="adminMfaCode"]').fill(recoveryCode);
+        await page.locator('button[type="submit"]').click();
+      }
+      const landing = { reader: "/", author: "/author/studio", admin: "/admin" };
+      await page.waitForURL(origin + landing[reader.role]);
       return page;
     }
     const sharingPage = await signIn(referrer);
@@ -106,6 +113,30 @@ async function verifyCheckoutInBrowser(api, buyer, referrer) {
     const submitted = await AuthorBook.findById(draft._id).lean();
     assert.equal(submitted.status, "submitted");
     assert.equal(submitted.price, 100);
+
+    const { createAdminMfaEnrollment, generateRecoveryCodes, hashRecoveryCode } =
+      await import("../src/modules/auth/admin-mfa.service.js");
+    const admin = await User.create({
+      displayName: "Browser test admin", email: "admin@example.test",
+      passwordHash: "unused-test-hash", accountStatus: "active", role: "admin", adminMfaEnabled: true,
+    });
+    const [recoveryCode] = generateRecoveryCodes();
+    const enrollment = createAdminMfaEnrollment(admin.email);
+    await AdminMfa.create({
+      userId: admin._id, enabled: true, encryptedSecret: enrollment.encryptedSecret,
+      recoveryCodeHashes: [hashRecoveryCode(recoveryCode)],
+    });
+    const adminPage = await signIn(admin, recoveryCode);
+    await adminPage.goto(origin + "/admin/author-books");
+    const card = adminPage.locator(".admin-book-card").filter({ has: adminPage.getByRole("heading", { name: title }) });
+    const decision = adminPage.waitForResponse(response =>
+      response.url().includes("/admin/author-books/" + draft.id) && response.request().method() !== "GET"
+    );
+    await card.locator(".admin-book-actions button:not(.secondary)").click();
+    assert.equal((await decision).status(), 200);
+    const approved = await AuthorBook.findById(draft._id).lean();
+    assert.equal(approved.status, "approved");
+    assert.equal(approved.price, 100);
     assert.equal(await Book.exists({ author: author.displayName }), null);
   } finally {
     try { await browser?.close(); } finally { await front.close(); }
@@ -114,6 +145,7 @@ async function verifyCheckoutInBrowser(api, buyer, referrer) {
 
 async function verifyPurchase(t, referred) {
   process.env.RAZORPAY_WEBHOOK_SECRET = secret;
+  process.env.ADMIN_MFA_ENCRYPTION_KEY = integrationMfaKey;
   const { default: createPendingBookOrder } = await import("../src/modules/orders/order.service.js");
   const { default: app } = await import("../src/app.js");
   const database = "capture_test_" + randomBytes(8).toString("hex");
