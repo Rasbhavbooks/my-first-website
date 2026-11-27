@@ -292,6 +292,18 @@ async function verifyPurchase(t, referred) {
         assert.equal(data.priceBreakdownPaise.gatewayFee, 279);
       }
     }
+    const origin = new URL(api).origin;
+    const robots = await fetch(origin + "/robots.txt");
+    assert.equal(robots.status, 200);
+    assert.match(await robots.text(), /Sitemap: https?:\/\/[^\s]+\/sitemap\.xml/);
+    const sitemap = await fetch(origin + "/sitemap.xml");
+    assert.equal(sitemap.status, 200);
+    assert.match(sitemap.headers.get("content-type"), /application\/xml/);
+    const xml = await sitemap.text();
+    assert.ok(xml.includes("/books/phase7-review-paid</loc>"));
+    assert.ok(xml.includes("/books/phase7-review-free</loc>"));
+    assert.ok(!xml.includes(unlistedDraft.id));
+    assert.ok(!xml.includes("/admin/"));
     if (scanner) await verifyCheckoutInBrowser(api, buyer, referrer, scanner);
   }
   const body = JSON.stringify({ event: "payment.captured", payload: { payment: { entity: {
