@@ -1,3 +1,4 @@
+import { Completion } from "../orders/reader-challenge.js";
 import { isDatabaseConnected } from "../../config/database.js";
 import UserWishlistItem from "../wishlist/wishlist-item.model.js";
 import AuthorFollow from "./author-follow.model.js";
@@ -41,6 +42,7 @@ export async function exportReaderAccountData(request, response) {
     authorBooks,
     chapters,
     readingHistory,
+    readingCompletions,
     readingBookmarks,
   ] = await Promise.all([
     UserWishlistItem.find({ userId }).select("catalogueId createdAt -_id").sort({ createdAt: 1 }).lean(),
@@ -56,6 +58,7 @@ export async function exportReaderAccountData(request, response) {
     AuthorBookChapter.find({ authorId: userId })
       .select("bookId title content order createdAt updatedAt -_id").sort({ bookId: 1, order: 1, createdAt: 1 }).lean(),
     ReaderBookActivity.find({ readerId: userId }).select("bookId lastOpenedAt -_id").sort({ lastOpenedAt: -1 }).lean(),
+    Completion.find({ readerId: userId }).select("bookId completedAt -_id").sort({ completedAt: -1 }).lean(),
     ReaderBookBookmark.find({ readerId: userId }).select("bookId pageNumber note updatedAt -_id").sort({ updatedAt: -1 }).lean(),
   ]);
 
@@ -82,6 +85,7 @@ export async function exportReaderAccountData(request, response) {
       helpfulVotes: helpfulVotes.map((vote) => ({ reviewId: String(vote.reviewId), createdAt: vote.createdAt })),
       readingHistory,
       bookmarks: readingBookmarks,
+      completions: readingCompletions,
     },
     author: {
       application: authorApplication,
