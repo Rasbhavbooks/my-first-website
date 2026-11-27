@@ -1,4 +1,5 @@
-import { Route, Routes } from "react-router";
+import { useEffect } from "react";
+import { matchPath, Route, Routes, useLocation } from "react-router";
 import AdminMfaGuard from "../components/auth/AdminMfaGuard.jsx";
 import PublicLayout from "../layouts/PublicLayout.jsx";
 import HomePage from "../pages/Home/HomePage.jsx";
@@ -40,7 +41,22 @@ import AuthorBooksPage from "../pages/Auth/AuthorBooksPage.jsx";
 import PublicAuthorPage from "../pages/Authors/PublicAuthorPage.jsx";
 import NotFoundPage from "../pages/NotFound/NotFoundPage.jsx";
 
+const indexablePaths = ["/", "/books/:bookId", "/categories/:categoryKey", "/authors/:slug", "/blog", "/blog/:slug", "/pages/:slug"];
+
 export default function AppRoutes() {
+  const { pathname, search } = useLocation();
+  const isCheckout = Boolean(matchPath("/books/:bookId", pathname))
+    && new URLSearchParams(search).get("checkout") === "preview";
+  const noIndex = isCheckout || !indexablePaths.some(pattern => matchPath(pattern, pathname));
+  useEffect(() => {
+    if (!noIndex) return;
+    const directive = document.createElement("meta");
+    directive.name = "robots";
+    directive.content = "noindex";
+    document.head.appendChild(directive);
+    return () => directive.remove();
+  }, [noIndex]);
+
   return (
     <Routes>
       <Route element={<PublicLayout />}>
