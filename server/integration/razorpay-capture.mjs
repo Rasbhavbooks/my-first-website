@@ -207,7 +207,8 @@ async function verifyPurchase(t, referred) {
   process.env.RAZORPAY_WEBHOOK_SECRET = secret;
   process.env.ADMIN_MFA_ENCRYPTION_KEY = integrationMfaKey;
   const scanner = !referred && process.env.VERIFY_CHECKOUT_BROWSER === "true" ? await startTestScanner(t) : null;
-  const { default: createPendingBookOrder } = await import("../src/modules/orders/order.service.js");
+  const { createTestCheckoutService } = await import("../src/modules/orders/test-checkout.service.js");
+  const { createRazorpayOrderService } = await import("../src/modules/orders/razorpay-order.service.js");
   if (scanner) process.env.SERVE_BUILT_FRONTEND = "true";
   const { default: app } = await import("../src/app.js");
   const database = "capture_test_" + randomBytes(8).toString("hex");
@@ -259,17 +260,34 @@ async function verifyPurchase(t, referred) {
     accountStatus: "active", role: "reader",
   })));
   const referralCode = referred ? await getReaderReferralCode(referrer._id) : undefined;
-  const { order } = await createPendingBookOrder({
-    buyerId: buyer._id, bookId: catalogue.catalogueId, referralCode, idempotencyKey: "capture-integration-order",
+  let gatewayCreations = 0;
+  const createGatewayOrder = createRazorpayOrderService({
+    findAttemptById: id => Attempt.findById(id).select("+providerOrderId"),
+    findOrderById: id => Order.findById(id),
+    findProviderOrderByReceipt: async () => null,
+    createProviderOrder: async input => {
+      gatewayCreations += 1;
+      return { ...input, id: "order_capture1" };
+    },
+    saveAttempt: attempt => attempt.save(),
   });
+  const prepareCheckout = createTestCheckoutService({ createGatewayOrder });
+  const checkoutInput = {
+    mode: "test", buyerId: buyer._id, bookId: catalogue.catalogueId,
+    referralCode, idempotencyKey: "capture-integration-order",
+  };
+  await assert.rejects(prepareCheckout({ ...checkoutInput, mode: "live" }), { code: "LIVE_CHECKOUT_DISABLED" });
+  const checkout = await prepareCheckout(checkoutInput);
+  assert.deepEqual(await prepareCheckout(checkoutInput), checkout);
+  assert.equal(gatewayCreations, 1);
+  assert.equal(checkout.providerOrderId, "order_capture1");
+  assert.equal(checkout.amountPaise, 13929);
+  const order = await Order.findById(checkout.orderId).select("+referrerId");
+  const attempt = await Attempt.findById(checkout.attemptId);
   assert.equal(order.amountPaise, 13929);
   assert.equal(order.referrerRewardPaise, referred ? 1000 : 0);
   assert.equal(String(order.referrerId), String(referred ? referrer._id : null));
-  const attempt = new Attempt({ orderId: order._id, attemptNumber: 1, provider: "razorpay",
-    amountPaise: 13929, idempotencyKeyHash: "b".repeat(64) });
-  attempt.attachProviderOrderId("order_capture1");
-  attempt.transitionTo("pending");
-  await attempt.save();
+  assert.equal(attempt.status, "pending");
 
   const server = app.listen(0, "127.0.0.1");
   await once(server, "listening");
