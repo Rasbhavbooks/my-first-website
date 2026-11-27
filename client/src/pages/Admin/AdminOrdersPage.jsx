@@ -95,7 +95,18 @@ export default function AdminOrdersPage() {
           <tbody>{orders.map((order) => <tr key={order.id}>
             <td><div className="admin-orders-book"><strong>{order.bookTitle?.[language] || order.bookTitle?.en || order.bookId}</strong><small>{order.authorName}</small></div></td>
             <td>{formatTimestamp(order.createdAt, language)}</td>
-            <td>{formatInr(order.amountPaise / 100, language)}</td>
+            <td>{formatInr(order.amountPaise / 100, language)}
+              {order.allocation && <details>
+                <summary>{t.priceBreakdownTitle}</summary>
+                <dl>{[
+                  [t.priceAuthorShare, order.allocation.author],
+                  ["Rasbhav Books", order.allocation.platform],
+                  [{ gu: "રેફરલ હિસ્સો", hi: "रेफरल हिस्सा", en: "Referral share" }[language], order.allocation.referral],
+                  [t.priceGst, order.allocation.gst],
+                  [t.priceGateway, order.allocation.gateway],
+                ].map(([label, amount]) => <div key={label}><dt>{label}</dt><dd>{formatInr(amount / 100, language)}</dd></div>)}</dl>
+              </details>}
+            </td>
             <td><span className="admin-orders-status" data-status={order.status}>{t[`adminOrderStatus_${order.status}`] || order.status}</span></td>
             <td>{formatTimestamp(order.paidAt, language)}</td>
             <td>{order.recordStatus ? t[`adminOrderRecord_${order.recordStatus}`] : "—"}</td>
