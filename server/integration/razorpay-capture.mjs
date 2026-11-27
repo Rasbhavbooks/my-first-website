@@ -142,11 +142,12 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
     assert.deepEqual(otherRecommendations.body.data.books, []);
     await sharingPage.goto(origin + "/library");
     await sharingPage.locator('progress[max="3"][value="0"]').waitFor();
-    await page.goto(readerUrl);
-    await page.getByRole("button", { name: undo }).click();
-    await page.getByRole("button", { name: mark }).waitFor();
-    await page.goto(origin + "/library");
+    const completedBooks = page.locator('section[aria-labelledby="reading-challenge-title"]');
+    await completedBooks.getByRole("button", { name: undo }).click();
     await page.locator('progress[max="3"][value="0"]').waitFor();
+    await completedBooks.getByRole("button", { name: undo }).waitFor({ state: "detached" });
+    await page.goto(readerUrl);
+    await page.getByRole("button", { name: mark }).waitFor();
 
     const author = await User.create({
       displayName: "Browser test author", email: "author@example.test",
@@ -501,10 +502,15 @@ async function verifyPurchase(t, referred) {
   assert.equal(response.statusCode, 404);
   assert.deepEqual(await saveReadingCompletion(completionRequest, response), { completed: true });
   await saveReadingCompletion(completionRequest, response);
-  assert.deepEqual(await getReadingChallenge(completionRequest, response), { completed: 1, target: 3 });
-  assert.deepEqual(await getReadingChallenge({ reader: { _id: otherReaderId } }, response), { completed: 0, target: 3 });
+  const challenge = await getReadingChallenge(completionRequest, response);
+  assert.equal(challenge.completed, 1);
+  assert.equal(challenge.target, 3);
+  assert.equal(challenge.books.length, 1);
+  assert.equal(challenge.books[0].bookId, catalogue.catalogueId);
+  assert.equal(challenge.books[0].title.en, catalogue.title.en);
+  assert.deepEqual(await getReadingChallenge({ reader: { _id: otherReaderId } }, response), { completed: 0, target: 3, books: [] });
   await deleteReadingCompletion(completionRequest, response);
-  assert.deepEqual(await getReadingChallenge(completionRequest, response), { completed: 0, target: 3 });
+  assert.deepEqual(await getReadingChallenge(completionRequest, response), { completed: 0, target: 3, books: [] });
 
   const startRefund = { mode: "test", orderId: order._id };
   assert.deepEqual(await startFullTestRefund(startRefund), { replayed: false });
