@@ -14,6 +14,7 @@ import {
   updateBookReview,
 } from "./reviews.controller.js";
 
+import { getReaderReferralCode } from "../orders/reader-referral.js";
 import readEbook from "./reading.controller.js";
 
 const router = Router();
@@ -48,6 +49,12 @@ const reportLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+router.post("/referral-code", requireReader, reviewReadLimiter, async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  const code = await getReaderReferralCode(req.reader._id);
+  if (!code) return res.sendStatus(403);
+  return res.json({ data: { code } });
+});
 router.get("/", listBooks);
 router.get("/:bookId/related", getRelatedBooks);
 router.get("/:bookId/read", ebookReadLimiter, requireReader, readEbook);
