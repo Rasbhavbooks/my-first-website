@@ -17,6 +17,11 @@ export default function BookDetailsPage() {
   const { bookId } = useParams();
   const { language, t } = useLanguage();
   const [params] = useSearchParams();
+  const referralCode = params.get("ref") ?? "";
+  const referralQuery = /^[a-f0-9]{32}$/.test(referralCode) ? new URLSearchParams({ ref: referralCode }) : new URLSearchParams();
+  const bookSearch = referralQuery.toString();
+  referralQuery.set("checkout", "preview");
+  const checkoutSearch = referralQuery.toString();
   const previewLabel = { gu: "ટેસ્ટ ચેકઆઉટ", hi: "टेस्ट चेकआउट", en: "Test checkout" }[language] || "Test checkout";
   const { getCategoryLabel } = useCategories();
   const { user, loading: authLoading } = useAuth();
@@ -86,7 +91,7 @@ export default function BookDetailsPage() {
         <p>{t.priceGateway} · {formatInr(book.priceBreakdownPaise.gatewayFee / 100, language)}</p>
         <strong>{t.priceBreakdownTitle} · {formatInr(customerPrice, language)}</strong>
         <p>{t.testPriceDisclaimer}</p>
-        <Link to={`/books/${encodeURIComponent(bookId)}`}>{title}</Link>
+        <Link to={{ pathname: `/books/${encodeURIComponent(bookId)}`, search: bookSearch }}>{title}</Link>
       </main>
     );
   }
@@ -105,7 +110,7 @@ export default function BookDetailsPage() {
           <p className="detail-author">{t.by} <strong>{book.author}</strong></p>
           <AuthorFollowButton authorName={book.author} />
           <div className="detail-price">{customerPrice === 0 ? t.freeBookPrice : formatInr(customerPrice, language)}</div>
-          {customerPrice > 0 && book.priceBreakdownPaise && <Link className="detail-reading-action" to="?checkout=preview">{previewLabel}</Link>}
+          {customerPrice > 0 && book.priceBreakdownPaise && <Link className="detail-reading-action" to={{ search: checkoutSearch }}>{previewLabel}</Link>}
           {customerPrice > 0 && book.priceBreakdownPaise && (
             <details className="detail-price-breakdown">
               <summary>{t.priceBreakdownTitle}</summary>

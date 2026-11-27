@@ -4,6 +4,7 @@ import { inrPriceToPaise } from "../../../../shared/money.js";
 import { calculateEbookQuote } from "../../../../shared/commerce-pricing.js";
 import { env } from "../../config/env.js";
 import Book from "../books/book.model.js";
+import { resolveReaderReferral } from "./reader-referral.js";
 import DigitalBookOrder from "./order.model.js";
 
 function error(message, code) {
@@ -120,6 +121,7 @@ export function createPendingOrderService({
 }
 
 const defaultService = createPendingOrderService({
+  resolveReferral: resolveReaderReferral,
   findAvailableBook: (catalogueId, { session } = {}) => {
     let query = Book.findOne({ catalogueId, availableForSale: true })
       .select("catalogueId title author price");
