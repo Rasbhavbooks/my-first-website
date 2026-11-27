@@ -251,9 +251,15 @@ async function verifyPurchase(t, referred) {
   assert.equal(await resolveReadingAccess({ bookId: String(unlistedDraft._id), readerId: unlistedDraft.authorId }), null);
 
   const text = { en: "Quiet River", gu: "શાંત નદી", hi: "शांत नदी" };
+  const otherReaderId = new mongoose.Types.ObjectId();
+  const source = await AuthorBook.create({
+    authorId: otherReaderId, authorName: "A. Writer", title: text, description: text, price: 100, status: "approved",
+    assets: { manuscript: { key: "private/test/reading.pdf", contentType: "application/pdf",
+      fileName: "reading.pdf", size: 512, scanStatus: "clean" } },
+  });
   const catalogue = await Book.create({
     catalogueId: "quiet-river", title: text, description: text, author: "A. Writer",
-    language: "English", category: "Novel", price: 100, availableForSale: true, tone: "blue", badge: "New",
+    language: "English", category: "Novel", price: 100, availableForSale: true, readingSourceId: source._id, tone: "blue", badge: "New",
   });
   const [buyer, referrer] = await User.create(["buyer", "referrer"].map(name => ({
     displayName: name, email: name + "@example.test", passwordHash: "unused-test-hash",
@@ -282,7 +288,8 @@ async function verifyPurchase(t, referred) {
   assert.equal(gatewayCreations, 1);
   assert.equal(checkout.providerOrderId, "order_capture1");
   assert.equal(checkout.amountPaise, 13929);
-  const order = await Order.findById(checkout.orderId).select("+referrerId");
+  const order = await Order.findById(checkout.orderId).select("+referrerId +authorBeneficiaryId");
+  assert.equal(String(order.authorBeneficiaryId), String(otherReaderId));
   const attempt = await Attempt.findById(checkout.attemptId);
   assert.equal(order.amountPaise, 13929);
   assert.equal(order.referrerRewardPaise, referred ? 1000 : 0);
@@ -406,6 +413,9 @@ async function verifyPurchase(t, referred) {
   assert.equal((await RefundRequest.findById(duplicateRefund._id)).status, "completed");
   assert.equal((await submitRefund(duplicateRefund.id)).replayed, true);
   assert.equal(refundCalls, 1);
+  const { getAuthorOrderShare } = await import("../src/modules/auth/authors.controller.js");
+  assert.deepEqual(await getAuthorOrderShare(otherReaderId), { amountPaise: 10000, orderCount: 1 });
+  assert.deepEqual(await getAuthorOrderShare(buyer._id), { amountPaise: 0, orderCount: 0 });
   async function historyFor(reader) {
     return listReaderOrders({ reader, query: {} }, {
       setHeader() {},
@@ -438,12 +448,8 @@ async function verifyPurchase(t, referred) {
     ["tax_payable", "credit", 650],
   ]);
   const readerId = order.buyerId;
-  const otherReaderId = new mongoose.Types.ObjectId();
-  const source = await AuthorBook.create({
-    authorId: otherReaderId, authorName: order.authorName, title: text, description: text, price: 100,
-    assets: { manuscript: { key: "private/test/reading.pdf", contentType: "application/pdf",
-      fileName: "reading.pdf", size: 512, scanStatus: "clean" } },
-  });
+  await Book.updateOne({ _id: catalogue._id }, { $unset: { readingSourceId: 1 } });
+  await AuthorBook.updateOne({ _id: source._id }, { $set: { status: "draft" } });
   assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId }), null);
   await Book.updateOne({ _id: catalogue._id }, { $set: { readingSourceId: source._id } });
   assert.equal((await Book.findById(catalogue._id).lean()).readingSourceId, undefined);
@@ -493,6 +499,7 @@ async function verifyPurchase(t, referred) {
   ]);
   assert.equal((await Order.findById(order._id)).status, "refunded");
   assert.equal((await Attempt.findById(attempt._id)).status, "refunded");
+  assert.deepEqual(await getAuthorOrderShare(otherReaderId), { amountPaise: 0, orderCount: 0 });
   assert.equal((await historyFor(referrer)).referralRewardPaise, 0);
   assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId }), null);
   await Book.updateOne({ _id: catalogue._id }, { $set: { price: 0 } });
