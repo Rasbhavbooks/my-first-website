@@ -1,3 +1,4 @@
+import { listAdminOrders } from "../src/modules/admin/admin-orders.controller.js";
 import { applyConfirmedTestRefund, startFullTestRefund } from "../src/modules/orders/full-refund.service.js";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
@@ -454,6 +455,12 @@ async function verifyPurchase(t, referred) {
   assert.deepEqual(await applyConfirmedTestRefund(fullRefund), { replayed: false, amountPaise: 13929 });
   assert.deepEqual(await applyConfirmedTestRefund(fullRefund), { replayed: true, amountPaise: 13929 });
   assert.equal(await Ledger.countDocuments({ orderId: order._id, eventType: "refund" }), 1);
+  const adminHistory = await listAdminOrders({ query: { status: "refunded" } }, {
+    setHeader() {},
+    json(body) { return body.data; },
+  });
+  assert.equal(adminHistory.orders[0].id, order.id);
+  assert.equal(adminHistory.orders[0].recordStatus, "refund_linked");
   const reversal = await Ledger.findOne({ orderId: order._id, eventType: "refund" });
   assert.deepEqual(reversal.entries.map(e => [e.accountCode, e.direction, e.amountPaise]).sort(), [
     ["author_payable", "debit", 10000], ["gateway_clearing", "credit", 13929],
