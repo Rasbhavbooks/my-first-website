@@ -1,10 +1,11 @@
+import BookCard from "../../components/books/BookCard.jsx";
 import { ReadingChallengeSummary } from "../../components/reader/ReadingChallenge.jsx";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowUpRight, BookOpen } from "lucide-react";
 import { Link, Navigate } from "react-router";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
-import { getReaderLibrary, getRecentlyOpenedBooks, clearReaderReadingHistory } from "../../services/readerLibraryService.js";
+import { getReaderRecommendations, getReaderLibrary, getRecentlyOpenedBooks, clearReaderReadingHistory } from "../../services/readerLibraryService.js";
 
 const styles = `
 .reader-library{max-width:1120px;min-height:70vh;margin:auto;padding:64px 24px 90px}
@@ -30,6 +31,27 @@ const styles = `
 @media(max-width:760px){.library-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.reader-library{padding:45px 19px 70px}.library-grid{grid-template-columns:1fr}.library-card{grid-template-columns:76px minmax(0,1fr)}.library-card-cover{min-height:112px}.library-section-heading h2{font-size:24px}}
 `;
+
+function RecommendedBooks({ language, t }) {
+  const [books, setBooks] = useState([]);
+  useEffect(() => {
+    let active = true;
+    getReaderRecommendations().then(result => { if (active) setBooks(result.books); })
+      .catch(() => { if (active) setBooks([]); });
+    return () => { active = false; };
+  }, []);
+  if (!books.length) return null;
+  const labels = {
+    gu: ["તમારા માટે પુસ્તકો", "તમે વાંચી લીધેલાં પુસ્તકોની શ્રેણી પરથી."],
+    hi: ["आपके लिए किताबें", "आपकी पढ़ी हुई किताबों की श्रेणियों के आधार पर।"],
+    en: ["Books for you", "Based on the categories of books you've marked as read."],
+  }[language];
+  return <section className="library-section" aria-labelledby="library-recommendations">
+    <div className="library-section-heading"><h2 id="library-recommendations">{labels[0]}</h2></div>
+    <p>{labels[1]}</p>
+    <div className="library-grid">{books.map(book => <BookCard key={book.id} book={book} language={language} t={t} />)}</div>
+  </section>;
+}
 
 function BookSection({ title, books, cursor, onMore, loadingMore, onClear, clearing, t, language }) {
   if (!books.length && !cursor) return null;
@@ -138,6 +160,7 @@ export default function ReaderLibraryPage() {
       <h1>{t.libraryTitle}</h1>
       <p className="reader-library-intro">{t.libraryIntro}</p>
       <ReadingChallengeSummary key={user.id} language={language} />
+      <RecommendedBooks key={user.id} language={language} t={t} />
       {error && <p className="library-error" role="alert">{error}</p>}
       {pageLoading ? <p aria-live="polite">{t.libraryLoading}</p> : (
         <>
