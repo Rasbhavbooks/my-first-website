@@ -82,6 +82,10 @@ The MFA-protected Admin Orders page shows counts and INR totals across paid, ref
 
 The private Author Studio includes the author share on paid orders after catalogue entries are linked to approved, scanned source manuscripts. An order snapshots the beneficiary from that link. Older unlinked orders are excluded from author reports; buyers and beneficiary IDs are not exposed. Full refunds remove the share from the author total.
 
+## રીડરની લાઇબ્રેરીમાં સૂચવેલ પુસ્તકો
+
+**વાંચી લીધું** તરીકે નોંધેલી તાજેતરની બુકની શ્રેણી પરથી લાઇબ્રેરીમાં જાહેર કેટલોગની છ સુધીની બુક સૂચવાય છે. સમાન ભાષાની બુકને પ્રાધાન્ય મળે છે. પહેલેથી વાંચેલી કે ખરીદેલી બુક સૂચવાતી નથી. આ યાદી ફક્ત લૉગિન કરેલા રીડર માટે બને છે.
+
 ## માસિક વાંચન લક્ષ્ય
 
 લાઇબ્રેરીમાંથી પોતાની ઍક્સેસવાળી બુક ખોલો અને **વાંચી લીધું** દબાવો. લાઇબ્રેરી પર પાછા જતાં આ મહિનાની ગણતરી એકથી વધે છે. એ જ બુક ફરી નોંધવાથી ગણતરી ફરી વધતી નથી. ભૂલથી નોંધાઈ હોય તો બુક પર **વાંચ્યાની નોંધ દૂર કરો** પસંદ કરો.
