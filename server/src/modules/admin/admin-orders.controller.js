@@ -42,6 +42,10 @@ export function serializeAdminOrder(order, recordStatus = null) {
     },
     authorName: order.authorName,
     amountPaise: order.amountPaise,
+    ...([order.authorPricePaise, order.platformCommissionPaise, order.referrerRewardPaise, order.gstPaise, order.gatewayFeePaise].every(Number.isSafeInteger) && {
+      allocation: { author: order.authorPricePaise, platform: order.platformCommissionPaise,
+        referral: order.referrerRewardPaise, gst: order.gstPaise, gateway: order.gatewayFeePaise },
+    }),
     currency: order.currency,
     status: order.status,
     recordStatus,
@@ -78,7 +82,7 @@ export async function listAdminOrders(request, response) {
       .sort({ createdAt: -1, _id: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .select("_id buyerId bookId bookTitle authorName amountPaise currency status createdAt paidAt cancelledAt refundedAt")
+      .select("_id buyerId bookId bookTitle authorName amountPaise authorPricePaise platformCommissionPaise referrerRewardPaise gstPaise gatewayFeePaise currency status createdAt paidAt cancelledAt refundedAt")
       .lean(),
   ]);
   const paidIds = orders.filter((order) => order.status === "paid").map((order) => order._id);
