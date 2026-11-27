@@ -42,12 +42,17 @@ export async function listReaderOrders(request, response) {
     .select("bookId bookTitle authorName amountPaise gstPaise gatewayFeePaise currency status createdAt paidAt")
     .lean();
 
+  const referralTotals = cursor ? [] : await DigitalBookOrder.aggregate([
+    { $match: { referrerId: request.reader._id, status: "paid", currency: "INR" } },
+    { $group: { _id: null, total: { $sum: "$referrerRewardPaise" } } },
+  ]);
   const hasMore = records.length > PAGE_SIZE;
   const orders = records.slice(0, PAGE_SIZE).map(serializeReaderOrder);
   response.setHeader("Cache-Control", "private, no-store");
   return response.json({
     data: {
       orders,
+      ...(!cursor && { referralRewardPaise: referralTotals[0]?.total ?? 0 }),
       nextCursor: hasMore ? orders.at(-1).id : null,
     },
   });

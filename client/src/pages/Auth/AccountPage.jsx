@@ -81,6 +81,7 @@ export default function AccountPage() {
   const [sessionsBusyId, setSessionsBusyId] = useState("");
   const [sessionsError, setSessionsError] = useState("");
   const [orders, setOrders] = useState([]);
+  const [referralRewardPaise, setReferralRewardPaise] = useState(null);
   const [ordersCursor, setOrdersCursor] = useState(null);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [ordersLoadingMore, setOrdersLoadingMore] = useState(false);
@@ -124,10 +125,12 @@ export default function AccountPage() {
       setOrdersLoading(false);
       return () => { active = false; };
     }
+    setReferralRewardPaise(null);
     setOrdersLoading(true);
     getReaderOrders()
       .then((result) => {
         if (!active) return;
+        setReferralRewardPaise(result.referralRewardPaise ?? null);
         setOrders(result.orders || []);
         setOrdersCursor(result.nextCursor || null);
         setOrdersError("");
@@ -370,6 +373,9 @@ export default function AccountPage() {
       </div>
       <section className="account-panel" style={{ marginTop: 20 }}>
         <h2>{t.ordersTitle}</h2>
+        {referralRewardPaise > 0 && <p>
+          {{ gu: "ચૂકવાયેલા ઓર્ડર પર રેફરલનો હિસ્સો", hi: "भुगतान किए गए ऑर्डर पर रेफरल हिस्सा", en: "Referral share on paid orders" }[language]} · {formatInr(referralRewardPaise / 100, language)}
+        </p>}
         {ordersLoading && <p role="status">{t.ordersLoading}</p>}
         {ordersError && <p className="account-error" role="alert">{ordersError}</p>}
         {!ordersLoading && !ordersError && orders.length === 0 && (

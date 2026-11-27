@@ -199,6 +199,7 @@ orderSchema.post("save", function rememberSavedStatus(document) {
 
 orderSchema.index({ buyerId: 1, idempotencyKeyHash: 1 }, { unique: true });
 orderSchema.index({ buyerId: 1, createdAt: -1 });
+orderSchema.index({ referrerId: 1, status: 1 }, { partialFilterExpression: { referrerId: { $type: "objectId" } } });
 orderSchema.index({ status: 1, createdAt: -1 });
 
 const DigitalBookOrder = mongoose.models.DigitalBookOrder
