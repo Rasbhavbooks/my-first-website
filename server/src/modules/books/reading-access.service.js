@@ -46,6 +46,6 @@ export default createReadingAccessService({
   }).select("price").lean(),
   findEntitlement: (readerId, bookId) => DigitalBookEntitlement.findOne({ readerId, bookId })
     .select("orderId currency amountPaise").lean(),
-  findPaidOrder: (_id, buyerId, bookId) => DigitalBookOrder.findOne({ _id, buyerId, bookId, status: "paid" })
+  findPaidOrder: (_id, buyerId, bookId) => DigitalBookOrder.findOne({ _id, buyerId, bookId, status: { $in: ["paid", "refund_pending"] } })
     .select("currency amountPaise").lean(),
 });
