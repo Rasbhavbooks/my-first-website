@@ -25,7 +25,7 @@ import RefundRequest from "../src/modules/orders/refund-request.model.js";
 
 const secret = randomBytes(32).toString("hex");
 
-async function verifyCheckoutInBrowser(api) {
+async function verifyCheckoutInBrowser(api, buyer, referrer) {
   const { chromium } = await import("playwright");
   const { preview } = await import("vite");
   const front = await preview({
@@ -36,11 +36,30 @@ async function verifyCheckoutInBrowser(api) {
   let browser;
   try {
     browser = await chromium.launch();
-    const page = await browser.newPage();
     const origin = "http://127.0.0.1:" + front.httpServer.address().port;
     const testCheckout = /Test checkout|ટેસ્ટ ચેકઆઉટ|टेस्ट चेकआउट/;
-    const code = "a".repeat(32);
-    await page.goto(origin + "/books/phase7-review-paid?ref=" + code);
+    const password = randomBytes(24).toString("hex");
+    async function signIn(reader) {
+      await reader.setPassword(password);
+      reader.emailVerifiedAt = new Date();
+      await reader.save();
+      const page = await browser.newPage();
+      await page.goto(origin + "/reader/login");
+      await page.locator('input[name="email"]').fill(reader.email);
+      await page.locator('input[name="password"]').fill(password);
+      await page.locator('button[type="submit"]').click();
+      await page.waitForURL(origin + "/");
+      return page;
+    }
+    const sharingPage = await signIn(referrer);
+    await sharingPage.goto(origin + "/books/phase7-review-paid");
+    const shareLabel = /Copy referral link|રેફરલ લિંક કૉપી કરો|रेफरल लिंक कॉपी करें/;
+    await sharingPage.getByRole("button", { name: shareLabel }).click();
+    const link = await sharingPage.getByRole("textbox", { name: shareLabel }).inputValue();
+    const code = await getReaderReferralCode(referrer._id);
+    assert.equal(new URL(link).searchParams.get("ref"), code);
+    const page = await signIn(buyer);
+    await page.goto(link);
     const checkout = page.getByRole("link", { name: testCheckout });
     await checkout.waitFor();
     assert.match(await page.locator("main .detail-price").innerText(), /139\.29/);
@@ -150,7 +169,7 @@ async function verifyPurchase(t, referred) {
         assert.equal(data.priceBreakdownPaise.gatewayFee, 279);
       }
     }
-    if (process.env.VERIFY_CHECKOUT_BROWSER === "true") await verifyCheckoutInBrowser(api);
+    if (process.env.VERIFY_CHECKOUT_BROWSER === "true") await verifyCheckoutInBrowser(api, buyer, referrer);
   }
   const body = JSON.stringify({ event: "payment.captured", payload: { payment: { entity: {
     id: "pay_capture1", order_id: "order_capture1", amount: 13929, currency: "INR",
