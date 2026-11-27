@@ -7,8 +7,9 @@ const copy = {
   en: { heading: "Monthly reading goal", mark: "Mark as read", undo: "Remove completion", error: "Could not load or save your reading progress." },
 };
 
-export function ReadingChallengeSummary({ language }) {
+export function ReadingChallengeSummary({ language, onCompletionRemoved }) {
   const [summary, setSummary] = useState(null);
+  const [removing, setRemoving] = useState(null);
   const [error, setError] = useState(false);
   const labels = copy[language] ?? copy.en;
   useEffect(() => {
@@ -17,6 +18,24 @@ export function ReadingChallengeSummary({ language }) {
       .catch(() => { if (active) setError(true); });
     return () => { active = false; };
   }, []);
+  async function removeBook(bookId) {
+    setError(false);
+    setRemoving(bookId);
+    try {
+      await setReadingCompletion(bookId, false);
+      setSummary(current => ({
+        ...current,
+        completed: Math.max(0, current.completed - 1),
+        books: current.books.filter(book => book.bookId !== bookId),
+      }));
+      onCompletionRemoved?.();
+      setSummary(await getReadingChallenge());
+    } catch {
+      setError(true);
+    } finally {
+      setRemoving(null);
+    }
+  }
   if (!summary && !error) return null;
   const number = new Intl.NumberFormat(language);
   return <section aria-labelledby="reading-challenge-title">
@@ -24,6 +43,18 @@ export function ReadingChallengeSummary({ language }) {
     {summary && <>
       <p>{number.format(summary.completed)} / {number.format(summary.target)}</p>
       <progress aria-labelledby="reading-challenge-title" value={Math.min(summary.completed, summary.target)} max={summary.target} />
+      {summary.books?.length > 0 && <>
+        <h3>{{ gu: "આ મહિને તાજેતરમાં વાંચેલી બુક", hi: "इस महीने हाल में पढ़ी गई किताबें", en: "Recently finished this month" }[language]}</h3>
+        <ul>{summary.books.map(book => {
+          const title = book.title?.[language] || book.title?.en || book.title?.gu || book.title?.hi || book.bookId;
+          return <li key={book.bookId}>
+            {title}{" "}
+            <button type="button" aria-label={labels.undo + " · " + title} disabled={removing !== null} onClick={() => removeBook(book.bookId)}>
+              {labels.undo}
+            </button>
+          </li>;
+        })}</ul>
+      </>}
     </>}
     {error && <p role="alert">{labels.error}</p>}
   </section>;
