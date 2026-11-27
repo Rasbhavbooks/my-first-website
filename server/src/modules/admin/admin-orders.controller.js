@@ -88,7 +88,7 @@ export async function listAdminOrders(request, response) {
   }
 
   const filter = status ? { status } : {};
-  const [total, orders] = await Promise.all([
+  const [total, orders, paymentTotals] = await Promise.all([
     DigitalBookOrder.countDocuments(filter),
     DigitalBookOrder.find(filter)
       .sort({ createdAt: -1, _id: -1 })
@@ -96,6 +96,10 @@ export async function listAdminOrders(request, response) {
       .limit(limit)
       .select("_id buyerId bookId bookTitle authorName amountPaise authorPricePaise platformCommissionPaise referrerRewardPaise gstPaise gatewayFeePaise currency status createdAt paidAt cancelledAt refundedAt")
       .lean(),
+    DigitalBookOrder.aggregate([
+      { $match: { currency: "INR", status: { $in: ["paid", "refund_pending", "refunded"] } } },
+      { $group: { _id: "$status", count: { $sum: 1 }, amountPaise: { $sum: "$amountPaise" } } },
+    ]),
   ]);
   const paidIds = orders.filter(order => ["paid", "refund_pending", "refunded"].includes(order.status)).map(order => order._id);
   const refundedIds = orders.filter(order => order.status === "refunded").map(order => order._id);
@@ -137,6 +141,10 @@ export async function listAdminOrders(request, response) {
       total,
       totalPages: Math.max(1, Math.ceil(total / limit)),
       status: status || "all",
+      paymentTotals: ["paid", "refund_pending", "refunded"].map(status => {
+        const row = paymentTotals.find(item => item._id === status);
+        return { status, count: row?.count ?? 0, amountPaise: row?.amountPaise ?? 0 };
+      }),
     },
   });
 }

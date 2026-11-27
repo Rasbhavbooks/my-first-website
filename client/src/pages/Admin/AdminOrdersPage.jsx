@@ -76,6 +76,17 @@ export default function AdminOrdersPage() {
       <p className="admin-orders-intro">{t.adminOrdersIntro}</p>
       <p>{t.adminOrdersPrivacyNote}</p>
       <p><Link to="/admin">{t.adminDashboardTitle}</Link> · <Link to="/admin/payment-reconciliation">{t.adminPaymentReconciliationTitle}</Link> · <Link to="/admin/ledger">{t.adminLedgerTitle}</Link></p>
+      {!error && result?.paymentTotals && <section aria-labelledby="admin-orders-payment-totals">
+        <h2 id="admin-orders-payment-totals">{{
+          gu: "બધા ઓર્ડરનો ચુકવણી સારાંશ",
+          hi: "सभी ऑर्डर का भुगतान सारांश",
+          en: "Payment totals across all orders",
+        }[language]}</h2>
+        <dl>{result.paymentTotals.map(row => <div key={row.status}>
+          <dt>{t[`adminOrderStatus_${row.status}`]}</dt>
+          <dd>{formatInr(row.amountPaise / 100, language)} · {row.count}</dd>
+        </div>)}</dl>
+      </section>}
       <label className="admin-orders-filter">
         <span>{t.adminOrderStatusFilter}</span>
         <select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}>
