@@ -72,6 +72,7 @@ export async function exportReaderAccountData(request, response) {
       role: request.reader.role,
       accountStatus: request.reader.accountStatus,
       emailVerifiedAt: request.reader.emailVerifiedAt,
+      monthlyReadingReminder: request.reader.monthlyReadingReminder === true,
       bio: request.reader.bio || "",
       hobbies: request.reader.hobbies || [],
       avatarUrl: request.reader.avatarUrl || "",
