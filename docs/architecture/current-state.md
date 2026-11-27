@@ -59,6 +59,15 @@ Broader platform settings, server-rendered SEO metadata and root-level sitemap/r
 
 - An internal reading access check requires a catalogue book linked to an approved, scanned PDF source with a matching approved price. Reading requires a signed-in account. A linked ₹0 book needs no payment. A priced book requires the reader’s matching entitlement and an order in the paid state. The check returns an internal source ID and never returns the storage key. No publication path sets the source link. The authenticated read-stream route is implemented, but no catalogue entry can yet be linked to an approved source, so it cannot serve a public book.
 
+## Phase 7 ચકાસવાની રીત
+
+1. ટેસ્ટ દર GST 5% અને ગેટવે ફી 2% હોય ત્યારે કેટલોગમાં લેખકભાવ ₹100 ધરાવતી બુક ખોલો. કિંમતની વિગતો ખોલતાં કુલ ₹139.29, GST ₹6.50 અને ગેટવે ફી ₹2.79 દેખાવી જોઈએ.
+2. **ટેસ્ટ ચેકઆઉટ** ખોલો. પુસ્તકનું નામ અને અંતિમ કિંમત સરખાવો. આ પ્રિવ્યૂ પૈસા વસૂલતું નથી. મફત બુક માટે કિંમત ₹0 હોય છે.
+3. [MongoDB ટેસ્ટ](../../server/integration/razorpay-capture.mjs) સીધી ખરીદીમાં લેખકના ₹100 અને પ્લેટફોર્મના ₹30 તપાસે છે. રેફરલવાળી ખરીદીમાં પ્લેટફોર્મના ₹20 અને રીડરના ₹10 તપાસે છે.
+4. એ જ ટેસ્ટમાં વધારાની ચુકવણી પરત કર્યા પછી એક વેચાણ અને વાંચન-પ્રવેશ જળવાય છે. મૂળ ખરીદીના સંપૂર્ણ રિફંડની પુષ્ટિનું અનુકરણ કરતાં વેચાણના હિસ્સા રદ થાય છે અને એ ખરીદીથી મળતો વાંચન-પ્રવેશ બંધ થાય છે.
+
+[રિફંડ નીતિનો ગુજરાતી ડ્રાફ્ટ](../legal/refund-policy-draft-gu.md) પહેલાં સમીક્ષા માટે છે. ત્યારબાદ [લેખકના પ્રકાશન અધિકારોનો ડ્રાફ્ટ](../legal/author-publication-rights-draft-gu.md) સમીક્ષા માટે છે.
+
 ## Phase 7 test pricing model
 
 - Owner-approved test split: author price is the author share; add a 30% platform commission on that author price. For a valid referral, allocate 10% of the author price from the platform commission to the referring reader, leaving 20% for Rasbhav Books. The buyer total is the same for direct and referred sales.
