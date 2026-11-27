@@ -1,6 +1,9 @@
 import { planFullRefund } from "../../shared/commerce-pricing.js";
 import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
+import { execFile } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 import { createHmac, randomBytes } from "node:crypto";
 import { reviewAuthorBook } from "../src/modules/books/author-book-admin.controller.js";
 import { once } from "node:events";
@@ -27,7 +30,8 @@ async function verifyPurchase(t, referred) {
   const { default: createPendingBookOrder } = await import("../src/modules/orders/order.service.js");
   const { default: app } = await import("../src/app.js");
   const database = "capture_test_" + randomBytes(8).toString("hex");
-  await mongoose.connect("mongodb://127.0.0.1:27018/" + database + "?replicaSet=rs0&directConnection=true", {
+  const mongoUri = "mongodb://127.0.0.1:27018/" + database + "?replicaSet=rs0&directConnection=true";
+  await mongoose.connect(mongoUri, {
     serverSelectionTimeoutMS: 10000,
   });
   t.after(async () => {
@@ -89,7 +93,29 @@ async function verifyPurchase(t, referred) {
   const server = app.listen(0, "127.0.0.1");
   await once(server, "listening");
   t.after(() => new Promise((resolve) => server.close(resolve)));
-  const url = "http://127.0.0.1:" + server.address().port + "/api/v1/payments/razorpay/webhook";
+  const api = "http://127.0.0.1:" + server.address().port + "/api/v1";
+  const url = api + "/payments/razorpay/webhook";
+  if (!referred) {
+    const script = fileURLToPath(new URL("../src/scripts/seedBooks.js", import.meta.url));
+    for (let run = 0; run < 2; run += 1) {
+      await promisify(execFile)(process.execPath, [script, "--review-fixtures"], {
+        env: { ...process.env, NODE_ENV: "test", MONGODB_URI: mongoUri },
+        timeout: 15000,
+      });
+    }
+    assert.equal(await Book.countDocuments({ catalogueId: { $in: ["phase7-review-paid", "phase7-review-free"] } }), 2);
+    for (const [id, price, total] of [["phase7-review-paid", 100, 13929], ["phase7-review-free", 0, 0]]) {
+      const response = await fetch(api + "/books/" + id);
+      assert.equal(response.status, 200);
+      const { data } = await response.json();
+      assert.equal(data.price, price);
+      assert.equal(data.customerPricePaise, total);
+      if (price) {
+        assert.equal(data.priceBreakdownPaise.gst, 650);
+        assert.equal(data.priceBreakdownPaise.gatewayFee, 279);
+      }
+    }
+  }
   const body = JSON.stringify({ event: "payment.captured", payload: { payment: { entity: {
     id: "pay_capture1", order_id: "order_capture1", amount: 13929, currency: "INR",
   } } } });
