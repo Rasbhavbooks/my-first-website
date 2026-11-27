@@ -80,6 +80,8 @@ export default function BookDetailsPage() {
       <main className="detail-state">
         <h1>{previewLabel}</h1>
         <h2>{title}</h2>
+        <p>{t.priceAuthorShare} · {formatInr(book.priceBreakdownPaise.authorPrice / 100, language)}</p>
+        <p>{t.pricePlatformPool} · {formatInr(book.priceBreakdownPaise.platformCommission / 100, language)}</p>
         <p>{t.priceGst} · {formatInr(book.priceBreakdownPaise.gst / 100, language)}</p>
         <p>{t.priceGateway} · {formatInr(book.priceBreakdownPaise.gatewayFee / 100, language)}</p>
         <strong>{t.priceBreakdownTitle} · {formatInr(customerPrice, language)}</strong>
