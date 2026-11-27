@@ -1,3 +1,5 @@
+import { planFullRefund } from "../../shared/commerce-pricing.js";
+import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import { createHmac, randomBytes } from "node:crypto";
 import { reviewAuthorBook } from "../src/modules/books/author-book-admin.controller.js";
@@ -180,6 +182,28 @@ async function verifyPurchase(t, referred) {
   const paid = await Order.findById(order._id).select("+paymentReference");
   paid.transitionTo("refund_pending");
   await paid.save();
+  assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId }), null);
+  // Simulate confirmation of a full test refund against the original order snapshot.
+  const refund = planFullRefund({ ...order.toObject(), totalPaise: order.amountPaise });
+  assert.equal(refund.refundAmountPaise, 13929);
+  await mongoose.connection.transaction(async session => {
+    const pending = await Order.findById(order._id).select("+paymentReference").session(session);
+    pending.transitionTo("refunded");
+    await pending.save({ session });
+    await Ledger.create([{
+      eventType: "refund", sourceType: "refund", sourceId: String(order._id),
+      sourceKeyHash: createHash("sha256").update("test-full-refund:" + order.id).digest("hex"),
+      orderId: order._id, currency: "INR", entries: refund.ledgerEntries,
+    }], { session });
+  });
+  const reversal = await Ledger.findOne({ orderId: order._id, eventType: "refund" });
+  assert.deepEqual(reversal.entries.map(e => [e.accountCode, e.direction, e.amountPaise]).sort(), [
+    ["author_payable", "debit", 10000], ["gateway_clearing", "credit", 13929],
+    ["gateway_fee_expense", "debit", 279], ["platform_commission", "debit", referred ? 2000 : 3000],
+    ...(referred ? [["referrer_payable", "debit", 1000]] : []),
+    ["tax_payable", "debit", 650],
+  ]);
+  assert.equal((await Order.findById(order._id)).status, "refunded");
   assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId }), null);
   await Book.updateOne({ _id: catalogue._id }, { $set: { price: 0 } });
   assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId }), null);
