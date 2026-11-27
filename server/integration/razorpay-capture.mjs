@@ -9,6 +9,9 @@ import mongoose from "mongoose";
 import Book from "../src/modules/books/book.model.js";
 import AuthorBook from "../src/modules/books/author-book.model.js";
 import resolveReadingAccess from "../src/modules/books/reading-access.service.js";
+import createPendingBookOrder from "../src/modules/orders/order.service.js";
+import { getReaderReferralCode } from "../src/modules/orders/reader-referral.js";
+import User from "../src/modules/users/user.model.js";
 import Order from "../src/modules/orders/order.model.js";
 import Attempt from "../src/modules/orders/payment-attempt.model.js";
 import PaymentEvent from "../src/modules/orders/payment-event.model.js";
@@ -60,13 +63,22 @@ async function verifyPurchase(t, referred) {
   assert.equal(await Book.countDocuments({ author: unpublishedAuthorName }), 0);
   assert.equal(await resolveReadingAccess({ bookId: String(unlistedDraft._id), readerId: unlistedDraft.authorId }), null);
 
-  const order = await Order.create({
-    buyerId: new mongoose.Types.ObjectId(), idempotencyKeyHash: "a".repeat(64),
-    bookId: "quiet-river", bookTitle: { en: "Quiet River", gu: "શાંત નદી", hi: "शांत नदी" },
-    authorName: "A. Writer", amountPaise: 13929, authorPricePaise: 10000, commissionRateBps: 3000,
-    platformCommissionPaise: referred ? 2000 : 3000, referralRateBps: referred ? 1000 : 0, referrerRewardPaise: referred ? 1000 : 0,
-    referrerId: referred ? new mongoose.Types.ObjectId() : null, gstRateBps: 500, gstPaise: 650, gatewayRateBps: 200, gatewayFeePaise: 279,
+  const text = { en: "Quiet River", gu: "શાંત નદી", hi: "शांत नदी" };
+  const catalogue = await Book.create({
+    catalogueId: "quiet-river", title: text, description: text, author: "A. Writer",
+    language: "English", category: "Novel", price: 100, availableForSale: true, tone: "blue", badge: "New",
   });
+  const [buyer, referrer] = await User.create(["buyer", "referrer"].map(name => ({
+    displayName: name, email: name + "@example.test", passwordHash: "unused-test-hash",
+    accountStatus: "active", role: "reader",
+  })));
+  const referralCode = referred ? await getReaderReferralCode(referrer._id) : undefined;
+  const { order } = await createPendingBookOrder({
+    buyerId: buyer._id, bookId: catalogue.catalogueId, referralCode, idempotencyKey: "capture-integration-order",
+  });
+  assert.equal(order.amountPaise, 13929);
+  assert.equal(order.referrerRewardPaise, referred ? 1000 : 0);
+  assert.equal(String(order.referrerId), String(referred ? referrer._id : null));
   const attempt = new Attempt({ orderId: order._id, attemptNumber: 1, provider: "razorpay",
     amountPaise: 13929, idempotencyKeyHash: "b".repeat(64) });
   attempt.attachProviderOrderId("order_capture1");
@@ -159,12 +171,6 @@ async function verifyPurchase(t, referred) {
   ]);
   const readerId = order.buyerId;
   const otherReaderId = new mongoose.Types.ObjectId();
-  const text = { en: "Quiet River", gu: "શાંત નદી", hi: "शांत नदी" };
-  const catalogue = await Book.create({
-    catalogueId: order.bookId, title: text, description: text,
-    author: order.authorName, language: "English", category: "Novel", price: 100,
-    tone: "blue", badge: "New",
-  });
   const source = await AuthorBook.create({
     authorId: otherReaderId, authorName: order.authorName, title: text, description: text, price: 100,
     assets: { manuscript: { key: "private/test/reading.pdf", contentType: "application/pdf",
