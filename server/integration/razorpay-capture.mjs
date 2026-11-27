@@ -115,6 +115,30 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
     assert.match(await freePrice.innerText(), /free|મફત|मुफ़्त|मुफ्त|निःशुल्क/i);
     assert.equal(await page.getByRole("link", { name: testCheckout }).count(), 0);
 
+    const freeBook = await Book.findOne({ catalogueId: "phase7-review-free" }).lean();
+    const readingSource = await AuthorBook.create({
+      authorId: new mongoose.Types.ObjectId(), authorName: freeBook.author,
+      title: freeBook.title, description: freeBook.description, price: 0, status: "approved",
+      assets: { manuscript: { key: "test/reading-goal.pdf", contentType: "application/pdf",
+        fileName: "reading-goal.pdf", size: 42, scanStatus: "clean" } },
+    });
+    await Book.updateOne({ _id: freeBook._id }, { $set: { readingSourceId: readingSource._id } });
+    const readerUrl = origin + "/read/" + freeBook.catalogueId;
+    const mark = /Mark as read|વાંચી લીધું|पढ़ लिया/;
+    const undo = /Remove completion|વાંચ્યાની નોંધ દૂર કરો|पढ़ने की प्रविष्टि हटाएँ/;
+    await page.goto(readerUrl);
+    await page.getByRole("button", { name: mark }).click();
+    await page.getByRole("button", { name: undo }).waitFor();
+    await page.goto(origin + "/library");
+    await page.locator('progress[max="3"][value="1"]').waitFor();
+    await sharingPage.goto(origin + "/library");
+    await sharingPage.locator('progress[max="3"][value="0"]').waitFor();
+    await page.goto(readerUrl);
+    await page.getByRole("button", { name: undo }).click();
+    await page.getByRole("button", { name: mark }).waitFor();
+    await page.goto(origin + "/library");
+    await page.locator('progress[max="3"][value="0"]').waitFor();
+
     const author = await User.create({
       displayName: "Browser test author", email: "author@example.test",
       passwordHash: "unused-test-hash", accountStatus: "active", role: "author",
