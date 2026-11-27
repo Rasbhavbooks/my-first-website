@@ -15,8 +15,9 @@ import Ledger from "../src/modules/orders/ledger-transaction.model.js";
 import { createRefundSubmissionService } from "../src/modules/orders/refund-submission.service.js";
 import RefundRequest from "../src/modules/orders/refund-request.model.js";
 
+const secret = randomBytes(32).toString("hex");
+
 async function verifyPurchase(t, referred) {
-  const secret = randomBytes(32).toString("hex");
   process.env.RAZORPAY_WEBHOOK_SECRET = secret;
   const { default: app } = await import("../src/app.js");
   const database = "capture_test_" + randomBytes(8).toString("hex");
