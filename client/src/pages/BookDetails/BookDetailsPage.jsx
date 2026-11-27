@@ -13,6 +13,43 @@ import { formatInr } from "../../utils/formatCurrency.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { getReaderLibraryBook } from "../../services/readerLibraryService.js";
 
+function ShareReferral({ bookId, language }) {
+  const [link, setLink] = useState("");
+  const [status, setStatus] = useState("idle");
+  const labels = ({
+    gu: ["રેફરલ લિંક કૉપી કરો", "લિંક કૉપી થઈ", "લિંક મેળવવા ફરી પ્રયાસ કરો"],
+    hi: ["रेफरल लिंक कॉपी करें", "लिंक कॉपी हुआ", "लिंक पाने के लिए फिर कोशिश करें"],
+    en: ["Copy referral link", "Link copied", "Try again to get your link"],
+  })[language] || ["Copy referral link", "Link copied", "Try again to get your link"];
+
+  async function share() {
+    setStatus("loading");
+    try {
+      const response = await fetch("/api/v1/books/referral-code", { method: "POST", credentials: "same-origin" });
+      if (!response.ok) throw new Error();
+      const { data } = await response.json();
+      if (!/^[a-f0-9]{32}$/.test(data?.code)) throw new Error();
+      const url = new URL("/books/" + encodeURIComponent(bookId), window.location.origin);
+      url.searchParams.set("ref", data.code);
+      setLink(url.href);
+      try {
+        await navigator.clipboard.writeText(url.href);
+        setStatus("copied");
+      } catch {
+        setStatus("manual");
+      }
+    } catch {
+      setStatus("error");
+    }
+  }
+
+  return <div>
+    <button type="button" onClick={share} disabled={status === "loading"}>{labels[0]}</button>
+    {link && <input aria-label={labels[0]} readOnly value={link} onFocus={event => event.target.select()} />}
+    <span role="status">{status === "copied" ? labels[1] : status === "error" ? labels[2] : ""}</span>
+  </div>;
+}
+
 export default function BookDetailsPage() {
   const { bookId } = useParams();
   const { language, t } = useLanguage();
@@ -110,6 +147,7 @@ export default function BookDetailsPage() {
           <p className="detail-author">{t.by} <strong>{book.author}</strong></p>
           <AuthorFollowButton authorName={book.author} />
           <div className="detail-price">{customerPrice === 0 ? t.freeBookPrice : formatInr(customerPrice, language)}</div>
+          {customerPrice > 0 && user?.role === "reader" && <ShareReferral key={bookId + user.id} bookId={bookId} language={language} />}
           {customerPrice > 0 && book.priceBreakdownPaise && <Link className="detail-reading-action" to={{ search: checkoutSearch }}>{previewLabel}</Link>}
           {customerPrice > 0 && book.priceBreakdownPaise && (
             <details className="detail-price-breakdown">
