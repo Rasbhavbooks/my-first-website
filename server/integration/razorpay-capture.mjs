@@ -479,6 +479,11 @@ async function verifyPurchase(t, referred) {
   });
   assert.equal(adminHistory.orders[0].id, order.id);
   assert.equal(adminHistory.orders[0].recordStatus, "refund_linked");
+  assert.deepEqual(adminHistory.paymentTotals, [
+    { status: "paid", count: 0, amountPaise: 0 },
+    { status: "refund_pending", count: 0, amountPaise: 0 },
+    { status: "refunded", count: 1, amountPaise: 13929 },
+  ]);
   const reversal = await Ledger.findOne({ orderId: order._id, eventType: "refund" });
   assert.deepEqual(reversal.entries.map(e => [e.accountCode, e.direction, e.amountPaise]).sort(), [
     ["author_payable", "debit", 10000], ["gateway_clearing", "credit", 13929],
