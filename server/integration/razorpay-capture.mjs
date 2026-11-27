@@ -134,8 +134,12 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
     const recommendations = page.locator('section[aria-labelledby="library-recommendations"]');
     await recommendations.locator('a[href="/books/phase7-review-paid"]').waitFor();
     assert.equal(await recommendations.locator('a[href="/books/phase7-review-free"]').count(), 0);
-    const otherRecommendations = await sharingPage.request.get(origin + "/api/v1/reader/library/recommendations");
-    assert.deepEqual((await otherRecommendations.json()).data.books, []);
+    const otherRecommendations = await sharingPage.evaluate(async () => {
+      const response = await fetch("/api/v1/reader/library/recommendations");
+      return { status: response.status, body: await response.json() };
+    });
+    assert.equal(otherRecommendations.status, 200, JSON.stringify(otherRecommendations.body));
+    assert.deepEqual(otherRecommendations.body.data.books, []);
     await sharingPage.goto(origin + "/library");
     await sharingPage.locator('progress[max="3"][value="0"]').waitFor();
     await page.goto(readerUrl);
