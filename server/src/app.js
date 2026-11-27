@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
+import { serveRobots, serveSitemap } from "./modules/public-seo.js";
 import { env } from "./config/env.js";
 import razorpayWebhookRoutes from "./modules/orders/razorpay-webhook.routes.js";
 import { notFound } from "./middleware/notFound.js";
@@ -49,6 +50,8 @@ app.use(cors({ origin: env.clientOrigin, credentials: true }));
 app.use("/api/v1/payments/razorpay/webhook", express.raw({ type: "application/json", limit: "256kb" }), razorpayWebhookRoutes);
 app.use(express.json({ limit: "1mb" }));
 app.get("/", (_request, response) => response.json({ name: "Rasbhav Books API", version: "v1" }));
+app.get("/robots.txt", serveRobots);
+app.get("/sitemap.xml", serveSitemap);
 app.use("/api/v1/health", healthRoutes);
 app.use("/api/v1/books", bookRoutes);
 app.use("/api/v1/categories", categoriesRoutes);
