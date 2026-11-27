@@ -1,3 +1,4 @@
+import { formatInr } from "../../utils/formatCurrency.js";
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router";
 import { getBookTitle } from "../../data/books.js";
@@ -86,6 +87,10 @@ export default function AuthorStudioPage() {
       {error && <p className="author-studio-error" role="alert">{error}</p>}
       <p><Link className="author-public-link" to="/author/books">{t.manageBooks}</Link></p>
       {profile && <p><Link className="author-public-link" to={`/authors/${profile.slug}`}>{t.openAuthorPage}</Link></p>}
+      {profile?.orderShare?.orderCount > 0 && <p>
+        {{ gu: "ચૂકવાયેલા ઓર્ડરમાં તમારો હિસ્સો", hi: "भुगतान किए गए ऑर्डर में आपका हिस्सा", en: "Your share on paid orders" }[language]}
+        {" · "}{formatInr(profile.orderShare.amountPaise / 100, language)}
+      </p>}
       {profile && <section className="author-studio-stats" aria-label={t.authorStats}>
         <div className="author-studio-stat"><strong>{profile.followerCount ?? 0}</strong><span>{t.authorFollowers}</span></div>
         <div className="author-studio-stat"><strong>{profile.newFollowers7Days ?? 0}</strong><span>{t.authorFollowers7Days}</span></div>
