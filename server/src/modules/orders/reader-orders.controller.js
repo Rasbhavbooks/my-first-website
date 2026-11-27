@@ -15,6 +15,9 @@ export function serializeReaderOrder(record) {
     },
     authorName: record.authorName,
     amountPaise: record.amountPaise,
+    ...(Number.isSafeInteger(record.gstPaise) && Number.isSafeInteger(record.gatewayFeePaise)
+      ? { fees: { gstPaise: record.gstPaise, gatewayFeePaise: record.gatewayFeePaise } }
+      : {}),
     currency: record.currency,
     status: record.status,
     createdAt: record.createdAt,
@@ -36,7 +39,7 @@ export async function listReaderOrders(request, response) {
   const records = await DigitalBookOrder.find(filter)
     .sort({ _id: -1 })
     .limit(PAGE_SIZE + 1)
-    .select("bookId bookTitle authorName amountPaise currency status createdAt paidAt")
+    .select("bookId bookTitle authorName amountPaise gstPaise gatewayFeePaise currency status createdAt paidAt")
     .lean();
 
   const hasMore = records.length > PAGE_SIZE;
