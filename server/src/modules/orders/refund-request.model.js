@@ -75,7 +75,13 @@ refundRequestSchema.methods.transitionTo = function transitionTo(nextStatus, { n
   this.status = nextStatus;
   return this;
 };
+refundRequestSchema.pre("save", function guardConcurrentTransition() {
+  if (!this.isNew && this.isModified("status")) {
+    this.$where = { status: this.$locals.persistedStatus };
+  }
+});
 refundRequestSchema.post("save", function rememberSavedStatus(document) {
+  document.$where = undefined;
   document.$locals.persistedStatus = document.status;
   document.$locals.transitionAuthorized = false;
   document.$locals.providerRefundIdAuthorized = false;
