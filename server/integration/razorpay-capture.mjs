@@ -324,8 +324,11 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
       response.url().endsWith("/report") && response.request().method() === "POST"
     );
     await publicPost.getByRole("button").first().click();
+    await publicPost.locator('select[name="reason"]').selectOption("spam");
+    await publicPost.locator('form button[type="submit"]').click();
     assert.equal((await report).status(), 200);
     await adminPage.reload();
+    await modPost.getByText(/^(Spam|સ્પામ|स्पैम) · 1$/).waitFor();
     await modPost.locator("button").last().click();
     await modPost.waitFor({ state: "detached" });
     await sharingPage.reload();
