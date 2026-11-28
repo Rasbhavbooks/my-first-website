@@ -4,6 +4,12 @@ import mongoose from "mongoose";
 import { requireAdmin, requireReader } from "../auth/auth.middleware.js";
 import Book from "./book.model.js";
 
+const reasonKeys = ["spam", "abuse", "personal_information", "other"];
+const reportCountsSchema = new mongoose.Schema(
+  Object.fromEntries(reasonKeys.map(reason => [reason, { type: Number, min: 0 }])),
+  { _id: false },
+);
+
 const schema = new mongoose.Schema({
   bookId: { type: String, maxlength: 64, required: true },
   parentId: { type: mongoose.Schema.Types.ObjectId, default: null, immutable: true },
@@ -12,6 +18,7 @@ const schema = new mongoose.Schema({
   body: { type: String, required: true, minlength: 10, maxlength: 1000 },
   status: { type: String, enum: ["pending", "approved", "hidden"], default: "pending" },
   reportedBy: { type: [mongoose.Schema.Types.ObjectId], default: [], select: false },
+  reportCounts: { type: reportCountsSchema, select: false },
   needsReview: { type: Boolean, default: true },
 }, { timestamps: true, versionKey: false });
 schema.index({ bookId: 1, status: 1, parentId: 1, _id: -1 });
@@ -92,13 +99,21 @@ async function createPost(request, response) {
 }
 
 async function reportPost(request, response) {
+  const reason = request.body?.reason ?? "other";
+  if (!reasonKeys.includes(reason)) {
+    return failure(response, 400, "INVALID_REPORT_REASON", "Choose a reason for the report.");
+  }
   const { bookId } = request.params;
   const postId = request.params.replyId ?? request.params.postId;
   if (!mongoose.isObjectIdOrHexString(postId)) return failure(response, 404, "POST_NOT_FOUND", "Post not found.");
   const post = await DiscussionPost.findOneAndUpdate({
     _id: postId, bookId, parentId: request.discussionParentId ?? null, status: "approved", authorId: { $ne: request.reader._id },
     reportedBy: { $ne: request.reader._id }, "reportedBy.99": { $exists: false },
-  }, { $addToSet: { reportedBy: request.reader._id }, $set: { needsReview: true } }).select("_id");
+  }, {
+    $addToSet: { reportedBy: request.reader._id },
+    $inc: { ["reportCounts." + reason]: 1 },
+    $set: { needsReview: true },
+  }).select("_id");
   if (!post) return failure(response, 409, "REPORT_UNAVAILABLE", "This post cannot be reported again or is unavailable.");
   return response.json({ data: { reported: true } });
 }
@@ -144,9 +159,9 @@ adminDiscussions.use(requireReader, requireAdmin, (_request, response, next) => 
   next();
 });
 adminDiscussions.get("/", readLimit, async (_request, response) => {
-  const posts = await DiscussionPost.find({ needsReview: true }).sort({ _id: 1 }).limit(30).lean();
+  const posts = await DiscussionPost.find({ needsReview: true }).select("+reportCounts").sort({ _id: 1 }).limit(30).lean();
   return response.json({ data: { posts: posts.map(post => ({
-    ...present(post), status: post.status, updatedAt: post.updatedAt,
+    ...present(post), status: post.status, updatedAt: post.updatedAt, reportCounts: post.reportCounts ?? {},
   })) } });
 });
 adminDiscussions.patch("/:postId", writeLimit, async (request, response) => {
@@ -158,7 +173,7 @@ adminDiscussions.patch("/:postId", writeLimit, async (request, response) => {
   }
   const post = await DiscussionPost.findOneAndUpdate(
     { _id: postId, needsReview: true, updatedAt: revision },
-    { $set: { status, needsReview: false } },
+    { $set: { status, needsReview: false }, $unset: { reportCounts: 1 } },
   ).select("_id");
   if (!post) return failure(response, 409, "DISCUSSION_CHANGED", "The post changed. Reload the moderation queue.");
   return response.json({ data: { reviewed: true } });
