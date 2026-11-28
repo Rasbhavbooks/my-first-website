@@ -24,7 +24,7 @@ export function paymentEventSourceKeyHash(provider, eventId) {
 
 export function serializeReconciliationEvent(event, postedSourceKeyHashes = new Set()) {
   const posted = postedSourceKeyHashes.has(paymentEventSourceKeyHash(event.provider, event.eventId));
-  const status = posted ? "posted" : event.outcome === "ignored" ? "ignored" : "unposted";
+  const status = posted ? "posted" : event.outcome === "applied" ? "unposted" : event.outcome;
   return {
     id: String(event._id),
     orderId: event.orderId ? String(event.orderId) : null,
@@ -50,16 +50,24 @@ export async function listAdminPaymentReconciliation(request, response) {
     });
   }
 
+  const { outcome } = request.query;
+  if (outcome !== undefined && outcome !== "failed") {
+    return response.status(400).json({
+      error: { code: "INVALID_PAYMENT_OUTCOME", message: "Choose a valid payment outcome." },
+    });
+  }
+  const filter = outcome === "failed" ? { outcome } : {};
   const [total, events] = await Promise.all([
-    DigitalBookPaymentEvent.countDocuments(),
-    DigitalBookPaymentEvent.find()
+    DigitalBookPaymentEvent.countDocuments(filter),
+    DigitalBookPaymentEvent.find(filter)
       .sort({ createdAt: -1, _id: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .select("_id provider eventId eventType orderId amountPaise currency outcome signatureVerifiedAt processedAt createdAt")
       .lean(),
   ]);
-  const sourceKeyHashes = events.map((event) => paymentEventSourceKeyHash(event.provider, event.eventId));
+  const sourceKeyHashes = events.filter(event => event.outcome === "applied")
+    .map(event => paymentEventSourceKeyHash(event.provider, event.eventId));
   const postedTransactions = sourceKeyHashes.length
     ? await LedgerTransaction.find({ sourceKeyHash: { $in: sourceKeyHashes }, eventType: "order_payment" })
       .select("sourceKeyHash")
