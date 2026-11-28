@@ -663,6 +663,9 @@ async function verifyPurchase(t, referred) {
     assert.equal((await RefundRequest.findById(duplicateRefund._id)).status, "submitted");
     assert.equal((await submit("processed")).status, "completed");
     assert.equal((await submit("do-not-fetch")).replayed, true);
+    duplicateRefund.transitionTo("submitted");
+    await assert.rejects(duplicateRefund.save(), { name: "DocumentNotFoundError" });
+    assert.equal((await RefundRequest.findById(duplicateRefund._id)).status, "completed");
   } else {
     let refundCalls = 0;
     const submitRefund = createRefundSubmissionService({
