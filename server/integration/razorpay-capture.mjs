@@ -180,6 +180,22 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
     await page.goto(readerUrl);
     await page.getByRole("button", { name: mark }).waitFor();
 
+    const discussionBookUrl = origin + "/books/phase7-review-paid";
+    const discussionBody = "Browser test reader discussion for this book.";
+    await page.goto(discussionBookUrl);
+    const discussion = page.locator('section[aria-labelledby="book-discussion-title"]');
+    await discussion.locator("textarea").fill(discussionBody);
+    const submittedPost = page.waitForResponse(response =>
+      response.url().endsWith("/discussions") && response.request().method() === "POST"
+    );
+    await discussion.locator('button[type="submit"]').click();
+    assert.equal((await submittedPost).status(), 201);
+    const visiblePosts = await page.evaluate(async () => {
+      const response = await fetch("/api/v1/books/phase7-review-paid/discussions");
+      return response.json();
+    });
+    assert.deepEqual(visiblePosts.data.posts, []);
+
     const author = await User.create({
       displayName: "Browser test author", email: "author@example.test",
       passwordHash: "unused-test-hash", accountStatus: "active", role: "author",
@@ -262,6 +278,23 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
     const approved = await AuthorBook.findById(draft._id).lean();
     assert.equal(approved.status, "approved");
     assert.equal(approved.price, 100);
+    await adminPage.goto(origin + "/admin/discussions");
+    const modPost = adminPage.locator("main.book-discussion li").filter({ hasText: discussionBody });
+    await modPost.locator("button").first().click();
+    await modPost.waitFor({ state: "detached" });
+
+    await sharingPage.goto(discussionBookUrl);
+    const publicPost = sharingPage.locator("section.book-discussion li").filter({ hasText: discussionBody });
+    await publicPost.getByRole("button").click();
+    await adminPage.reload();
+    await modPost.locator("button").last().click();
+    await modPost.waitFor({ state: "detached" });
+    await sharingPage.reload();
+    const hiddenPosts = await sharingPage.evaluate(async () => {
+      const response = await fetch("/api/v1/books/phase7-review-paid/discussions");
+      return response.json();
+    });
+    assert.deepEqual(hiddenPosts.data.posts, []);
     assert.equal(await Book.exists({ author: author.displayName }), null);
   } finally {
     try { await browser?.close(); } finally { await front.close(); }
