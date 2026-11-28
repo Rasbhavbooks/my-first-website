@@ -31,6 +31,19 @@ function validateProviderOrder(order, expected) {
   return { id: order.id, amountPaise: order.amount, currency: order.currency, receipt: order.receipt };
 }
 
+function validateProviderRefund(refund, { paymentId, amountPaise, currency, receipt }) {
+  if (
+    !refund || refund.entity !== "refund"
+    || !/^rfnd_[A-Za-z0-9]{1,150}$/.test(String(refund.id ?? ""))
+    || refund.payment_id !== paymentId || refund.amount !== amountPaise
+    || refund.currency !== currency || refund.receipt !== receipt
+    || !["pending", "processed", "failed"].includes(refund.status)
+  ) {
+    throw fail("Razorpay returned a refund that does not match the request.", "RAZORPAY_REFUND_MISMATCH");
+  }
+  return refund;
+}
+
 export function createRazorpayClient({
   keyId,
   keySecret,
@@ -72,12 +85,40 @@ export function createRazorpayClient({
       throw fail("Razorpay returned an unreadable response.", "RAZORPAY_INVALID_RESPONSE");
     }
     if (!response.ok) {
-      throw fail("Razorpay rejected the test-mode order request.", "RAZORPAY_API_REJECTED");
+      throw fail("Razorpay rejected the test-mode request.", "RAZORPAY_API_REJECTED");
     }
     return body;
   }
 
   return {
+    async refundCapturedPayment({ paymentId, amountPaise, currency, idempotencyKey }) {
+      if (
+        typeof paymentId !== "string" || !/^pay_[A-Za-z0-9]{1,150}$/.test(paymentId)
+        || !Number.isSafeInteger(amountPaise) || amountPaise < 100 || currency !== "INR"
+        || typeof idempotencyKey !== "string" || !/^[a-f0-9]{64}$/.test(idempotencyKey)
+      ) {
+        throw fail("A valid INR payment, amount and refund key are required.", "INVALID_RAZORPAY_REFUND");
+      }
+      const receipt = "rb-" + idempotencyKey.slice(0, 36);
+      const expected = { paymentId, amountPaise, currency, receipt };
+      const paymentPath = `/payments/${paymentId}`;
+      let refund = validateProviderRefund(await request(paymentPath + "/refund", {
+        method: "POST",
+        headers: { "X-Refund-Idempotency": idempotencyKey },
+        body: JSON.stringify({ amount: amountPaise, speed: "normal", receipt }),
+      }), expected);
+      // The idempotent POST can replay its initial pending response.
+      if (refund.status === "pending") {
+        const refundId = refund.id;
+        refund = validateProviderRefund(await request(paymentPath + "/refunds/" + refundId, { method: "GET" }), expected);
+        if (refund.id !== refundId) throw fail("Razorpay returned a different refund ID.", "RAZORPAY_REFUND_MISMATCH");
+      }
+      if (refund.status === "failed") {
+        throw fail("Razorpay marked the test refund as failed.", "RAZORPAY_REFUND_FAILED");
+      }
+      return { status: refund.status === "processed" ? "completed" : "pending", refundId: refund.id, paymentId, amountPaise, currency };
+    },
+
     async checkConnection() {
       const body = await request("/orders?count=1", { method: "GET" });
       if (!Array.isArray(body?.items)) {
