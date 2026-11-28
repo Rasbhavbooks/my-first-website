@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
 import mongoose from "mongoose";
@@ -7,6 +8,7 @@ import Book from "./book.model.js";
 const clubSchema = new mongoose.Schema({
   bookId: { type: String, required: true, unique: true, maxlength: 64 },
   active: { type: Boolean, default: true },
+  meetingId: { type: String, default: null },
   meetingAt: { type: Date, default: null },
   meetingNote: { type: String, maxlength: 240, default: "" },
 }, { timestamps: true, versionKey: false });
@@ -14,6 +16,7 @@ const Club = mongoose.models.ReadingClub || mongoose.model("ReadingClub", clubSc
 
 const memberSchema = new mongoose.Schema({
   clubId: { type: mongoose.Schema.Types.ObjectId, required: true },
+  goingToMeetingId: { type: String, default: null },
   readerId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
 }, { timestamps: { createdAt: true, updatedAt: false }, versionKey: false });
 memberSchema.index({ clubId: 1, readerId: 1 }, { unique: true });
@@ -35,21 +38,30 @@ async function listClubs(request, response, admin = false) {
     { $lookup: { from: Book.collection.name, localField: "bookId", foreignField: "catalogueId", as: "book" } },
     { $unwind: { path: "$book", preserveNullAndEmptyArrays: admin } },
     { $limit: 50 },
-    { $project: { bookId: 1, active: 1, title: "$book.title", meetingAt: 1, meetingNote: 1 } },
+    { $project: { bookId: 1, active: 1, title: "$book.title", meetingAt: 1, meetingNote: 1, meetingId: 1 } },
   ]);
   const ids = clubs.map(club => club._id);
-  const [totals, joined] = await Promise.all([
+  const meetingIds = clubs.map(club => club.meetingId).filter(Boolean);
+  const [totals, joined, attendance] = await Promise.all([
     ClubMember.aggregate([
       { $match: { clubId: { $in: ids } } },
       { $group: { _id: "$clubId", count: { $sum: 1 } } },
     ]),
     request.reader && !admin
-      ? ClubMember.distinct("clubId", { clubId: { $in: ids }, readerId: request.reader._id }) : [],
+      ? ClubMember.find({ clubId: { $in: ids }, readerId: request.reader._id }).select("clubId goingToMeetingId -_id").lean() : [],
+    ClubMember.aggregate([
+      { $match: { clubId: { $in: ids }, goingToMeetingId: { $in: meetingIds } } },
+      { $group: { _id: "$goingToMeetingId", count: { $sum: 1 } } },
+    ]),
   ]);
   const counts = new Map(totals.map(row => [String(row._id), row.count]));
-  const membership = new Set(joined.map(String));
+  const membership = new Map(joined.map(row => [String(row.clubId), row.goingToMeetingId]));
+  const attending = new Map(attendance.map(row => [row._id, row.count]));
   return send(response, { clubs: clubs.map(club => ({
     id: String(club._id), bookId: club.bookId, title: club.title ?? null, active: club.active,
+    meetingId: club.active && club.meetingAt > new Date() ? club.meetingId ?? null : null,
+    going: Boolean(club.meetingId && membership.get(String(club._id)) === club.meetingId),
+    attendanceCount: attending.get(club.meetingId) ?? 0,
     meetingAt: admin || club.meetingAt > new Date() ? club.meetingAt ?? null : null,
     meetingNote: admin || club.meetingAt > new Date() ? club.meetingNote ?? "" : "",
     memberCount: counts.get(String(club._id)) ?? 0, joined: membership.has(String(club._id)),
@@ -81,6 +93,21 @@ async function changeMembership(request, response) {
   }
   return send(response, { joined, memberCount: await ClubMember.countDocuments({ clubId }) });
 }
+
+readingClubs.put("/:clubId/rsvp", requireReader, limit, async (request, response) => {
+  const { clubId } = request.params;
+  const { meetingId, going } = request.body ?? {};
+  if (!mongoose.isObjectIdOrHexString(clubId) || typeof going !== "boolean" || typeof meetingId !== "string") {
+    return fail(response, 400, "INVALID_RSVP", "Choose a meeting and an attendance response.");
+  }
+  const club = await Club.exists({ _id: clubId, active: true, meetingId, meetingAt: { $gt: new Date() } });
+  if (!club) return fail(response, 409, "MEETING_CHANGED", "The club meeting changed. Reload the page.");
+  const result = await ClubMember.updateOne({ clubId, readerId: request.reader._id }, {
+    $set: { goingToMeetingId: going ? meetingId : null },
+  });
+  if (!result.matchedCount) return fail(response, 403, "MEMBERSHIP_REQUIRED", "Join the club before responding.");
+  return send(response, { going, attendanceCount: await ClubMember.countDocuments({ clubId, goingToMeetingId: meetingId }) });
+});
 
 readingClubs.put("/:clubId/membership", requireReader, limit, changeMembership);
 readingClubs.delete("/:clubId/membership", requireReader, limit, changeMembership);
@@ -118,8 +145,8 @@ adminReadingClubs.patch("/:clubId/meeting", async (request, response) => {
     || (meetingAt !== null && (!date || !Number.isFinite(date.getTime()) || date.toISOString() !== meetingAt || date <= new Date()))) {
     return fail(response, 400, "INVALID_CLUB_MEETING", "Choose a future meeting time and an optional short note.");
   }
-  const update = { meetingAt: date, meetingNote: date ? meetingNote.trim() : "" };
+  const update = { meetingId: date ? randomUUID() : null, meetingAt: date, meetingNote: date ? meetingNote.trim() : "" };
   const result = await Club.updateOne({ _id: clubId }, { $set: update }, { runValidators: true });
   if (!result.matchedCount) return fail(response, 404, "CLUB_NOT_FOUND", "Club not found.");
-  return send(response, update);
+  return send(response, { ...update, going: false, attendanceCount: 0 });
 });
