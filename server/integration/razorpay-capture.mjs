@@ -135,11 +135,19 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
     const reminder = page.getByRole("checkbox", { name: reminderLabel });
     await reminder.waitFor();
     assert.equal(await reminder.isChecked(), false);
-    await reminder.check();
+    const enableReminder = page.waitForResponse(response =>
+      response.url().endsWith('/challenge/reminder') && response.request().method() === 'PUT'
+    );
+    await reminder.click();
+    assert.equal((await enableReminder).status(), 200);
     await page.locator('section[aria-labelledby="reading-challenge-title"] input:checked').waitFor();
     await page.reload();
     await page.locator('section[aria-labelledby="reading-challenge-title"] input:checked').waitFor();
-    await reminder.uncheck();
+    const disableReminder = page.waitForResponse(response =>
+      response.url().endsWith('/challenge/reminder') && response.request().method() === 'PUT'
+    );
+    await reminder.click();
+    assert.equal((await disableReminder).status(), 200);
     await page.locator('section[aria-labelledby="reading-challenge-title"] input:not(:checked)').waitFor();
     const recommendations = page.locator('section[aria-labelledby="library-recommendations"]');
     await recommendations.locator('a[href="/books/phase7-review-paid"]').waitFor();
