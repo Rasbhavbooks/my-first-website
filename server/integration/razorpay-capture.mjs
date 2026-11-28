@@ -197,6 +197,7 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
       return response.json();
     });
     assert.deepEqual(visiblePosts.data.posts, []);
+    assert.deepEqual((await (await fetch(api + "/community/discussions")).json()).data.books, []);
 
     const author = await User.create({
       displayName: "Browser test author", email: "author@example.test",
@@ -285,7 +286,9 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
     await modPost.locator("button").first().click();
     await modPost.waitFor({ state: "detached" });
 
-    await sharingPage.goto(discussionBookUrl);
+    await sharingPage.goto(origin + "/community");
+    await sharingPage.locator('main a[href="/books/phase7-review-paid#book-discussion-title"]').click();
+    assert.equal(new URL(sharingPage.url()).hash, "#book-discussion-title");
     const publicPost = sharingPage.locator("section.book-discussion li").filter({ hasText: discussionBody });
     const replyBody = "A reply from another reader in the discussion.";
     await publicPost.locator(".discussion-replies > button").click();
@@ -345,6 +348,7 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
       return response.json();
     });
     assert.deepEqual(hiddenPosts.data.posts, []);
+    assert.deepEqual((await (await fetch(api + "/community/discussions")).json()).data.books, []);
     const hiddenThread = await sharingPage.evaluate(async id => (await fetch("/api/v1/books/phase7-review-paid/discussions/" + id + "/replies")).status, postId);
     assert.equal(hiddenThread, 404);
     assert.equal(await Book.exists({ author: author.displayName }), null);
