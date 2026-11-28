@@ -71,6 +71,7 @@ const userSchema = new mongoose.Schema(
       default: "pending_verification",
       required: true,
     },
+    monthlyReadingReminder: { type: Boolean, default: false },
     emailVerifiedAt: {
       type: Date,
       default: null,

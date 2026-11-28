@@ -1,5 +1,5 @@
 import { listReaderRecommendations } from "./reader-recommendations.js";
-import { deleteReadingCompletion, getReadingChallenge, getReadingCompletion, saveReadingCompletion } from "./reader-challenge.js";
+import { deleteReadingCompletion, getReadingChallenge, getReadingCompletion, saveReadingCompletion, updateReadingReminder } from "./reader-challenge.js";
 import { rateLimit } from "express-rate-limit";
 import { Router } from "express";
 import { requireReader } from "../auth/auth.middleware.js";
@@ -22,6 +22,7 @@ router.put("/:bookId/bookmark", libraryLimiter, requireReader, saveReaderBookBoo
 router.delete("/:bookId/bookmark", libraryLimiter, requireReader, deleteReaderBookBookmark);
 router.get("/recommendations", libraryLimiter, requireReader, listReaderRecommendations);
 router.get("/challenge", libraryLimiter, requireReader, getReadingChallenge);
+router.put("/challenge/reminder", libraryLimiter, requireReader, updateReadingReminder);
 router.get("/:bookId/completion", libraryLimiter, requireReader, getReadingCompletion);
 router.put("/:bookId/completion", libraryLimiter, requireReader, saveReadingCompletion);
 router.delete("/:bookId/completion", libraryLimiter, requireReader, deleteReadingCompletion);

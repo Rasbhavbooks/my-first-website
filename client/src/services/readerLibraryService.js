@@ -103,3 +103,14 @@ export async function setReadingCompletion(bookId, completed) {
 export function getReaderRecommendations() {
   return readLibraryResponse("/api/v1/reader/library/recommendations");
 }
+
+export async function setReadingReminder(enabled) {
+  const response = await fetch("/api/v1/reader/library/challenge/reminder", {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ enabled }),
+  });
+  if (!response.ok) throw new Error("Could not save your reminder preference.");
+  return (await response.json()).data;
+}

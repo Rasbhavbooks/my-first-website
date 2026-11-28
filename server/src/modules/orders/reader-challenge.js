@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import User from "../users/user.model.js";
 import Book from "../books/book.model.js";
 import resolveReadingAccess from "../books/reading-access.service.js";
 
@@ -19,8 +20,16 @@ export function challengeMonthStart(now) {
   return new Date(Date.UTC(indiaDate.getUTCFullYear(), indiaDate.getUTCMonth(), 1) - indiaOffsetMs);
 }
 
+export function readingReminderDue(now, completed) {
+  if (completed >= target) return false;
+  const local = new Date(now.getTime() + indiaOffsetMs);
+  const nextMonth = Date.UTC(local.getUTCFullYear(), local.getUTCMonth() + 1, 1) - indiaOffsetMs;
+  return nextMonth - now.getTime() <= 7 * 24 * 60 * 60 * 1000;
+}
+
 export async function getReadingChallenge(request, response) {
-  const filter = { readerId: request.reader._id, completedAt: { $gte: challengeMonthStart(new Date()) } };
+  const now = new Date();
+  const filter = { readerId: request.reader._id, completedAt: { $gte: challengeMonthStart(now) } };
   const [completed, recent] = await Promise.all([
     Completion.countDocuments(filter),
     Completion.find(filter).sort({ completedAt: -1, _id: -1 }).limit(20).select("bookId completedAt -_id").lean(),
@@ -29,7 +38,19 @@ export async function getReadingChallenge(request, response) {
     .select("catalogueId title -_id").lean();
   const titles = new Map(catalogue.map(book => [book.catalogueId, book.title]));
   const books = recent.map(row => ({ ...row, title: titles.get(row.bookId) ?? null }));
-  return response.set("Cache-Control", "no-store").json({ data: { completed, target, books } });
+  const reminderEnabled = request.reader.monthlyReadingReminder === true;
+  return response.set("Cache-Control", "no-store").json({
+    data: { completed, target, books, reminderEnabled, reminderDue: reminderEnabled && readingReminderDue(now, completed) },
+  });
+}
+
+export async function updateReadingReminder(request, response) {
+  if (typeof request.body?.enabled !== "boolean") {
+    return response.status(400).json({ error: { code: "INVALID_READING_REMINDER", message: "Choose whether to receive reading reminders." } });
+  }
+  await User.updateOne({ _id: request.reader._id }, { $set: { monthlyReadingReminder: request.body.enabled } });
+  request.reader.monthlyReadingReminder = request.body.enabled;
+  return getReadingChallenge(request, response);
 }
 
 function completionFilter(request) {

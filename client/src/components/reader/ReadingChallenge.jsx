@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getReadingChallenge, getReadingCompletion, setReadingCompletion } from "../../services/readerLibraryService.js";
+import { getReadingChallenge, getReadingCompletion, setReadingCompletion, setReadingReminder } from "../../services/readerLibraryService.js";
 
 const copy = {
   gu: { heading: "માસિક વાંચન લક્ષ્ય", mark: "વાંચી લીધું", undo: "વાંચ્યાની નોંધ દૂર કરો", error: "વાંચનની નોંધ મેળવી કે સાચવી શકાઈ નહીં." },
@@ -10,6 +10,7 @@ const copy = {
 export function ReadingChallengeSummary({ language, onCompletionRemoved }) {
   const [summary, setSummary] = useState(null);
   const [removing, setRemoving] = useState(null);
+  const [savingReminder, setSavingReminder] = useState(false);
   const [error, setError] = useState(false);
   const labels = copy[language] ?? copy.en;
   useEffect(() => {
@@ -36,20 +37,42 @@ export function ReadingChallengeSummary({ language, onCompletionRemoved }) {
       setRemoving(null);
     }
   }
+  async function changeReminder(enabled) {
+    setError(false);
+    setSavingReminder(true);
+    try {
+      setSummary(await setReadingReminder(enabled));
+    } catch {
+      setError(true);
+    } finally {
+      setSavingReminder(false);
+    }
+  }
   if (!summary && !error) return null;
+  const reminderLabels = {
+    gu: ["લાઇબ્રેરીમાં વાંચન લક્ષ્ય યાદ અપાવો", "આ મહિનાનું લક્ષ્ય પૂરું કરવા હજી સમય છે."],
+    hi: ["लाइब्रेरी में पढ़ने का लक्ष्य याद दिलाएँ", "इस महीने का लक्ष्य पूरा करने के लिए अभी समय है।"],
+    en: ["Remind me in the library", "There is still time to reach this month's goal."],
+  }[language] ?? ["Remind me in the library", "There is still time to reach this month's goal."];
   const number = new Intl.NumberFormat(language);
   return <section aria-labelledby="reading-challenge-title">
     <h2 id="reading-challenge-title">{labels.heading}</h2>
     {summary && <>
       <p>{number.format(summary.completed)} / {number.format(summary.target)}</p>
       <progress aria-labelledby="reading-challenge-title" value={Math.min(summary.completed, summary.target)} max={summary.target} />
+      <p><label>
+        <input type="checkbox" checked={Boolean(summary.reminderEnabled)} disabled={savingReminder || removing !== null}
+          onChange={event => changeReminder(event.target.checked)} />
+        {" "}{reminderLabels[0]}
+      </label></p>
+      {summary.reminderDue && <p role="status">{reminderLabels[1]}</p>}
       {summary.books?.length > 0 && <>
         <h3>{{ gu: "આ મહિને તાજેતરમાં વાંચેલી બુક", hi: "इस महीने हाल में पढ़ी गई किताबें", en: "Recently finished this month" }[language]}</h3>
         <ul>{summary.books.map(book => {
           const title = book.title?.[language] || book.title?.en || book.title?.gu || book.title?.hi || book.bookId;
           return <li key={book.bookId}>
             {title}{" "}
-            <button type="button" aria-label={labels.undo + " · " + title} disabled={removing !== null} onClick={() => removeBook(book.bookId)}>
+            <button type="button" aria-label={labels.undo + " · " + title} disabled={savingReminder || removing !== null} onClick={() => removeBook(book.bookId)}>
               {labels.undo}
             </button>
           </li>;
