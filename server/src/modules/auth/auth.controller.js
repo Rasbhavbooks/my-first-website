@@ -242,6 +242,13 @@ export async function loginReader(request, response) {
     });
   }
 
+  if (request.body?.expectedRole !== undefined && request.body.expectedRole !== user.role) {
+    await recordLoginSecurityMetric({ outcome: "failure", knownAccount: true });
+    return response.status(403).json({
+      error: { code: "ROLE_LOGIN_MISMATCH", message: "Use the login page for this account's role." },
+    });
+  }
+
   if (user.role === "admin") {
     const adminMfa = await AdminMfa.findOne({ userId: user._id, enabled: true })
       .select("+encryptedSecret +recoveryCodeHashes");

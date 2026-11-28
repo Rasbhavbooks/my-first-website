@@ -1,5 +1,7 @@
 export const messages = {
   en: {
+    loginServiceUnavailable: "The login service is unavailable. Try again when the site is back online.",
+    signInRequestFailed: "Could not sign in. Try again.",
     authorBooksTitle: "My books",
     authorBooksIntro: "Create a draft, add its details, then send it to the Rasbhav team for review.",
     booksInStudio: "Your book drafts",
@@ -120,6 +122,8 @@ export const messages = {
     copyright: "© 2026 Rasbhav Books. Every book has a soul.", by: "by", filter: "Filter books by category", notFound: "This page could not be found.", backHome: "Back home",
   },
   gu: {
+    loginServiceUnavailable: "લૉગિન સર્વરનો સંપર્ક થઈ શક્યો નથી. સાઇટ ફરી ચાલુ થાય ત્યારે પ્રયાસ કરો.",
+    signInRequestFailed: "લૉગિન થઈ શક્યું નહીં. ફરી પ્રયાસ કરો.",
     authorBooksTitle: "મારાં પુસ્તકો",
     authorBooksIntro: "ડ્રાફ્ટ બનાવો, પુસ્તકની વિગતો ઉમેરો અને પછી Rasbhav ટીમને તપાસ માટે મોકલો.",
     booksInStudio: "તમારા પુસ્તકના ડ્રાફ્ટ",
@@ -240,6 +244,8 @@ export const messages = {
     copyright: "© 2026 Rasbhav Books. દરેક પુસ્તકમાં એક આત્મા છે.", by: "લેખક", filter: "પ્રકાર પ્રમાણે પુસ્તકો ગાળો", notFound: "આ પાનું મળ્યું નથી.", backHome: "મુખ્ય પાને જાઓ",
   },
   hi: {
+    loginServiceUnavailable: "लॉगिन सेवा उपलब्ध नहीं है। साइट फिर शुरू होने पर कोशिश करें।",
+    signInRequestFailed: "साइन इन नहीं हो सका। फिर कोशिश करें।",
     authorBooksTitle: "मेरी किताबें",
     authorBooksIntro: "ड्राफ़्ट बनाएँ, किताब की जानकारी जोड़ें और जाँच के लिए Rasbhav टीम को भेजें।",
     booksInStudio: "आपके किताब के ड्राफ़्ट",
