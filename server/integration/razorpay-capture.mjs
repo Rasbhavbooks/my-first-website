@@ -307,6 +307,19 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
     await publicPost.locator(".discussion-replies > button").click();
     await thread.getByText(replyBody, { exact: true }).waitFor();
 
+    const firstLike = publicPost.locator('button[aria-pressed="false"]').first();
+    await firstLike.click();
+    await publicPost.locator('button[aria-pressed="true"]').first().waitFor();
+    const duplicateLike = await sharingPage.evaluate(async id => {
+      const result = await fetch("/api/v1/books/phase7-review-paid/discussions/" + id + "/like", { method: "PUT" });
+      return { status: result.status, body: await result.json() };
+    }, postId);
+    assert.equal(duplicateLike.status, 200);
+    assert.deepEqual(duplicateLike.body.data, { liked: true, likeCount: 1 });
+    await sharingPage.reload();
+    await publicPost.locator('button[aria-pressed="true"]').first().click();
+    await publicPost.locator('button[aria-pressed="false"]').first().waitFor();
+
     const report = sharingPage.waitForResponse(response =>
       response.url().endsWith("/report") && response.request().method() === "POST"
     );
