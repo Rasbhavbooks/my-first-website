@@ -131,6 +131,10 @@ npm run seed:books --workspace @rasbhav/server -- --review-fixtures
 
 ખાનગી ટેસ્ટ ડેટાબેઝમાં Razorpay ટેસ્ટ ઓર્ડર તૈયાર કરી શકાય છે. ચકાસાયેલ પેમેન્ટ પછી એ જ ડેટાબેઝમાં ડુપ્લિકેટ પેમેન્ટનો રિફંડ અથવા મૂળ ઓર્ડરનો સંપૂર્ણ રિફંડ અલગથી ચલાવી શકાય છે. રેઝરપે પેમેન્ટ, રકમ અને કરન્સી સાથે મેળ ખાતો પૂર્ણ રિફંડ આપે ત્યારે જ ખરીદી અને કમિશનના રેકોર્ડ બદલાય છે. કમાન્ડ અને ગોઠવણી [README](../../README.md#verify-a-razorpay-test-refund)માં છે.
 
+### નિષ્ફળ ચુકવણીની નોંધ
+
+Razorpayની સહી ચકાસ્યા પછી અને રકમ સ્થાનિક પેમેન્ટ સાથે મેળ ખાય ત્યારે નિષ્ફળ ચુકવણીની નોંધ થાય છે. એડમિન **ચુકવણી મેળવણી** પાનાં પર **ફક્ત નિષ્ફળ ચુકવણીઓ બતાવો** પસંદ કરીને આ નોંધો જોઈ શકે છે. નિષ્ફળતાની નોંધથી ઓર્ડર બંધ થતો નથી. એ જ પેમેન્ટ પછી સફળ થાય તો તેની ચકાસેલી પુષ્ટિ પર ખરીદી નોંધાય છે. સફળ ચુકવણી પછી નિષ્ફળતાનો સંદેશ મોડી આવે તો ખરીદી કે લેજરમાં ફેરફાર થતો નથી.
+
 ## Phase 7 test pricing model
 
 - Owner-approved test split: author price is the author share; add a 30% platform commission on that author price. For a valid referral, allocate 10% of the author price from the platform commission to the referring reader, leaving 20% for Rasbhav Books. The buyer total is the same for direct and referred sales.
