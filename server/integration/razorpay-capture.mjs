@@ -189,7 +189,9 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
       response.url().endsWith("/discussions") && response.request().method() === "POST"
     );
     await discussion.locator('button[type="submit"]').click();
-    assert.equal((await submittedPost).status(), 201);
+    const posted = await submittedPost;
+    assert.equal(posted.status(), 201);
+    const postId = (await posted.json()).data.post.id;
     const visiblePosts = await page.evaluate(async () => {
       const response = await fetch("/api/v1/books/phase7-review-paid/discussions");
       return response.json();
@@ -285,10 +287,30 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
 
     await sharingPage.goto(discussionBookUrl);
     const publicPost = sharingPage.locator("section.book-discussion li").filter({ hasText: discussionBody });
+    const replyBody = "A reply from another reader in the discussion.";
+    await publicPost.locator(".discussion-replies > button").click();
+    const thread = sharingPage.locator("#book-discussion-" + postId);
+    await thread.locator("textarea").fill(replyBody);
+    const replySubmitted = sharingPage.waitForResponse(response =>
+      response.url().endsWith("/replies") && response.request().method() === "POST"
+    );
+    await thread.locator('button[type="submit"]').click();
+    const replyResponse = await replySubmitted;
+    assert.equal(replyResponse.status(), 201);
+    assert.equal((await replyResponse.json()).data.post.parentId, postId);
+    assert.equal(await thread.getByText(replyBody, { exact: true }).count(), 0);
+    await adminPage.reload();
+    const modReply = adminPage.locator("main.book-discussion li").filter({ hasText: replyBody });
+    await modReply.locator("button").first().click();
+    await modReply.waitFor({ state: "detached" });
+    await sharingPage.reload();
+    await publicPost.locator(".discussion-replies > button").click();
+    await thread.getByText(replyBody, { exact: true }).waitFor();
+
     const report = sharingPage.waitForResponse(response =>
       response.url().endsWith("/report") && response.request().method() === "POST"
     );
-    await publicPost.getByRole("button").click();
+    await publicPost.getByRole("button").first().click();
     assert.equal((await report).status(), 200);
     await adminPage.reload();
     await modPost.locator("button").last().click();
@@ -299,6 +321,8 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
       return response.json();
     });
     assert.deepEqual(hiddenPosts.data.posts, []);
+    const hiddenThread = await sharingPage.evaluate(async id => (await fetch("/api/v1/books/phase7-review-paid/discussions/" + id + "/replies")).status, postId);
+    assert.equal(hiddenThread, 404);
     assert.equal(await Book.exists({ author: author.displayName }), null);
   } finally {
     try { await browser?.close(); } finally { await front.close(); }
