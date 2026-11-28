@@ -1,6 +1,10 @@
 export const messages = {
   en: {
     loginServiceUnavailable: "The login service is unavailable. Try again when the site is back online.",
+    registrationUnavailable: "Account registration is temporarily unavailable. Try again later.",
+    registrationFieldsInvalid: "Check the name and email and follow the password requirements below.",
+    verificationUnavailable: "Email verification is temporarily unavailable. Try again later.",
+    authTryLater: "Too many attempts. Wait a few minutes before trying again.",
     signInRequestFailed: "Could not sign in. Try again.",
     authorBooksTitle: "My books",
     authorBooksIntro: "Create a draft, add its details, then send it to the Rasbhav team for review.",
@@ -123,6 +127,10 @@ export const messages = {
   },
   gu: {
     loginServiceUnavailable: "લૉગિન સર્વરનો સંપર્ક થઈ શક્યો નથી. સાઇટ ફરી ચાલુ થાય ત્યારે પ્રયાસ કરો.",
+    registrationUnavailable: "હાલ ખાતું બનાવી શકાતું નથી. થોડી વાર પછી ફરી પ્રયાસ કરો.",
+    registrationFieldsInvalid: "નામ અને ઈમેલ તપાસો અને નીચે આપેલી પાસવર્ડની શરતો પૂરી કરો.",
+    verificationUnavailable: "હાલ ઈમેલ ચકાસણી ઉપલબ્ધ નથી. થોડી વાર પછી ફરી પ્રયાસ કરો.",
+    authTryLater: "ઘણા પ્રયાસો થયા છે. ફરી પ્રયાસ કરતાં પહેલાં થોડી મિનિટ રાહ જુઓ.",
     signInRequestFailed: "લૉગિન થઈ શક્યું નહીં. ફરી પ્રયાસ કરો.",
     authorBooksTitle: "મારાં પુસ્તકો",
     authorBooksIntro: "ડ્રાફ્ટ બનાવો, પુસ્તકની વિગતો ઉમેરો અને પછી Rasbhav ટીમને તપાસ માટે મોકલો.",
@@ -245,6 +253,10 @@ export const messages = {
   },
   hi: {
     loginServiceUnavailable: "लॉगिन सेवा उपलब्ध नहीं है। साइट फिर शुरू होने पर कोशिश करें।",
+    registrationUnavailable: "अभी खाता नहीं बनाया जा सकता। कुछ देर बाद फिर कोशिश करें।",
+    registrationFieldsInvalid: "नाम और ईमेल जाँचें और नीचे दी गई पासवर्ड की शर्तें पूरी करें।",
+    verificationUnavailable: "ईमेल सत्यापन अभी उपलब्ध नहीं है। कुछ देर बाद फिर कोशिश करें।",
+    authTryLater: "बहुत ज़्यादा कोशिशें हो चुकी हैं। दोबारा कोशिश करने से पहले कुछ मिनट रुकें।",
     signInRequestFailed: "साइन इन नहीं हो सका। फिर कोशिश करें।",
     authorBooksTitle: "मेरी किताबें",
     authorBooksIntro: "ड्राफ़्ट बनाएँ, किताब की जानकारी जोड़ें और जाँच के लिए Rasbhav टीम को भेजें।",
