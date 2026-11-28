@@ -1,3 +1,4 @@
+import { BookDiscussion } from "../../components/books/BookDiscussion.jsx";
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Link, useParams, useSearchParams } from "react-router";
@@ -185,6 +186,7 @@ export default function BookDetailsPage() {
         </article>
       </div>
       <BookReviews bookId={book.id} />
+      <BookDiscussion key={book.id} bookId={book.id} />
       <RelatedBooks book={book} language={language} t={t} />
     </main>
   );
