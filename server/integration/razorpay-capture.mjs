@@ -143,6 +143,7 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
     await page.getByRole("button", { name: undo }).waitFor();
     await page.goto(origin + "/library");
     await page.locator('progress[max="3"][value="1"]').waitFor();
+    assert.deepEqual(await page.locator(".reading-streak dd").allTextContents(), ["1", "1"]);
     const reminderLabel = /Remind me in the library|લાઇબ્રેરીમાં વાંચન લક્ષ્ય યાદ અપાવો|लाइब्रेरी में पढ़ने का लक्ष्य याद दिलाएँ/;
     const reminder = page.getByRole("checkbox", { name: reminderLabel });
     await reminder.waitFor();
@@ -523,12 +524,15 @@ async function verifyPurchase(t, referred) {
     { sourceId: String(source._id), kind: "purchased" });
   assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId, readerId: otherReaderId }), null);
   assert.equal(await resolveReadingAccess({ bookId: catalogue.catalogueId }), null);
-  const { getReadingChallenge, saveReadingCompletion, deleteReadingCompletion, challengeMonthStart, readingReminderDue } =
+  const { getReadingChallenge, saveReadingCompletion, deleteReadingCompletion, challengeMonthStart, readingReminderDue, calculateReadingStreak } =
     await import("../src/modules/orders/reader-challenge.js");
   assert.equal(challengeMonthStart(new Date("2026-11-30T18:30:00Z")).toISOString(), "2026-11-30T18:30:00.000Z");
   assert.equal(readingReminderDue(new Date("2026-11-25T12:00:00Z"), 2), true);
   assert.equal(readingReminderDue(new Date("2026-11-25T12:00:00Z"), 3), false);
   assert.equal(readingReminderDue(new Date("2026-11-10T12:00:00Z"), 2), false);
+  const readingDates = ["2026-11-28T19:00:00Z", "2026-11-29T08:00:00Z", "2026-11-29T19:00:00Z"].map(value => new Date(value));
+  assert.deepEqual(calculateReadingStreak(readingDates, new Date("2026-12-01T05:00:00Z")), { current: 2, longest: 2 });
+  assert.deepEqual(calculateReadingStreak(readingDates, new Date("2026-12-02T05:00:00Z")), { current: 0, longest: 2 });
   const completionRequest = { reader: { _id: readerId }, params: { bookId: catalogue.catalogueId } };
   const response = { set() { return this; }, status(value) { this.statusCode = value; return this; }, json(body) { return body.data; } };
   await saveReadingCompletion({ ...completionRequest, reader: { _id: otherReaderId } }, response);
@@ -538,12 +542,13 @@ async function verifyPurchase(t, referred) {
   const challenge = await getReadingChallenge(completionRequest, response);
   assert.equal(challenge.completed, 1);
   assert.equal(challenge.target, 3);
+  assert.deepEqual(challenge.streak, { current: 1, longest: 1 });
   assert.equal(challenge.books.length, 1);
   assert.equal(challenge.books[0].bookId, catalogue.catalogueId);
   assert.equal(challenge.books[0].title.en, catalogue.title.en);
-  assert.deepEqual(await getReadingChallenge({ reader: { _id: otherReaderId } }, response), { completed: 0, target: 3, books: [], reminderEnabled: false, reminderDue: false });
+  assert.deepEqual(await getReadingChallenge({ reader: { _id: otherReaderId } }, response), { completed: 0, target: 3, books: [], reminderEnabled: false, reminderDue: false, streak: { current: 0, longest: 0 } });
   await deleteReadingCompletion(completionRequest, response);
-  assert.deepEqual(await getReadingChallenge(completionRequest, response), { completed: 0, target: 3, books: [], reminderEnabled: false, reminderDue: false });
+  assert.deepEqual(await getReadingChallenge(completionRequest, response), { completed: 0, target: 3, books: [], reminderEnabled: false, reminderDue: false, streak: { current: 0, longest: 0 } });
 
   const startRefund = { mode: "test", orderId: order._id };
   assert.deepEqual(await startFullTestRefund(startRefund), { replayed: false });

@@ -14,6 +14,7 @@ export const Completion = mongoose.models.ReaderBookCompletion || mongoose.model
 
 const indiaOffsetMs = 330 * 60 * 1000;
 const target = 3;
+const dayMs = 24 * 60 * 60 * 1000;
 
 export function challengeMonthStart(now) {
   const indiaDate = new Date(now.getTime() + indiaOffsetMs);
@@ -24,15 +25,34 @@ export function readingReminderDue(now, completed) {
   if (completed >= target) return false;
   const local = new Date(now.getTime() + indiaOffsetMs);
   const nextMonth = Date.UTC(local.getUTCFullYear(), local.getUTCMonth() + 1, 1) - indiaOffsetMs;
-  return nextMonth - now.getTime() <= 7 * 24 * 60 * 60 * 1000;
+  return nextMonth - now.getTime() <= 7 * dayMs;
+}
+
+export function calculateReadingStreak(dates, now) {
+  const localDay = date => Math.floor((date.getTime() + indiaOffsetMs) / dayMs);
+  const today = localDay(now);
+  const days = [...new Set(dates.map(localDay))].filter(day => day <= today).sort((a, b) => a - b);
+  let longest = 0;
+  let run = 0;
+  let previous = -Infinity;
+  for (const day of days) {
+    run = day === previous + 1 ? run + 1 : 1;
+    longest = Math.max(longest, run);
+    previous = day;
+  }
+  return { current: previous >= today - 1 ? run : 0, longest };
 }
 
 export async function getReadingChallenge(request, response) {
   const now = new Date();
   const filter = { readerId: request.reader._id, completedAt: { $gte: challengeMonthStart(now) } };
-  const [completed, recent] = await Promise.all([
+  const [completed, recent, readingDays] = await Promise.all([
     Completion.countDocuments(filter),
     Completion.find(filter).sort({ completedAt: -1, _id: -1 }).limit(20).select("bookId completedAt -_id").lean(),
+    Completion.aggregate([
+      { $match: { readerId: request.reader._id } },
+      { $group: { _id: { $dateTrunc: { date: "$completedAt", unit: "day", timezone: "Asia/Kolkata" } } } },
+    ]),
   ]);
   const catalogue = await Book.find({ catalogueId: { $in: recent.map(row => row.bookId) } })
     .select("catalogueId title -_id").lean();
@@ -40,7 +60,11 @@ export async function getReadingChallenge(request, response) {
   const books = recent.map(row => ({ ...row, title: titles.get(row.bookId) ?? null }));
   const reminderEnabled = request.reader.monthlyReadingReminder === true;
   return response.set("Cache-Control", "no-store").json({
-    data: { completed, target, books, reminderEnabled, reminderDue: reminderEnabled && readingReminderDue(now, completed) },
+    data: {
+      completed, target, books, reminderEnabled,
+      reminderDue: reminderEnabled && readingReminderDue(now, completed),
+      streak: calculateReadingStreak(readingDays.map(day => day._id), now),
+    },
   });
 }
 

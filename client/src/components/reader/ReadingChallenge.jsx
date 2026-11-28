@@ -54,6 +54,11 @@ export function ReadingChallengeSummary({ language, onCompletionRemoved }) {
     hi: ["लाइब्रेरी में पढ़ने का लक्ष्य याद दिलाएँ", "इस महीने का लक्ष्य पूरा करने के लिए अभी समय है।"],
     en: ["Remind me in the library", "There is still time to reach this month's goal."],
   }[language] ?? ["Remind me in the library", "There is still time to reach this month's goal."];
+  const streakLabels = {
+    gu: ["હાલના સતત દિવસ", "સૌથી લાંબો સળંગ ગાળો", "સાત દિવસ સતત વાંચન"],
+    hi: ["अभी लगातार दिन", "सबसे लंबा सिलसिला", "सात दिन लगातार पढ़ा"],
+    en: ["Current streak", "Longest streak", "Seven days of reading"],
+  }[language];
   const number = new Intl.NumberFormat(language);
   return <section aria-labelledby="reading-challenge-title">
     <h2 id="reading-challenge-title">{labels.heading}</h2>
@@ -66,6 +71,13 @@ export function ReadingChallengeSummary({ language, onCompletionRemoved }) {
         {" "}{reminderLabels[0]}
       </label></p>
       {summary.reminderDue && <p role="status">{reminderLabels[1]}</p>}
+      {summary.streak && <>
+        <dl className="reading-streak">
+          <div><dt>{streakLabels[0]}</dt><dd>{number.format(summary.streak.current)}</dd></div>
+          <div><dt>{streakLabels[1]}</dt><dd>{number.format(summary.streak.longest)}</dd></div>
+        </dl>
+        {summary.streak.longest >= 7 && <p>{streakLabels[2]}</p>}
+      </>}
       {summary.books?.length > 0 && <>
         <h3>{{ gu: "આ મહિને તાજેતરમાં વાંચેલી બુક", hi: "इस महीने हाल में पढ़ी गई किताबें", en: "Recently finished this month" }[language]}</h3>
         <ul>{summary.books.map(book => {
