@@ -351,6 +351,17 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
     assert.deepEqual((await (await fetch(api + "/community/discussions")).json()).data.books, []);
     const hiddenThread = await sharingPage.evaluate(async id => (await fetch("/api/v1/books/phase7-review-paid/discussions/" + id + "/replies")).status, postId);
     assert.equal(hiddenThread, 404);
+    await page.goto(origin + "/community");
+    const myPost = page.locator('section[aria-labelledby="my-discussion-title"] li').filter({ hasText: discussionBody });
+    await myPost.getByText(/^(Hidden|છુપાવેલી|छिपाई गई)$/).waitFor();
+    const mark = /Mark as read|વાંચેલું ગણો|पढ़ा हुआ मानें/;
+    await myPost.getByRole("button", { name: mark }).click();
+    await myPost.getByRole("button", { name: mark }).waitFor({ state: "detached" });
+    await page.reload();
+    await myPost.waitFor();
+    assert.equal(await myPost.getByRole("button", { name: mark }).count(), 0);
+    const otherHistory = await sharingPage.evaluate(async () => (await fetch("/api/v1/community/my-discussions")).json());
+    assert.ok(otherHistory.data.posts.every(post => post.body !== discussionBody));
 
     const adminClubs = adminPage.locator('section[aria-labelledby="reading-clubs-title"]');
     await adminClubs.locator("input").fill("phase7-review-paid");
