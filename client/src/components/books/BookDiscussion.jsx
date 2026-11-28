@@ -3,9 +3,9 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
 
 const labels = {
-  gu: { title: "પુસ્તક ચર્ચા", empty: "હજી ચર્ચામાં કોઈ નોંધ નથી.", body: "તમારો વિચાર લખો", help: "૧૦થી ૧૦૦૦ અક્ષર લખો. નોંધ જાહેર થાય એ પહેલાં એડમિન તેની સમીક્ષા કરશે.", send: "સમીક્ષા માટે મોકલો", pending: "તમારી નોંધ સમીક્ષા માટે મોકલાઈ.", report: "રિપોર્ટ કરો", reported: "રિપોર્ટ નોંધાયો.", admin: "પુસ્તક ચર્ચાની સમીક્ષા", approve: "જાહેર રાખો", hide: "છુપાવો", queueEmpty: "સમીક્ષા માટે કોઈ નોંધ નથી.", more: "વધુ નોંધ", error: "વિનંતી પૂરી થઈ શકી નહીં. ફરી પ્રયાસ કરો.", loading: "લોડ થઈ રહ્યું છે…" },
-  hi: { title: "पुस्तक चर्चा", empty: "चर्चा में अभी कोई पोस्ट नहीं है।", body: "अपना विचार लिखें", help: "10 से 1,000 अक्षर लिखें। प्रकाशन से पहले एडमिन इसकी समीक्षा करेगा।", send: "समीक्षा के लिए भेजें", pending: "आपकी पोस्ट समीक्षा के लिए भेजी गई।", report: "रिपोर्ट करें", reported: "रिपोर्ट दर्ज हुई।", admin: "पुस्तक चर्चा की समीक्षा", approve: "सार्वजनिक रखें", hide: "छिपाएँ", queueEmpty: "समीक्षा के लिए कोई पोस्ट नहीं है।", more: "और पोस्ट", error: "अनुरोध पूरा नहीं हुआ। फिर कोशिश करें।", loading: "लोड हो रहा है…" },
-  en: { title: "Book discussion", empty: "There are no posts yet.", body: "Share your thoughts", help: "Write 10 to 1,000 characters. An admin reviews posts before they appear.", send: "Send for review", pending: "Your post was submitted for review.", report: "Report post", reported: "Report received.", admin: "Moderate book discussions", approve: "Make public or keep visible", hide: "Hide post", queueEmpty: "There are no posts to review.", more: "More posts", error: "Could not complete the request. Try again.", loading: "Loading…" },
+  gu: { replies: "જવાબો", reply: "તમારો જવાબ લખો", title: "પુસ્તક ચર્ચા", empty: "હજી ચર્ચામાં કોઈ નોંધ નથી.", body: "તમારો વિચાર લખો", help: "૧૦થી ૧૦૦૦ અક્ષર લખો. નોંધ જાહેર થાય એ પહેલાં એડમિન તેની સમીક્ષા કરશે.", send: "સમીક્ષા માટે મોકલો", pending: "તમારી નોંધ સમીક્ષા માટે મોકલાઈ.", report: "રિપોર્ટ કરો", reported: "રિપોર્ટ નોંધાયો.", admin: "પુસ્તક ચર્ચાની સમીક્ષા", approve: "જાહેર રાખો", hide: "છુપાવો", queueEmpty: "સમીક્ષા માટે કોઈ નોંધ નથી.", more: "વધુ નોંધ", error: "વિનંતી પૂરી થઈ શકી નહીં. ફરી પ્રયાસ કરો.", loading: "લોડ થઈ રહ્યું છે…" },
+  hi: { replies: "जवाब", reply: "अपना जवाब लिखें", title: "पुस्तक चर्चा", empty: "चर्चा में अभी कोई पोस्ट नहीं है।", body: "अपना विचार लिखें", help: "10 से 1,000 अक्षर लिखें। प्रकाशन से पहले एडमिन इसकी समीक्षा करेगा।", send: "समीक्षा के लिए भेजें", pending: "आपकी पोस्ट समीक्षा के लिए भेजी गई।", report: "रिपोर्ट करें", reported: "रिपोर्ट दर्ज हुई।", admin: "पुस्तक चर्चा की समीक्षा", approve: "सार्वजनिक रखें", hide: "छिपाएँ", queueEmpty: "समीक्षा के लिए कोई पोस्ट नहीं है।", more: "और पोस्ट", error: "अनुरोध पूरा नहीं हुआ। फिर कोशिश करें।", loading: "लोड हो रहा है…" },
+  en: { replies: "Replies", reply: "Write a reply", title: "Book discussion", empty: "There are no posts yet.", body: "Share your thoughts", help: "Write 10 to 1,000 characters. An admin reviews posts before they appear.", send: "Send for review", pending: "Your post was submitted for review.", report: "Report post", reported: "Report received.", admin: "Moderate book discussions", approve: "Make public or keep visible", hide: "Hide post", queueEmpty: "There are no posts to review.", more: "More posts", error: "Could not complete the request. Try again.", loading: "Loading…" },
 };
 
 const style = `
@@ -13,6 +13,7 @@ const style = `
 .book-discussion form{display:grid;gap:8px;margin:18px 0}.book-discussion textarea{width:100%;min-height:100px;padding:10px;border:1px solid #b8aa97;background:#fff}
 .book-discussion ul{padding:0;list-style:none}.book-discussion li{padding:14px 0;border-bottom:1px solid #ded4c9}.book-discussion li p{white-space:pre-wrap;overflow-wrap:anywhere}
 .book-discussion button{padding:8px 12px;border:1px solid #54464e;background:#fff;color:#30252c;cursor:pointer}.book-discussion button:disabled{opacity:.55;cursor:wait}
+.book-discussion .discussion-replies{margin:12px 0 0;padding-left:16px;border-left:2px solid #ded4c9}
 .book-discussion .discussion-actions{display:flex;gap:8px;flex-wrap:wrap}
 `;
 
@@ -26,10 +27,25 @@ async function discussionRequest(path, method = "GET", body) {
 }
 
 export function BookDiscussion({ bookId }) {
+  const endpoint = "/api/v1/books/" + encodeURIComponent(bookId) + "/discussions";
+  return <DiscussionFeed endpoint={endpoint} />;
+}
+
+function ReplyThread({ post, endpoint, copy }) {
+  const [open, setOpen] = useState(false);
+  const threadId = "book-discussion-" + post.id;
+  return <div className="discussion-replies">
+    <button type="button" aria-expanded={open} aria-controls={open ? threadId : undefined} onClick={() => setOpen(value => !value)}>
+      {copy.replies}
+    </button>
+    {open && <DiscussionFeed endpoint={endpoint + "/" + post.id + "/replies"} threadId={threadId} />}
+  </div>;
+}
+
+function DiscussionFeed({ endpoint, threadId }) {
   const { user } = useAuth();
   const { language } = useLanguage();
   const copy = labels[language] ?? labels.en;
-  const endpoint = "/api/v1/books/" + encodeURIComponent(bookId) + "/discussions";
   const [page, setPage] = useState(null);
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
@@ -49,9 +65,12 @@ export function BookDiscussion({ bookId }) {
     try { await task(); } catch { setError(true); } finally { setBusy(false); }
   }
 
-  return <section className="book-discussion" aria-labelledby="book-discussion-title">
-    <style>{style}</style>
-    <h2 id="book-discussion-title">{copy.title}</h2>
+  const prefix = threadId || "book-discussion";
+  return <section id={threadId} className={threadId ? undefined : "book-discussion"} aria-labelledby={prefix + "-title"}>
+    {threadId ? <h3 id={prefix + "-title"}>{copy.replies}</h3> : <>
+      <style>{style}</style>
+      <h2 id={prefix + "-title"}>{copy.title}</h2>
+    </>}
     {user && <form onSubmit={event => {
       event.preventDefault();
       void act(async () => {
@@ -60,10 +79,10 @@ export function BookDiscussion({ bookId }) {
         setNotice(copy.pending);
       });
     }}>
-      <label htmlFor="book-discussion-body">{copy.body}</label>
-      <textarea id="book-discussion-body" aria-describedby="book-discussion-help"
+      <label htmlFor={prefix + "-body"}>{threadId ? copy.reply : copy.body}</label>
+      <textarea id={prefix + "-body"} aria-describedby={prefix + "-help"}
         value={body} onChange={event => setBody(event.target.value)} minLength={10} maxLength={1000} required />
-      <small id="book-discussion-help">{copy.help}</small>
+      <small id={prefix + "-help"}>{copy.help}</small>
       <div><button type="submit" disabled={busy}>{copy.send}</button></div>
     </form>}
     {notice && <p role="status">{notice}</p>}
@@ -77,6 +96,7 @@ export function BookDiscussion({ bookId }) {
         await discussionRequest(endpoint + "/" + post.id + "/report", "POST");
         setNotice(copy.reported);
       })}>{copy.report}</button>}
+      {!threadId && <ReplyThread post={post} endpoint={endpoint} copy={copy} />}
     </li>)}</ul>}
     {page?.nextCursor && <button type="button" disabled={busy} onClick={() => act(async () => {
       const next = await discussionRequest(endpoint + "?cursor=" + encodeURIComponent(page.nextCursor));
@@ -121,7 +141,7 @@ export function AdminDiscussions() {
     {!posts && !error && <p role="status">{copy.loading}</p>}
     {posts?.length === 0 && <p>{copy.queueEmpty}</p>}
     {posts?.length > 0 && <ul>{posts.map(post => <li key={post.id}>
-      <strong>{post.authorName} · {post.bookId}</strong>
+      <strong>{post.authorName} · {post.bookId}{post.parentId ? " · " + copy.replies : ""}</strong>
       <p>{post.body}</p>
       <div className="discussion-actions">
         <button type="button" disabled={busy} onClick={() => review(post, "approved")}>{copy.approve}</button>
