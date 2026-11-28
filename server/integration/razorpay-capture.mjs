@@ -285,7 +285,11 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
 
     await sharingPage.goto(discussionBookUrl);
     const publicPost = sharingPage.locator("section.book-discussion li").filter({ hasText: discussionBody });
+    const report = sharingPage.waitForResponse(response =>
+      response.url().endsWith("/report") && response.request().method() === "POST"
+    );
     await publicPost.getByRole("button").click();
+    assert.equal((await report).status(), 200);
     await adminPage.reload();
     await modPost.locator("button").last().click();
     await modPost.waitFor({ state: "detached" });
