@@ -1,15 +1,14 @@
 import "dotenv/config";
 import { parseArgs } from "node:util";
-import mongoose from "mongoose";
 import { env } from "../config/env.js";
-import { connectDatabase, disconnectDatabase } from "../config/database.js";
 import Book from "../modules/books/book.model.js";
 import DigitalBookOrder from "../modules/orders/order.model.js";
 import DigitalBookPaymentAttempt from "../modules/orders/payment-attempt.model.js";
 import prepareTestCheckout from "../modules/orders/test-checkout.service.js";
 import User from "../modules/users/user.model.js";
 
-const catalogueId = "phase7-razorpay-sandbox";
+import { sandboxCatalogueId as catalogueId, withRazorpaySandbox } from "./razorpay-sandbox.js";
+
 const title = { en: "Sandbox eBook", gu: "સૅન્ડબૉક્સ ઇબુક", hi: "सैंडबॉक्स ईबुक" };
 const description = {
   en: "Sample listing for Razorpay test orders.",
@@ -41,22 +40,7 @@ async function prepareSandboxOrder() {
     throw new Error("Enter a valid referral code without surrounding spaces.");
   }
 
-  const uri = process.env.RAZORPAY_SANDBOX_MONGODB_URI;
-  if (process.env.NODE_ENV === "production" || !env.razorpayConfigured || env.razorpayMode !== "test") {
-    throw new Error("A development environment and Razorpay test credentials are required.");
-  }
-  if (!uri || uri === env.mongoUri) {
-    throw new Error("Set RAZORPAY_SANDBOX_MONGODB_URI to a separate test database connection.");
-  }
-
-  // Disable automatic collection and index creation until the selected database is verified.
-  mongoose.set("autoCreate", false);
-  mongoose.set("autoIndex", false);
-  try {
-    await connectDatabase(uri);
-    if (mongoose.connection.name !== database) {
-      throw new Error("The connected database does not match --test-database.");
-    }
+  await withRazorpaySandbox(database, async () => {
     const buyer = await User.findOne({
       email, role: "reader", accountStatus: "active", emailVerifiedAt: { $type: "date" },
     }).select("_id").lean();
@@ -84,9 +68,7 @@ async function prepareSandboxOrder() {
       platformSharePaise: order.platformCommissionPaise,
       referralSharePaise: order.referrerRewardPaise,
     }, null, 2));
-  } finally {
-    await disconnectDatabase();
-  }
+  });
 }
 
 prepareSandboxOrder().catch((error) => {
