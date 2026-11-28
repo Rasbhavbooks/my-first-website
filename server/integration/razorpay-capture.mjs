@@ -320,6 +320,14 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
     await publicPost.locator('button[aria-pressed="true"]').first().click();
     await publicPost.locator('button[aria-pressed="false"]').first().waitFor();
 
+    await publicPost.getByRole("button", { name: /Hide this reader|આ વાચકની નોંધો છુપાવો|इस पाठक की पोस्ट छिपाएँ/ }).click();
+    await publicPost.waitFor({ state: "detached" });
+    const guestPosts = await sharingPage.evaluate(async () => (await fetch("/api/v1/books/phase7-review-paid/discussions")).json());
+    assert.equal(guestPosts.data.posts[0].id, postId);
+    await sharingPage.getByText(/^(Hidden readers|છુપાવેલા વાચકો|छिपाए गए पाठक)$/).click();
+    await sharingPage.getByRole("button", { name: /Show again|ફરી બતાવો|फिर दिखाएँ/ }).click();
+    await publicPost.waitFor();
+
     const report = sharingPage.waitForResponse(response =>
       response.url().endsWith("/report") && response.request().method() === "POST"
     );
