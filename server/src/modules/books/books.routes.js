@@ -1,3 +1,4 @@
+import { bookDiscussions } from "./book-discussions.js";
 import { rateLimit } from "express-rate-limit";
 import { Router } from "express";
 import { requireReader } from "../auth/auth.middleware.js";
@@ -67,5 +68,6 @@ router.delete("/:bookId/reviews/:reviewId/helpful", requireReader, helpfulVoteLi
 router.patch("/:bookId/reviews/:reviewId", requireReader, reviewWriteLimiter, updateBookReview);
 router.delete("/:bookId/reviews/:reviewId", requireReader, reviewWriteLimiter, deleteBookReview);
 router.post("/:bookId/reviews/:reviewId/report", requireReader, reportLimiter, reportBookReview);
+router.use("/:bookId/discussions", bookDiscussions);
 router.get("/:bookId", getBook);
 export default router;
