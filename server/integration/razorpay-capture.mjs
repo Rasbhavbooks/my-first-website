@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { createHmac, randomBytes } from "node:crypto";
+import { createHash, createHmac, randomBytes } from "node:crypto";
 import { reviewAuthorBook } from "../src/modules/books/author-book-admin.controller.js";
 import { once } from "node:events";
 import { createServer } from "node:net";
@@ -417,6 +417,50 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
   }
 }
 
+async function runSandboxRefund({ database, mongoUri, order, duplicateRefund, refundStatus }) {
+  const paymentId = duplicateRefund ? "pay_duplicate1" : "pay_capture1";
+  const refundId = duplicateRefund ? "rfnd_duplicate1" : "rfnd_full1";
+  const expectedKey = createHash("sha256").update(duplicateRefund
+    ? "rasbhav-test-refund:" + duplicateRefund.id
+    : "test-full-refund:" + order.id).digest("hex");
+  const fixture = {
+    id: refundId, entity: "refund", payment_id: paymentId, amount: order.amountPaise,
+    currency: "INR", receipt: "rb-" + expectedKey.slice(0, 36),
+  };
+  const mock = `data:text/javascript,${encodeURIComponent(`
+    import assert from "node:assert/strict";
+    const fixture = ${JSON.stringify(fixture)};
+    const base = "https://api.razorpay.com/v1/payments/" + fixture.payment_id;
+    globalThis.fetch = async (url, options) => {
+      if (options.method === "POST") {
+        assert.equal(url, base + "/refund");
+        assert.equal(options.headers["X-Refund-Idempotency"], ${JSON.stringify(expectedKey)});
+        assert.deepEqual(JSON.parse(options.body), { amount: fixture.amount, speed: "normal", receipt: fixture.receipt });
+        return Response.json({ ...fixture, status: "pending" });
+      }
+      assert.equal(options.method, "GET");
+      assert.equal(url, base + "/refunds/" + fixture.id);
+      const status = ${JSON.stringify(refundStatus)};
+      return Response.json(status === "mismatch"
+        ? { ...fixture, amount: fixture.amount - 1, status: "processed" }
+        : { ...fixture, status });
+    };
+  `)}`;
+  const script = fileURLToPath(new URL("../src/scripts/refundRazorpaySandboxOrder.js", import.meta.url));
+  const { stdout } = await promisify(execFile)(process.execPath, [
+    "--import", mock, script, "--test-database", database, "--order-id", order.id,
+    ...(duplicateRefund ? ["--duplicate-request-id", duplicateRefund.id] : ["--full"]),
+  ], {
+    timeout: 20000,
+    env: {
+      ...process.env, NODE_ENV: "test", MONGODB_URI: "",
+      RAZORPAY_SANDBOX_MONGODB_URI: mongoUri, RAZORPAY_MODE: "test",
+      RAZORPAY_KEY_ID: "rzp_test_fixture", RAZORPAY_KEY_SECRET: "fixture",
+    },
+  });
+  return JSON.parse(stdout.slice(stdout.indexOf("{")));
+}
+
 async function verifyPurchase(t, referred) {
   process.env.RAZORPAY_WEBHOOK_SECRET = secret;
   process.env.ADMIN_MFA_ENCRYPTION_KEY = integrationMfaKey;
@@ -472,7 +516,7 @@ async function verifyPurchase(t, referred) {
       fileName: "reading.pdf", size: 512, scanStatus: "clean" } },
   });
   const catalogue = await Book.create({
-    catalogueId: "quiet-river", title: text, description: text, author: "A. Writer",
+    catalogueId: referred ? "phase7-razorpay-sandbox" : "quiet-river", title: text, description: text, author: "A. Writer",
     language: "English", category: "Novel", price: 100, availableForSale: true, readingSourceId: source._id, tone: "blue", badge: "New",
   });
   const [buyer, referrer] = await User.create(["buyer", "referrer"].map(name => ({
@@ -611,22 +655,32 @@ async function verifyPurchase(t, referred) {
   assert.equal(duplicateRefund.status, "pending");
   assert.equal(duplicateRefund.amountPaise, 13929);
   assert.equal(duplicateRefund.providerPaymentId, "pay_duplicate1");
-  let refundCalls = 0;
-  const submitRefund = createRefundSubmissionService({
-    mode: "test",
-    findRefundRequestById: id => RefundRequest.findById(id).select("+providerPaymentId +providerRefundId"),
-    refundCapturedPayment: async ({ paymentId, amountPaise, currency }) => {
-      assert.equal(paymentId, "pay_duplicate1");
-      assert.equal(amountPaise, 13929);
-      assert.equal(currency, "INR");
-      refundCalls += 1;
-      return { status: "completed", refundId: "rfnd_duplicate1" };
-    },
-  });
-  assert.equal((await submitRefund(duplicateRefund.id)).completed, true);
-  assert.equal((await RefundRequest.findById(duplicateRefund._id)).status, "completed");
-  assert.equal((await submitRefund(duplicateRefund.id)).replayed, true);
-  assert.equal(refundCalls, 1);
+  if (referred) {
+    const args = { database, mongoUri, order, duplicateRefund };
+    const submit = refundStatus => runSandboxRefund({ ...args, refundStatus });
+    await assert.rejects(submit("mismatch"), /RAZORPAY_REFUND_MISMATCH/);
+    assert.equal((await submit("pending")).status, "submitted");
+    assert.equal((await RefundRequest.findById(duplicateRefund._id)).status, "submitted");
+    assert.equal((await submit("processed")).status, "completed");
+    assert.equal((await submit("do-not-fetch")).replayed, true);
+  } else {
+    let refundCalls = 0;
+    const submitRefund = createRefundSubmissionService({
+      mode: "test",
+      findRefundRequestById: id => RefundRequest.findById(id).select("+providerPaymentId +providerRefundId"),
+      refundCapturedPayment: async ({ paymentId, amountPaise, currency }) => {
+        assert.equal(paymentId, "pay_duplicate1");
+        assert.equal(amountPaise, 13929);
+        assert.equal(currency, "INR");
+        refundCalls += 1;
+        return { status: "completed", refundId: "rfnd_duplicate1" };
+      },
+    });
+    assert.equal((await submitRefund(duplicateRefund.id)).completed, true);
+    assert.equal((await RefundRequest.findById(duplicateRefund._id)).status, "completed");
+    assert.equal((await submitRefund(duplicateRefund.id)).replayed, true);
+    assert.equal(refundCalls, 1);
+  }
   const { getAuthorOrderShare } = await import("../src/modules/auth/authors.controller.js");
   assert.deepEqual(await getAuthorOrderShare(otherReaderId), { amountPaise: 10000, orderCount: 1 });
   assert.deepEqual(await getAuthorOrderShare(buyer._id), { amountPaise: 0, orderCount: 0 });
@@ -716,7 +770,16 @@ async function verifyPurchase(t, referred) {
     ...fullRefund, confirmation: { ...fullRefund.confirmation, paymentId: "pay_duplicate1" },
   }), { code: "INVALID_FULL_REFUND" });
   assert.equal((await Order.findById(order._id)).status, "refund_pending");
-  assert.deepEqual(await applyConfirmedTestRefund(fullRefund), { replayed: false, amountPaise: 13929 });
+  if (referred) {
+    const submit = refundStatus => runSandboxRefund({ database, mongoUri, order, refundStatus });
+    await assert.rejects(submit("failed"), /RAZORPAY_REFUND_FAILED/);
+    assert.equal((await submit("pending")).status, "submitted");
+    assert.equal(await Ledger.countDocuments({ orderId: order._id, eventType: "refund" }), 0);
+    assert.equal((await submit("processed")).status, "completed");
+    assert.equal((await submit("do-not-fetch")).replayed, true);
+  } else {
+    assert.deepEqual(await applyConfirmedTestRefund(fullRefund), { replayed: false, amountPaise: 13929 });
+  }
   assert.deepEqual(await applyConfirmedTestRefund(fullRefund), { replayed: true, amountPaise: 13929 });
   assert.equal(await Ledger.countDocuments({ orderId: order._id, eventType: "refund" }), 1);
   const adminHistory = await listAdminOrders({ query: { status: "refunded" } }, {
