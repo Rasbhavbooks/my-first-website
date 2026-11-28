@@ -34,7 +34,7 @@ const styles = `
 `;
 export default function AdminDashboardPage() {
   const { user, loading } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [stats, setStats] = useState(null);
   const [statsError, setStatsError] = useState("");
   const [readiness, setReadiness] = useState(null);
@@ -106,6 +106,7 @@ export default function AdminDashboardPage() {
     [t.authorApplicationsTitle, "/admin/author-applications"],
     [t.adminBookReviewTitle, "/admin/author-books"],
     [t.adminReviewsTitle, "/admin/review-moderation"],
+    [{ gu: "પુસ્તક ચર્ચાની સમીક્ષા", hi: "पुस्तक चर्चा की समीक्षा", en: "Moderate book discussions" }[language], "/admin/discussions"],
   ];
   return (
     <main className="admin-home">
