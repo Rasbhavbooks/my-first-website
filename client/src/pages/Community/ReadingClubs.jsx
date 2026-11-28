@@ -3,6 +3,12 @@ import { Link } from "react-router";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
 
+const meetingLabels = {
+  gu: { next: "આગામી બેઠક", time: "બેઠકનો સમય (ભારતીય સમય)", note: "બેઠકની ટૂંકી નોંધ", save: "બેઠક સાચવો", clear: "બેઠક રદ કરો" },
+  hi: { next: "अगली बैठक", time: "बैठक का समय (भारतीय समय)", note: "बैठक की संक्षिप्त जानकारी", save: "बैठक सहेजें", clear: "बैठक रद्द करें" },
+  en: { next: "Next meeting", time: "Meeting time (India time)", note: "Short meeting note", save: "Save meeting", clear: "Cancel meeting" },
+};
+
 const labels = {
   gu: { title: "વાંચન ક્લબ", empty: "હજુ કોઈ વાંચન ક્લબ નથી.", join: "જોડાઓ", leave: "ક્લબ છોડો", members: "સભ્યો", create: "ક્લબ બનાવો", book: "કેટલોગનું પુસ્તક ID", archive: "ક્લબ બંધ કરો", reopen: "ફરી ખોલો", error: "ક્લબનો ફેરફાર થઈ શક્યો નહીં." },
   hi: { title: "पठन क्लब", empty: "अभी कोई पठन क्लब नहीं है।", join: "जुड़ें", leave: "क्लब छोड़ें", members: "सदस्य", create: "क्लब बनाएँ", book: "कैटलॉग की पुस्तक ID", archive: "क्लब बंद करें", reopen: "फिर खोलें", error: "क्लब में बदलाव नहीं हो सका।" },
@@ -19,10 +25,28 @@ function json(method, body) {
   return { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
 }
 
+function MeetingEditor({ club, copy, busy, save }) {
+  const date = club.meetingAt ? new Date(club.meetingAt) : null;
+  const local = date ? new Date(date.getTime() + 330 * 60_000).toISOString().slice(0, 16) : "";
+  return <form onSubmit={event => {
+    event.preventDefault();
+    const values = new FormData(event.currentTarget);
+    const proposed = new Date(values.get("meetingAt") + ":00+05:30");
+    if (Number.isFinite(proposed.getTime())) save(proposed.toISOString(), values.get("meetingNote"));
+  }}>
+    <label>{copy.time}{" "}<input name="meetingAt" type="datetime-local" required defaultValue={local} /></label>{" "}
+    <label>{copy.note}{" "}<input name="meetingNote" type="text" maxLength={240} defaultValue={club.meetingNote} /></label>{" "}
+    <button disabled={busy} type="submit">{copy.save}</button>{" "}
+    {date && <button disabled={busy} type="button" onClick={() => save(null, "")}>{copy.clear}</button>}
+  </form>;
+}
+
 export function ReadingClubs({ admin = false }) {
   const { user } = useAuth();
   const { language } = useLanguage();
   const copy = labels[language] ?? labels.en;
+  const meeting = meetingLabels[language] ?? meetingLabels.en;
+  const meetingDate = new Intl.DateTimeFormat(language, { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" });
   const endpoint = admin ? "/api/v1/admin/clubs" : "/api/v1/community/clubs";
   const listing = endpoint + (!admin && user ? "?personal=1" : "");
   const [clubs, setClubs] = useState(null);
@@ -72,6 +96,13 @@ export function ReadingClubs({ admin = false }) {
     });
   }
 
+  function saveMeeting(club, meetingAt, meetingNote) {
+    void act(async () => {
+      const result = await request(endpoint + "/" + club.id + "/meeting", json("PATCH", { meetingAt, meetingNote }));
+      setClubs(current => current.map(item => item.id === club.id ? { ...item, ...result } : item));
+    });
+  }
+
   return <section aria-labelledby="reading-clubs-title">
     <h2 id="reading-clubs-title">{copy.title}</h2>
     {admin && <form onSubmit={createClub}>
@@ -87,6 +118,12 @@ export function ReadingClubs({ admin = false }) {
       {(user || admin) && <button type="button" disabled={busy} onClick={() => changeClub(club)}>
         {admin ? (club.active ? copy.archive : copy.reopen) : (club.joined ? copy.leave : copy.join)}
       </button>}
+      {club.meetingAt && <p><strong>{meeting.next}</strong>{" · "}
+        <time dateTime={club.meetingAt}>{meetingDate.format(new Date(club.meetingAt))} IST</time>
+        {club.meetingNote && <>{" · "}{club.meetingNote}</>}
+      </p>}
+      {admin && <MeetingEditor key={club.meetingAt || "no-meeting"} club={club} copy={meeting} busy={busy}
+        save={(at, note) => saveMeeting(club, at, note)} />}
     </li>)}</ul>}
   </section>;
 }
