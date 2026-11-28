@@ -368,9 +368,16 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
     await readerClub.getByText(/Discuss the opening chapters/).waitFor();
     await readerClub.getByRole("button", { name: /Join club|જોડાઓ|जुड़ें/ }).click();
     await readerClub.getByRole("button", { name: /Leave club|ક્લબ છોડો|क्लब छोड़ें/ }).waitFor();
+    const attending = /I’m attending|હું આવીશ|मैं आऊँगा/;
+    const withdraw = /Withdraw RSVP|હાજરી પાછી ખેંચો|उपस्थिति वापस लें/;
+    await readerClub.getByRole("button", { name: attending }).click();
+    await readerClub.getByRole("button", { name: withdraw }).waitFor();
     await sharingPage.reload();
+    await readerClub.getByRole("button", { name: withdraw }).waitFor();
+    assert.equal((await (await fetch(api + "/community/clubs")).json()).data.clubs[0].attendanceCount, 1);
     await readerClub.getByRole("button", { name: /Leave club|ક્લબ છોડો|क्लब छोड़ें/ }).click();
     await readerClub.getByRole("button", { name: /Join club|જોડાઓ|जुड़ें/ }).waitFor();
+    assert.equal((await (await fetch(api + "/community/clubs")).json()).data.clubs[0].attendanceCount, 0);
     const cancelled = adminPage.waitForResponse(response => response.url().endsWith("/meeting") && response.request().method() === "PATCH");
     await adminClubs.getByRole("button", { name: /Cancel meeting|બેઠક રદ કરો|बैठक रद्द करें/ }).click();
     assert.equal((await cancelled).status(), 200);
