@@ -19,6 +19,8 @@ const schema = new mongoose.Schema({
   status: { type: String, enum: ["pending", "approved", "hidden"], default: "pending" },
   reportedBy: { type: [mongoose.Schema.Types.ObjectId], default: [], select: false },
   reportCounts: { type: reportCountsSchema, select: false },
+  decisionAt: Date,
+  decisionSeenAt: Date,
   needsReview: { type: Boolean, default: true },
 }, { timestamps: true, versionKey: false });
 schema.index({ bookId: 1, status: 1, parentId: 1, _id: -1 });
@@ -207,6 +209,36 @@ bookDiscussions.put("/:postId/replies/:replyId/like", requireReader, writeLimit,
 bookDiscussions.delete("/:postId/replies/:replyId/like", requireReader, writeLimit, requirePublicParent, updateLike);
 
 export const communityDiscussions = Router();
+communityDiscussions.get("/my-discussions", requireReader, readLimit, async (request, response) => {
+  const cursor = request.query.cursor;
+  if (cursor !== undefined && (typeof cursor !== "string" || !mongoose.isObjectIdOrHexString(cursor))) {
+    return failure(response, 400, "INVALID_DISCUSSION_CURSOR", "Choose a valid discussion page.");
+  }
+  const filter = { authorId: request.reader._id };
+  if (cursor) filter._id = { $lt: cursor };
+  const posts = await DiscussionPost.find(filter).sort({ _id: -1 }).limit(21).lean();
+  const rows = posts.slice(0, 20).map(post => ({
+    ...present(post), status: post.status, decisionAt: post.decisionAt ?? null,
+    unread: Boolean(post.decisionAt && !post.decisionSeenAt),
+  }));
+  return response.set("Cache-Control", "private, no-store").json({
+    data: { posts: rows, nextCursor: posts.length > 20 ? rows.at(-1).id : null },
+  });
+});
+communityDiscussions.put("/my-discussions/:postId/seen", requireReader, writeLimit, async (request, response) => {
+  const { postId } = request.params;
+  const decisionAt = typeof request.body?.decisionAt === "string" ? new Date(request.body.decisionAt) : null;
+  if (!mongoose.isObjectIdOrHexString(postId) || !decisionAt || !Number.isFinite(decisionAt.getTime())) {
+    return failure(response, 400, "INVALID_DISCUSSION_DECISION", "Choose a valid decision.");
+  }
+  const result = await DiscussionPost.updateOne(
+    { _id: postId, authorId: request.reader._id, decisionAt },
+    { $set: { decisionSeenAt: new Date() } },
+    { timestamps: false },
+  );
+  if (!result.matchedCount) return failure(response, 404, "DISCUSSION_NOT_FOUND", "This decision is unavailable or changed.");
+  return response.set("Cache-Control", "private, no-store").json({ data: { unread: false } });
+});
 communityDiscussions.get("/discussions", readLimit, async (_request, response) => {
   const books = await DiscussionPost.aggregate([
     { $match: { status: "approved", parentId: null } },
@@ -243,7 +275,7 @@ adminDiscussions.patch("/:postId", writeLimit, async (request, response) => {
   }
   const post = await DiscussionPost.findOneAndUpdate(
     { _id: postId, needsReview: true, updatedAt: revision },
-    { $set: { status, needsReview: false }, $unset: { reportCounts: 1 } },
+    { $set: { status, needsReview: false, decisionAt: new Date() }, $unset: { reportCounts: 1, decisionSeenAt: 1 } },
   ).select("_id");
   if (!post) return failure(response, 409, "DISCUSSION_CHANGED", "The post changed. Reload the moderation queue.");
   return response.json({ data: { reviewed: true } });
