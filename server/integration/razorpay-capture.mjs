@@ -362,6 +362,20 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
     assert.equal(await myPost.getByRole("button", { name: markDecision }).count(), 0);
     const otherHistory = await sharingPage.evaluate(async () => (await fetch("/api/v1/community/my-discussions")).json());
     assert.ok(otherHistory.data.posts.every(post => post.body !== discussionBody));
+    const deniedRemoval = await sharingPage.evaluate(async id => (await fetch(
+      "/api/v1/community/my-discussions/" + id, { method: "DELETE" },
+    )).status, postId);
+    assert.equal(deniedRemoval, 404);
+    await myPost.waitFor();
+    page.once("dialog", dialog => dialog.accept());
+    await myPost.getByRole("button", { name: /Remove post|નોંધ દૂર કરો|पोस्ट हटाएँ/ }).click();
+    await myPost.waitFor({ state: "detached" });
+    await page.reload();
+    await page.locator('section[aria-labelledby="my-discussion-title"]').waitFor();
+    const myHistory = await page.evaluate(async () => (await fetch("/api/v1/community/my-discussions")).json());
+    assert.ok(myHistory.data.posts.every(post => post.id !== postId));
+    const replyHistory = await sharingPage.evaluate(async () => (await fetch("/api/v1/community/my-discussions")).json());
+    assert.equal(replyHistory.data.posts.find(post => post.body === replyBody).status, "hidden");
 
     const adminClubs = adminPage.locator('section[aria-labelledby="reading-clubs-title"]');
     await adminClubs.locator("input").fill("phase7-review-paid");
