@@ -31,6 +31,11 @@ function fail(response, status, code, message) {
   return response.status(status).json({ error: { code, message } });
 }
 
+function currentMeetingId(club, now) {
+  if (!club.active || !(club.meetingAt > now)) return null;
+  return club.meetingId || String(club._id) + ":" + club.meetingAt.getTime();
+}
+
 async function listClubs(request, response, admin = false) {
   const clubs = await Club.aggregate([
     { $match: admin ? {} : { active: true } },
@@ -41,7 +46,8 @@ async function listClubs(request, response, admin = false) {
     { $project: { bookId: 1, active: 1, title: "$book.title", meetingAt: 1, meetingNote: 1, meetingId: 1 } },
   ]);
   const ids = clubs.map(club => club._id);
-  const meetingIds = clubs.map(club => club.meetingId).filter(Boolean);
+  const now = new Date();
+  const meetingIds = clubs.map(club => currentMeetingId(club, now)).filter(Boolean);
   const [totals, joined, attendance] = await Promise.all([
     ClubMember.aggregate([
       { $match: { clubId: { $in: ids } } },
@@ -59,11 +65,11 @@ async function listClubs(request, response, admin = false) {
   const attending = new Map(attendance.map(row => [row._id, row.count]));
   return send(response, { clubs: clubs.map(club => ({
     id: String(club._id), bookId: club.bookId, title: club.title ?? null, active: club.active,
-    meetingId: club.active && club.meetingAt > new Date() ? club.meetingId ?? null : null,
-    going: Boolean(club.meetingId && membership.get(String(club._id)) === club.meetingId),
-    attendanceCount: attending.get(club.meetingId) ?? 0,
-    meetingAt: admin || club.meetingAt > new Date() ? club.meetingAt ?? null : null,
-    meetingNote: admin || club.meetingAt > new Date() ? club.meetingNote ?? "" : "",
+    meetingId: currentMeetingId(club, now),
+    going: Boolean(currentMeetingId(club, now) && membership.get(String(club._id)) === currentMeetingId(club, now)),
+    attendanceCount: attending.get(currentMeetingId(club, now)) ?? 0,
+    meetingAt: admin || club.meetingAt > now ? club.meetingAt ?? null : null,
+    meetingNote: admin || club.meetingAt > now ? club.meetingNote ?? "" : "",
     memberCount: counts.get(String(club._id)) ?? 0, joined: membership.has(String(club._id)),
   })) });
 }
@@ -100,8 +106,9 @@ readingClubs.put("/:clubId/rsvp", requireReader, limit, async (request, response
   if (!mongoose.isObjectIdOrHexString(clubId) || typeof going !== "boolean" || typeof meetingId !== "string") {
     return fail(response, 400, "INVALID_RSVP", "Choose a meeting and an attendance response.");
   }
-  const club = await Club.exists({ _id: clubId, active: true, meetingId, meetingAt: { $gt: new Date() } });
-  if (!club) return fail(response, 409, "MEETING_CHANGED", "The club meeting changed. Reload the page.");
+  const now = new Date();
+  const club = await Club.findOne({ _id: clubId, active: true, meetingAt: { $gt: now } }).lean();
+  if (!club || currentMeetingId(club, now) !== meetingId) return fail(response, 409, "MEETING_CHANGED", "The club meeting changed. Reload the page.");
   const result = await ClubMember.updateOne({ clubId, readerId: request.reader._id }, {
     $set: { goingToMeetingId: going ? meetingId : null },
   });
