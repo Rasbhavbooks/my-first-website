@@ -32,6 +32,13 @@ const likeSchema = new mongoose.Schema({
 likeSchema.index({ postId: 1, readerId: 1 }, { unique: true });
 export const DiscussionLike = mongoose.models.BookDiscussionLike || mongoose.model("BookDiscussionLike", likeSchema);
 
+const blockSchema = new mongoose.Schema({
+  readerId: { type: mongoose.Schema.Types.ObjectId, required: true, immutable: true },
+  blockedId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, immutable: true, index: true },
+}, { timestamps: { createdAt: true, updatedAt: false }, versionKey: false });
+blockSchema.index({ readerId: 1, blockedId: 1 }, { unique: true });
+export const DiscussionBlock = mongoose.models.BookDiscussionBlock || mongoose.model("BookDiscussionBlock", blockSchema);
+
 const writeLimit = rateLimit({ windowMs: 60_000, limit: 20, standardHeaders: "draft-8", legacyHeaders: false });
 const readLimit = rateLimit({ windowMs: 60_000, limit: 90, standardHeaders: "draft-8", legacyHeaders: false });
 
@@ -48,10 +55,18 @@ bookDiscussions.use((_request, response, next) => {
   response.set("Cache-Control", "no-store");
   next();
 });
+async function hiddenAuthors(request) {
+  if (!request.reader) return [];
+  return DiscussionBlock.distinct("blockedId", { readerId: request.reader._id });
+}
+
 async function requirePublicParent(request, response, next) {
   const { bookId, postId } = request.params;
   const parent = mongoose.isObjectIdOrHexString(postId)
-    && await DiscussionPost.exists({ _id: postId, bookId, parentId: null, status: "approved" });
+    && await DiscussionPost.exists({
+      _id: postId, bookId, parentId: null, status: "approved",
+      authorId: { $nin: await hiddenAuthors(request) },
+    });
   if (!parent) return failure(response, 404, "POST_NOT_FOUND", "Post not found.");
   request.discussionParentId = parent._id;
   return next();
@@ -64,6 +79,7 @@ async function listPosts(request, response) {
   }
   const filter = { bookId: request.params.bookId, parentId: request.discussionParentId ?? null, status: "approved" };
   if (cursor) filter._id = { $lt: cursor };
+  if (request.reader) filter.authorId = { $nin: await hiddenAuthors(request) };
   const posts = await DiscussionPost.find(filter).sort({ _id: -1 }).limit(21).lean();
   const visible = posts.slice(0, 20);
   const postIds = visible.map(post => post._id);
@@ -118,6 +134,38 @@ async function reportPost(request, response) {
   return response.json({ data: { reported: true } });
 }
 
+async function blockPostAuthor(request, response) {
+  const postId = request.params.replyId ?? request.params.postId;
+  const post = mongoose.isObjectIdOrHexString(postId) && await DiscussionPost.findOne({
+    _id: postId, bookId: request.params.bookId, parentId: request.discussionParentId ?? null, status: "approved",
+    authorId: { $ne: request.reader._id },
+  }).select("+authorId").lean();
+  if (!post) return failure(response, 404, "POST_NOT_FOUND", "Post not found or you wrote it yourself.");
+  const filter = { readerId: request.reader._id, blockedId: post.authorId };
+  try {
+    await DiscussionBlock.updateOne(filter, { $setOnInsert: filter }, { upsert: true });
+  } catch (error) {
+    if (error.code !== 11000) throw error;
+  }
+  return response.json({ data: { blocked: true } });
+}
+
+async function listBlocks(request, response) {
+  const rows = await DiscussionBlock.find({ readerId: request.reader._id }).sort({ createdAt: -1 })
+    .populate({ path: "blockedId", select: "displayName" }).lean();
+  return response.json({ data: { blocks: rows.map(row => ({
+    id: String(row._id), displayName: row.blockedId?.displayName ?? "",
+  })) } });
+}
+
+async function removeBlock(request, response) {
+  if (!mongoose.isObjectIdOrHexString(request.params.blockId)) {
+    return failure(response, 400, "INVALID_BLOCK", "Choose a valid block.");
+  }
+  await DiscussionBlock.deleteOne({ _id: request.params.blockId, readerId: request.reader._id });
+  return response.json({ data: { blocked: false } });
+}
+
 function optionallyRequireReader(request, response, next) {
   return request.query.personal === "1" ? requireReader(request, response, next) : next();
 }
@@ -144,11 +192,15 @@ async function updateLike(request, response) {
 
 bookDiscussions.get("/", readLimit, optionallyRequireReader, listPosts);
 bookDiscussions.post("/", requireReader, writeLimit, createPost);
+bookDiscussions.get("/blocks", requireReader, readLimit, listBlocks);
+bookDiscussions.delete("/blocks/:blockId", requireReader, writeLimit, removeBlock);
+bookDiscussions.post("/:postId/block", requireReader, writeLimit, blockPostAuthor);
 bookDiscussions.post("/:postId/report", requireReader, writeLimit, reportPost);
 bookDiscussions.put("/:postId/like", requireReader, writeLimit, updateLike);
 bookDiscussions.delete("/:postId/like", requireReader, writeLimit, updateLike);
 bookDiscussions.get("/:postId/replies", readLimit, optionallyRequireReader, requirePublicParent, listPosts);
 bookDiscussions.post("/:postId/replies", requireReader, writeLimit, requirePublicParent, createPost);
+bookDiscussions.post("/:postId/replies/:replyId/block", requireReader, writeLimit, requirePublicParent, blockPostAuthor);
 bookDiscussions.post("/:postId/replies/:replyId/report", requireReader, writeLimit, requirePublicParent, reportPost);
 bookDiscussions.put("/:postId/replies/:replyId/like", requireReader, writeLimit, requirePublicParent, updateLike);
 bookDiscussions.delete("/:postId/replies/:replyId/like", requireReader, writeLimit, requirePublicParent, updateLike);
