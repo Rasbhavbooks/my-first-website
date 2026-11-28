@@ -1,3 +1,5 @@
+import { Completion } from "../orders/reader-challenge.js";
+import { Referral } from "../orders/reader-referral.js";
 import { randomBytes } from "node:crypto";
 import mongoose from "mongoose";
 import User from "../users/user.model.js";
@@ -68,6 +70,8 @@ export async function removePrivateRecords(userId, session) {
   await ReaderWishlistItem.deleteMany({ userId }).session(session);
   await ReaderBookActivity.deleteMany({ readerId: userId }).session(session);
   await ReaderBookBookmark.deleteMany({ readerId: userId }).session(session);
+  await Completion.deleteMany({ readerId: userId }).session(session);
+  await Referral.deleteMany({ readerId: userId }).session(session);
   await DigitalBookEntitlement.deleteMany({ readerId: userId }).session(session);
 }
 
@@ -130,6 +134,7 @@ export async function deleteReaderAccount(request, response) {
         current.role = "reader";
         current.accountStatus = "deleted";
         current.emailVerifiedAt = null;
+        current.monthlyReadingReminder = false;
         current.adminMfaEnabled = false;
         await current.setPassword(randomBytes(48).toString("base64url"));
         await current.save({ session });

@@ -1,3 +1,5 @@
+import { Completion } from "../orders/reader-challenge.js";
+import { Referral } from "../orders/reader-referral.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { validateAccountDeletionRequest } from "./account-deletion.controller.js";
@@ -61,7 +63,7 @@ test("private account cleanup deletes the user's profile, drafts, activity, revi
     ReaderSession, PasswordResetToken, VerificationToken, AuthorApplication,
     AuthorFollow, AuthorProfile, AuthorBookChapter, AuthorBook, ReviewHelpfulVote,
     ReviewReport, BookReview, ReaderWishlistItem, ReaderBookActivity,
-    ReaderBookBookmark, DigitalBookEntitlement,
+    ReaderBookBookmark, DigitalBookEntitlement, Completion, Referral,
   ];
   for (const model of models) {
     t.mock.method(model, "deleteMany", filter => {
@@ -94,6 +96,8 @@ test("private account cleanup deletes the user's profile, drafts, activity, revi
   assert.deepEqual(deleted.get("ReaderWishlistItem"), { userId });
   assert.deepEqual(deleted.get("ReaderBookActivity"), { readerId: userId });
   assert.deepEqual(deleted.get("ReaderBookBookmark"), { readerId: userId });
+  assert.deepEqual(deleted.get("ReaderBookCompletion"), { readerId: userId });
+  assert.deepEqual(deleted.get("ReaderReferral"), { readerId: userId });
   assert.deepEqual(deleted.get("DigitalBookEntitlement"), { readerId: userId });
   assert.equal(deleted.size, models.length);
 });

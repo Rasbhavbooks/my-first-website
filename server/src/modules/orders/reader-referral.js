@@ -7,7 +7,7 @@ const schema = new mongoose.Schema({
   code: { type: String, required: true, immutable: true, unique: true, match: /^[a-f0-9]{32}$/ },
 }, { versionKey: false });
 
-const Referral = mongoose.models.ReaderReferral || mongoose.model("ReaderReferral", schema);
+export const Referral = mongoose.models.ReaderReferral || mongoose.model("ReaderReferral", schema);
 
 export async function getReaderReferralCode(readerId) {
   if (!await User.exists({ _id: readerId, role: "reader", accountStatus: "active" })) return null;
