@@ -1,3 +1,4 @@
+import { ClubMember } from "../books/reading-clubs.js";
 import { DiscussionBlock, DiscussionLike, DiscussionPost } from "../books/book-discussions.js";
 import { Completion } from "../orders/reader-challenge.js";
 import { Referral } from "../orders/reader-referral.js";
@@ -70,6 +71,7 @@ export async function removePrivateRecords(userId, session) {
   await BookReview.deleteMany({ userId }).session(session);
   const discussionPosts = await DiscussionPost.find({ authorId: userId }).select("_id").session(session).lean();
   const discussionIds = discussionPosts.map(post => post._id);
+  await ClubMember.deleteMany({ readerId: userId }).session(session);
   await DiscussionBlock.deleteMany({ $or: [{ readerId: userId }, { blockedId: userId }] }).session(session);
   await DiscussionLike.deleteMany({ $or: [
     { readerId: userId },

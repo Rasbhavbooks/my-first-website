@@ -351,6 +351,22 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
     assert.deepEqual((await (await fetch(api + "/community/discussions")).json()).data.books, []);
     const hiddenThread = await sharingPage.evaluate(async id => (await fetch("/api/v1/books/phase7-review-paid/discussions/" + id + "/replies")).status, postId);
     assert.equal(hiddenThread, 404);
+
+    const adminClubs = adminPage.locator('section[aria-labelledby="reading-clubs-title"]');
+    await adminClubs.locator("input").fill("phase7-review-paid");
+    await adminClubs.locator('button[type="submit"]').click();
+    await adminClubs.locator("li").waitFor();
+    await sharingPage.goto(origin + "/community");
+    const readerClub = sharingPage.locator('section[aria-labelledby="reading-clubs-title"] li');
+    await readerClub.getByRole("button", { name: /Join club|જોડાઓ|जुड़ें/ }).click();
+    await readerClub.getByRole("button", { name: /Leave club|ક્લબ છોડો|क्लब छोड़ें/ }).waitFor();
+    await sharingPage.reload();
+    await readerClub.getByRole("button", { name: /Leave club|ક્લબ છોડો|क्लब छोड़ें/ }).click();
+    await readerClub.getByRole("button", { name: /Join club|જોડાઓ|जुड़ें/ }).waitFor();
+    const archive = adminPage.waitForResponse(response => response.url().includes("/api/v1/admin/clubs/") && response.request().method() === "PATCH");
+    await adminClubs.locator("li button").click();
+    assert.equal((await archive).status(), 200);
+    assert.deepEqual((await (await fetch(api + "/community/clubs")).json()).data.clubs, []);
     assert.equal(await Book.exists({ author: author.displayName }), null);
   } finally {
     try { await browser?.close(); } finally { await front.close(); }

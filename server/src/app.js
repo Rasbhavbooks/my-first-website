@@ -1,3 +1,4 @@
+import { readingClubs, adminReadingClubs } from "./modules/books/reading-clubs.js";
 import { adminDiscussions, communityDiscussions } from "./modules/books/book-discussions.js";
 import cors from "cors";
 import express from "express";
@@ -76,6 +77,8 @@ app.use("/api/v1/wishlist", wishlistRoutes);
 app.use("/api/v1/reader/orders", readerOrderRoutes);
 app.use("/api/v1/reader/library", readerLibraryRoutes);
 app.use("/api/v1/reader/follows", followsRoutes);
+app.use("/api/v1/community/clubs", readingClubs);
+app.use("/api/v1/admin/clubs", adminReadingClubs);
 app.use("/api/v1/community", communityDiscussions);
 app.use("/api/v1/admin/discussions", adminDiscussions);
 app.use("/api/v1/admin/reviews", reviewModerationRoutes);

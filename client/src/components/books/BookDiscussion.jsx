@@ -1,3 +1,4 @@
+import { ReadingClubs } from "../../pages/Community/ReadingClubs.jsx";
 import { useLocation } from "react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -225,6 +226,7 @@ export function AdminDiscussions() {
   return <main className="book-discussion">
     <style>{style}</style>
     <h1>{copy.admin}</h1>
+    <ReadingClubs admin />
     {error && <p role="alert">{copy.error}</p>}
     {!posts && !error && <p role="status">{copy.loading}</p>}
     {posts?.length === 0 && <p>{copy.queueEmpty}</p>}
