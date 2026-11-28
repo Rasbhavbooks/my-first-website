@@ -750,6 +750,62 @@ async function verifyPurchase(t, referred) {
     { sourceId: String(source._id), kind: "free" });
 }
 
+test("private Razorpay command verifies the sandbox and prepares a retry-safe test order", async t => {
+  const database = "razorpay_sandbox_" + randomBytes(6).toString("hex");
+  const uri = "mongodb://127.0.0.1:27018/" + database + "?replicaSet=rs0&directConnection=true";
+  const connection = await mongoose.createConnection(uri).asPromise();
+  t.after(async () => {
+    try { await connection.dropDatabase(); } finally { await connection.close(); }
+  });
+  const email = "sandbox@example.test";
+  await connection.collection("users").insertOne({
+    email, role: "reader", accountStatus: "active", emailVerifiedAt: new Date(),
+  });
+
+  // Run the real CLI in a child process with only the outbound Razorpay API stubbed.
+  const mock = `data:text/javascript,${encodeURIComponent(`
+    globalThis.fetch = async (url, options) => {
+      if (new URL(url).origin !== "https://api.razorpay.com") throw new Error("Unexpected URL");
+      if (options.method === "GET") return Response.json({ items: [] });
+      const { amount, currency, receipt } = JSON.parse(options.body);
+      return Response.json({ id: "order_Sandbox123", amount, currency, receipt });
+    };
+  `)}`;
+  const script = fileURLToPath(new URL("../src/scripts/prepareRazorpaySandboxOrder.js", import.meta.url));
+  const run = (databaseName, overrides = {}) => promisify(execFile)(process.execPath, [
+    "--import", mock, script, "--test-database", databaseName,
+    "--reader-email", email, "--idempotency-key", "razorpay-sandbox-integration-key",
+  ], {
+    timeout: 20000,
+    env: {
+      ...process.env, NODE_ENV: "test", MONGODB_URI: "",
+      RAZORPAY_SANDBOX_MONGODB_URI: uri, RAZORPAY_MODE: "test",
+      RAZORPAY_KEY_ID: "rzp_test_fixture", RAZORPAY_KEY_SECRET: "fixture",
+      TEST_GST_RATE_BPS: "500", TEST_GATEWAY_RATE_BPS: "200", ...overrides,
+    },
+  });
+  await assert.rejects(run(database, { NODE_ENV: "production" }), /development environment/);
+  await assert.rejects(run(database, { MONGODB_URI: uri }), /separate test database/);
+  await assert.rejects(run("unconfirmed_database"), /does not match --test-database/);
+  assert.deepEqual((await connection.listCollections()).map(collection => collection.name), ["users"]);
+
+  async function order() {
+    const { stdout } = await run(database);
+    return JSON.parse(stdout.slice(stdout.indexOf("{")));
+  }
+  const prepared = await order();
+  assert.equal(prepared.providerOrderId, "order_Sandbox123");
+  assert.equal(prepared.amountPaise, 13929);
+  assert.equal(prepared.gstPaise, 650);
+  assert.equal(prepared.gatewayFeePaise, 279);
+  assert.equal(prepared.authorSharePaise, 10000);
+  assert.equal(prepared.platformSharePaise, 3000);
+  assert.equal(prepared.referralSharePaise, 0);
+  assert.deepEqual(await order(), prepared);
+  assert.equal(await connection.collection(Order.collection.name).countDocuments(), 1);
+  assert.equal(await connection.collection(Attempt.collection.name).countDocuments(), 1);
+});
+
 test("private storage verification requires a non-production test invocation", async () => {
   const script = fileURLToPath(new URL("../src/scripts/verifyPrivateStorage.js", import.meta.url));
   await assert.rejects(
