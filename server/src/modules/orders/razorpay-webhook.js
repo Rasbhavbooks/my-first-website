@@ -52,13 +52,22 @@ export function createRazorpayWebhookVerifier({ webhookSecret, findAttemptByProv
     if (!providerOrderId || !providerPaymentId) {
       throw fail("The signed Razorpay payment is missing its order or payment reference.");
     }
-    if (!Number.isSafeInteger(amountPaise) || amountPaise < 1 || currency !== "INR") {
+    const paymentFailed = eventType === "payment.failed";
+    if (paymentFailed && (payment?.status !== "failed" || !/^pay_[A-Za-z0-9]{1,150}$/.test(providerPaymentId))) {
+      throw fail("The signed Razorpay failure does not identify a failed payment.");
+    }
+    if (!Number.isSafeInteger(amountPaise) || amountPaise < 1 || (currency !== "INR" && !(paymentFailed && currency === ""))) {
       throw fail("Only positive whole-paise INR Razorpay payments are supported.");
     }
 
     const attempt = await findAttemptByProviderOrderId(providerOrderId);
     if (!attempt) {
       throw fail("The Razorpay order does not match a local payment attempt.", "PAYMENT_ATTEMPT_NOT_FOUND");
+    }
+
+    // Some failed Razorpay notifications omit the currency. The matched INR attempt supplies it.
+    if (paymentFailed && (attempt.currency !== "INR" || attempt.amountPaise !== amountPaise)) {
+      throw fail("The failed Razorpay payment does not match the local amount and currency.");
     }
 
     return {
@@ -72,7 +81,7 @@ export function createRazorpayWebhookVerifier({ webhookSecret, findAttemptByProv
       providerOrderId: attempt.providerOrderId,
       providerPaymentId,
       amountPaise,
-      currency,
+      currency: paymentFailed ? attempt.currency : currency,
     };
   };
 }
