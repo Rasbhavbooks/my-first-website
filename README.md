@@ -87,6 +87,19 @@ npm run verify:razorpay-order --workspace @rasbhav/server -- \
 
 Use your sandbox database name and verified sandbox reader email. The command creates a ₹100 example listing in that database on its first run and prepares a pending order with Razorpay Test Mode. It prints the order references and the GST, gateway fee, author share, platform share, and referral share in paise. At 5% GST and a 2% gateway fee the total is 13,929 paise. Add `--referral-code` with a valid code for this listing to review a referred order. Use the same idempotency key to retry the same pending order and a new key for a separate purchase. Payment authorization and refunds are checked separately.
 
+### Verify a Razorpay test refund
+
+Use the same dedicated sandbox database and a captured sandbox order. The local `orderId` is printed by the order command. The order must have a verified payment and payment ledger entry.
+
+```sh
+npm run verify:razorpay-refund --workspace @rasbhav/server -- \
+  --test-database rasbhav_razorpay_sandbox --order-id LOCAL_ORDER_ID --full
+```
+
+For a duplicate capture, replace `--full` with `--duplicate-request-id LOCAL_REFUND_REQUEST_ID`. Find that ID in the sandbox database's `paymentrefundrequests` collection by the same order ID and reason `duplicate_payment`. This refunds the duplicate payment and preserves the original purchase. A full refund reverses the original shares and reading access after Razorpay confirms processing. If the command reports `submitted`, repeat the same command to check for completion using the same refund key. If Razorpay reports a failure, review the refund in the Test Mode dashboard before further action.
+
+The commands use Razorpay's [idempotent refund API](https://hdfcbank-collectnow-docs.razorpay.com/api/refunds/normal-refunds-idempotent/) and require Test Mode credentials.
+
 ## First admin account
 
 Create and verify a normal reader account first. With the API's private `MONGODB_URI` configured, run this once in the repository terminal:
