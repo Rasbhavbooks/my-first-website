@@ -62,12 +62,21 @@ export default function RegisterPage() {
         email: form.email,
         password: form.password,
       });
-      setNotice(t.registrationSuccess);
+      setNotice(result.verificationToken ? t.developmentVerificationToken : t.registrationSuccess);
       setVerificationToken(result.verificationToken || "");
       setVerificationPending(true);
       setForm((current) => ({ ...current, password: "", confirmPassword: "" }));
     } catch (requestError) {
-      setError(requestError.code === "ACCOUNT_EXISTS" ? t.accountExists : t.registrationError);
+      const messageByCode = {
+        ACCOUNT_EXISTS: t.accountExists,
+        INVALID_REGISTRATION: t.registrationFieldsInvalid,
+        EMAIL_DELIVERY_FAILED: t.verificationEmailError,
+        EMAIL_DELIVERY_NOT_CONFIGURED: t.verificationUnavailable,
+      };
+      const fallback = requestError.status >= 500 || requestError instanceof TypeError
+        ? t.registrationUnavailable
+        : t.registrationError;
+      setError(requestError.status === 429 ? t.authTryLater : (messageByCode[requestError.code] || fallback));
     } finally {
       setBusy(false);
     }
@@ -97,8 +106,11 @@ export default function RegisterPage() {
       const result = await resendReaderVerification(form.email);
       setVerificationToken(result.verificationToken || "");
       setNotice(result.verificationToken ? t.developmentVerificationToken : t.verificationEmailSent);
-    } catch {
-      setError(t.verificationEmailError);
+    } catch (requestError) {
+      if (requestError.status === 429) setError(t.authTryLater);
+      else if (requestError.code === "EMAIL_DELIVERY_FAILED") setError(t.verificationEmailError);
+      else if (requestError.status >= 500 || requestError instanceof TypeError) setError(t.verificationUnavailable);
+      else setError(t.verificationEmailError);
     } finally {
       setBusy(false);
     }
