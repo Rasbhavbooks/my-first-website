@@ -41,7 +41,7 @@ export default function LoginPage({ expectedRole = "reader" }) {
     setError("");
     setBusy(true);
     try {
-      const signedInUser = await signIn(form);
+      const signedInUser = await signIn({ ...form, expectedRole });
       setForm((current) => ({ ...current, password: "", adminMfaCode: "" }));
       if (signedInUser.role !== expectedRole) {
         await signOut();
@@ -58,7 +58,9 @@ export default function LoginPage({ expectedRole = "reader" }) {
       else if (requestError.code === "MFA_REQUIRED") { setNeedsMfa(true); setError(t.adminMfaPrompt); }
       else if (requestError.code === "INVALID_MFA_CODE") { setNeedsMfa(true); setError(t.adminMfaInvalid); }
       else if (requestError.code === "MFA_CONFIGURATION_UNAVAILABLE") setError(t.adminMfaUnavailable);
-      else setError(requestError.code === "INVALID_CREDENTIALS" ? t.loginError : t.registrationError);
+      else if (requestError.code === "ROLE_LOGIN_MISMATCH") setError(t.roleLoginMismatch);
+      else if (requestError.status >= 500 || requestError instanceof TypeError) setError(t.loginServiceUnavailable);
+      else setError(requestError.code === "INVALID_CREDENTIALS" ? t.loginError : t.signInRequestFailed);
     } finally {
       setBusy(false);
     }
