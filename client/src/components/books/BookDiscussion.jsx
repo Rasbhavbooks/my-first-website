@@ -14,6 +14,12 @@ const moderationLabels = {
   en: { guidelines: "Discuss the book respectfully. Avoid spam, harassment, and sharing anyone’s private information.", reason: "Reason for reporting", cancel: "Cancel", reasons: { spam: "Spam", abuse: "Harassment or abuse", personal_information: "Private information", other: "Other" } },
 };
 
+const blockLabels = {
+  gu: { block: "આ વાચકની નોંધો છુપાવો", title: "છુપાવેલા વાચકો", unblock: "ફરી બતાવો", empty: "કોઈ વાચક છુપાવેલો નથી." },
+  hi: { block: "इस पाठक की पोस्ट छिपाएँ", title: "छिपाए गए पाठक", unblock: "फिर दिखाएँ", empty: "कोई पाठक छिपाया नहीं गया है।" },
+  en: { block: "Hide this reader’s posts", title: "Hidden readers", unblock: "Show again", empty: "No readers are hidden." },
+};
+
 const style = `
 .book-discussion{max-width:900px;margin:32px auto;padding:16px 24px;color:#30252c}
 .book-discussion form{display:grid;gap:8px;margin:18px 0}.book-discussion textarea{width:100%;min-height:100px;padding:10px;border:1px solid #b8aa97;background:#fff}
@@ -34,25 +40,63 @@ async function discussionRequest(path, method = "GET", body) {
 
 export function BookDiscussion({ bookId }) {
   const endpoint = "/api/v1/books/" + encodeURIComponent(bookId) + "/discussions";
-  return <DiscussionFeed endpoint={endpoint} />;
+  const [revision, setRevision] = useState(0);
+  return <DiscussionFeed key={revision} endpoint={endpoint} onBlocksChanged={() => setRevision(value => value + 1)} />;
 }
 
-function ReplyThread({ post, endpoint, copy }) {
+function ReplyThread({ post, endpoint, copy, onBlocksChanged }) {
   const [open, setOpen] = useState(false);
   const threadId = "book-discussion-" + post.id;
   return <div className="discussion-replies">
     <button type="button" aria-expanded={open} aria-controls={open ? threadId : undefined} onClick={() => setOpen(value => !value)}>
       {copy.replies}
     </button>
-    {open && <DiscussionFeed endpoint={endpoint + "/" + post.id + "/replies"} threadId={threadId} />}
+    {open && <DiscussionFeed endpoint={endpoint + "/" + post.id + "/replies"} threadId={threadId} onBlocksChanged={onBlocksChanged} />}
   </div>;
 }
 
-function DiscussionFeed({ endpoint, threadId }) {
+function DiscussionBlocks({ endpoint, copy, onBlocksChanged, errorLabel }) {
+  const [blocks, setBlocks] = useState(null);
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState(false);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    discussionRequest(endpoint + "/blocks").then(result => { if (active) setBlocks(result.blocks); })
+      .catch(() => { if (active) setError(true); });
+    return () => { active = false; };
+  }, [endpoint, open]);
+
+  async function unblock(id) {
+    setBusy(true);
+    setError(false);
+    try {
+      await discussionRequest(endpoint + "/blocks/" + id, "DELETE");
+      onBlocksChanged();
+    } catch {
+      setError(true);
+      setBusy(false);
+    }
+  }
+
+  return <details onToggle={event => setOpen(event.currentTarget.open)}>
+    <summary>{copy.title}</summary>
+    {error && <p role="alert">{errorLabel}</p>}
+    {blocks?.length === 0 && <p>{copy.empty}</p>}
+    {blocks?.length > 0 && <ul>{blocks.map(block => <li key={block.id}>
+      {block.displayName || "—"}{" "}
+      <button type="button" disabled={busy} onClick={() => unblock(block.id)}>{copy.unblock}</button>
+    </li>)}</ul>}
+  </details>;
+}
+
+function DiscussionFeed({ endpoint, threadId, onBlocksChanged }) {
   const { user } = useAuth();
   const { language } = useLanguage();
   const copy = labels[language] ?? labels.en;
   const moderation = moderationLabels[language] ?? moderationLabels.en;
+  const blocks = blockLabels[language] ?? blockLabels.en;
   const feedPath = endpoint + (user ? "?personal=1" : "");
   const [page, setPage] = useState(null);
   const [body, setBody] = useState("");
@@ -80,6 +124,7 @@ function DiscussionFeed({ endpoint, threadId }) {
       <style>{style}</style>
       <h2 id={prefix + "-title"}>{copy.title}</h2>
       <p>{moderation.guidelines}</p>
+      {user && <DiscussionBlocks endpoint={endpoint} copy={blocks} errorLabel={copy.error} onBlocksChanged={onBlocksChanged} />}
     </>}
     {user && <form onSubmit={event => {
       event.preventDefault();
@@ -129,7 +174,11 @@ function DiscussionFeed({ endpoint, threadId }) {
           posts: current.posts.map(item => item.id === post.id ? { ...item, ...reaction } : item),
         }));
       })}>{post.liked ? copy.unlike : copy.like} · {post.likeCount}</button> : <span>{copy.like} · {post.likeCount}</span>}
-      {!threadId && <ReplyThread post={post} endpoint={endpoint} copy={copy} />}
+      {user && !post.owned && <button type="button" disabled={busy} onClick={() => act(async () => {
+        await discussionRequest(endpoint + "/" + post.id + "/block", "POST");
+        onBlocksChanged();
+      })}>{blocks.block}</button>}
+      {!threadId && <ReplyThread post={post} endpoint={endpoint} copy={copy} onBlocksChanged={onBlocksChanged} />}
     </li>)}</ul>}
     {page?.nextCursor && <button type="button" disabled={busy} onClick={() => act(async () => {
       const next = await discussionRequest(feedPath + (user ? "&" : "?") + "cursor=" + encodeURIComponent(page.nextCursor));
