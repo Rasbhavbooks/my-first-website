@@ -1,3 +1,4 @@
+import { DiscussionPost } from "../books/book-discussions.js";
 import { Completion } from "../orders/reader-challenge.js";
 import { Referral } from "../orders/reader-referral.js";
 import { randomBytes } from "node:crypto";
@@ -67,6 +68,8 @@ export async function removePrivateRecords(userId, session) {
     ...(reviewIds.length ? [{ reviewId: { $in: reviewIds } }] : []),
   ] }).session(session);
   await BookReview.deleteMany({ userId }).session(session);
+  await DiscussionPost.deleteMany({ authorId: userId }).session(session);
+  await DiscussionPost.updateMany({ reportedBy: userId }, { $pull: { reportedBy: userId } }).session(session);
   await ReaderWishlistItem.deleteMany({ userId }).session(session);
   await ReaderBookActivity.deleteMany({ readerId: userId }).session(session);
   await ReaderBookBookmark.deleteMany({ readerId: userId }).session(session);
