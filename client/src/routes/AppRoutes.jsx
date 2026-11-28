@@ -1,3 +1,4 @@
+import { AdminDiscussions } from "../components/books/BookDiscussion.jsx";
 import { useEffect } from "react";
 import { matchPath, Route, Routes, useLocation } from "react-router";
 import AdminMfaGuard from "../components/auth/AdminMfaGuard.jsx";
@@ -101,6 +102,7 @@ export default function AppRoutes() {
           <Route path="admin/blog" element={<AdminBlogPostsPage />} />
           <Route path="admin/media" element={<AdminMediaLibraryPage />} />
           <Route path="admin/site-settings" element={<AdminSiteSettingsPage />} />
+          <Route path="admin/discussions" element={<AdminDiscussions />} />
           <Route path="admin/review-moderation" element={<ReviewModerationPage />} />
           <Route path="admin/author-books" element={<AuthorBooksAdminPage />} />
           <Route path="admin/author-applications" element={<AuthorApplicationsPage />} />
