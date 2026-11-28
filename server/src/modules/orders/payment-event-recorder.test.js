@@ -87,9 +87,11 @@ test("validates raw webhook size and shape before invoking the verifier", async 
 });
 
 test("only captured events receive the applied outcome", async () => {
-  const data = recorder({ facts: { ...verifiedFacts, eventType: "payment.failed" } });
-  const result = await data.service({ rawBody, headers });
-  assert.equal(result.event.outcome, "ignored");
+  for (const [eventType, expected] of [["payment.failed", "failed"], ["payment.authorized", "ignored"]]) {
+    const data = recorder({ facts: { ...verifiedFacts, eventType } });
+    const result = await data.service({ rawBody, headers });
+    assert.equal(result.event.outcome, expected);
+  }
 });
 
 test("returns a replay for matching signed event facts but rejects reused event IDs", async (t) => {
