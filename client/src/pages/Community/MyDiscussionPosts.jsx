@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 
 const labels = {
-  gu: { title: "મારી ચર્ચા નોંધો", empty: "તમે હજુ ચર્ચામાં કોઈ નોંધ મોકલી નથી.", pending: "સમીક્ષા બાકી", approved: "મંજૂર", hidden: "છુપાવેલી", seen: "વાંચેલું ગણો", link: "પુસ્તકની ચર્ચા", more: "વધુ નોંધો", error: "નોંધો મેળવી કે અપડેટ કરી શકાઈ નહીં." },
-  hi: { title: "मेरी चर्चा पोस्ट", empty: "आपने अभी कोई चर्चा पोस्ट नहीं भेजी है।", pending: "समीक्षा बाकी", approved: "मंज़ूर", hidden: "छिपाई गई", seen: "पढ़ा हुआ मानें", link: "पुस्तक की चर्चा", more: "और पोस्ट", error: "पोस्ट लोड या अपडेट नहीं हो सकीं।" },
-  en: { title: "My discussion posts", empty: "You haven’t submitted a discussion post yet.", pending: "Awaiting review", approved: "Approved", hidden: "Hidden", seen: "Mark as read", link: "Open book discussion", more: "More posts", error: "Could not load or update your posts." },
+  gu: { remove: "નોંધ દૂર કરો", confirm: "તમારી આ નોંધ કાયમ માટે દૂર કરવી છે?", title: "મારી ચર્ચા નોંધો", empty: "તમે હજુ ચર્ચામાં કોઈ નોંધ મોકલી નથી.", pending: "સમીક્ષા બાકી", approved: "મંજૂર", hidden: "છુપાવેલી", seen: "વાંચેલું ગણો", link: "પુસ્તકની ચર્ચા", more: "વધુ નોંધો", error: "નોંધો મેળવી કે અપડેટ કરી શકાઈ નહીં." },
+  hi: { remove: "पोस्ट हटाएँ", confirm: "क्या यह पोस्ट हमेशा के लिए हटानी है?", title: "मेरी चर्चा पोस्ट", empty: "आपने अभी कोई चर्चा पोस्ट नहीं भेजी है।", pending: "समीक्षा बाकी", approved: "मंज़ूर", hidden: "छिपाई गई", seen: "पढ़ा हुआ मानें", link: "पुस्तक की चर्चा", more: "और पोस्ट", error: "पोस्ट लोड या अपडेट नहीं हो सकीं।" },
+  en: { remove: "Remove post", confirm: "Permanently remove your post?", title: "My discussion posts", empty: "You haven’t submitted a discussion post yet.", pending: "Awaiting review", approved: "Approved", hidden: "Hidden", seen: "Mark as read", link: "Open book discussion", more: "More posts", error: "Could not load or update your posts." },
 };
 const endpoint = "/api/v1/community/my-discussions";
 
@@ -51,6 +51,14 @@ export function MyDiscussionPosts({ language }) {
     });
   }
 
+  function removePost(post) {
+    if (!window.confirm(copy.confirm)) return;
+    void act(async () => {
+      await request(endpoint + "/" + post.id, { method: "DELETE" });
+      setPage(current => ({ ...current, posts: current.posts.filter(item => item.id !== post.id) }));
+    });
+  }
+
   function more() {
     void act(async () => {
       const next = await request(endpoint + "?cursor=" + encodeURIComponent(page.nextCursor));
@@ -66,6 +74,7 @@ export function MyDiscussionPosts({ language }) {
       <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{post.body}</p>
       <p><strong>{copy[post.status]}</strong>{" · "}
         <Link to={"/books/" + encodeURIComponent(post.bookId) + "#book-discussion-title"}>{copy.link}</Link>
+        {" "}<button type="button" disabled={busy} onClick={() => removePost(post)}>{copy.remove}</button>
         {post.unread && <>{" "}<button type="button" disabled={busy} onClick={() => markAsRead(post)}>{copy.seen}</button></>}
       </p>
     </li>)}</ul>}
