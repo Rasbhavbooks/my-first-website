@@ -76,6 +76,18 @@ async function verifyCheckoutInBrowser(api, buyer, referrer, scanner) {
       reader.emailVerifiedAt = new Date();
       await reader.save();
       const page = await browser.newPage();
+      if (reader.id === buyer.id) {
+        await page.goto(origin + "/admin/login");
+        await page.locator('input[name="email"]').fill(reader.email);
+        await page.locator('input[name="password"]').fill(password);
+        const wrongPortal = page.waitForResponse(response => response.url().endsWith("/api/v1/auth/login"));
+        await page.locator('button[type="submit"]').click();
+        const rejected = await wrongPortal;
+        assert.equal(rejected.status(), 403);
+        assert.equal((await rejected.json()).error.code, "ROLE_LOGIN_MISMATCH");
+        await page.getByRole("alert").waitFor();
+        assert.ok(!(await page.context().cookies()).some(cookie => cookie.name === "rasbhav_reader_session"));
+      }
       await page.goto(origin + "/" + reader.role + "/login");
       await page.locator('head meta[name="robots"][content="noindex"]').waitFor({ state: "attached" });
       await page.locator('input[name="email"]').fill(reader.email);
