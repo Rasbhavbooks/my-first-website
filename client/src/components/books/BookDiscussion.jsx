@@ -3,9 +3,9 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
 
 const labels = {
-  gu: { replies: "જવાબો", reply: "તમારો જવાબ લખો", title: "પુસ્તક ચર્ચા", empty: "હજી ચર્ચામાં કોઈ નોંધ નથી.", body: "તમારો વિચાર લખો", help: "૧૦થી ૧૦૦૦ અક્ષર લખો. નોંધ જાહેર થાય એ પહેલાં એડમિન તેની સમીક્ષા કરશે.", send: "સમીક્ષા માટે મોકલો", pending: "તમારી નોંધ સમીક્ષા માટે મોકલાઈ.", report: "રિપોર્ટ કરો", reported: "રિપોર્ટ નોંધાયો.", admin: "પુસ્તક ચર્ચાની સમીક્ષા", approve: "જાહેર રાખો", hide: "છુપાવો", queueEmpty: "સમીક્ષા માટે કોઈ નોંધ નથી.", more: "વધુ નોંધ", error: "વિનંતી પૂરી થઈ શકી નહીં. ફરી પ્રયાસ કરો.", loading: "લોડ થઈ રહ્યું છે…" },
-  hi: { replies: "जवाब", reply: "अपना जवाब लिखें", title: "पुस्तक चर्चा", empty: "चर्चा में अभी कोई पोस्ट नहीं है।", body: "अपना विचार लिखें", help: "10 से 1,000 अक्षर लिखें। प्रकाशन से पहले एडमिन इसकी समीक्षा करेगा।", send: "समीक्षा के लिए भेजें", pending: "आपकी पोस्ट समीक्षा के लिए भेजी गई।", report: "रिपोर्ट करें", reported: "रिपोर्ट दर्ज हुई।", admin: "पुस्तक चर्चा की समीक्षा", approve: "सार्वजनिक रखें", hide: "छिपाएँ", queueEmpty: "समीक्षा के लिए कोई पोस्ट नहीं है।", more: "और पोस्ट", error: "अनुरोध पूरा नहीं हुआ। फिर कोशिश करें।", loading: "लोड हो रहा है…" },
-  en: { replies: "Replies", reply: "Write a reply", title: "Book discussion", empty: "There are no posts yet.", body: "Share your thoughts", help: "Write 10 to 1,000 characters. An admin reviews posts before they appear.", send: "Send for review", pending: "Your post was submitted for review.", report: "Report post", reported: "Report received.", admin: "Moderate book discussions", approve: "Make public or keep visible", hide: "Hide post", queueEmpty: "There are no posts to review.", more: "More posts", error: "Could not complete the request. Try again.", loading: "Loading…" },
+  gu: { like: "ગમ્યું", unlike: "લાઇક દૂર કરો", replies: "જવાબો", reply: "તમારો જવાબ લખો", title: "પુસ્તક ચર્ચા", empty: "હજી ચર્ચામાં કોઈ નોંધ નથી.", body: "તમારો વિચાર લખો", help: "૧૦થી ૧૦૦૦ અક્ષર લખો. નોંધ જાહેર થાય એ પહેલાં એડમિન તેની સમીક્ષા કરશે.", send: "સમીક્ષા માટે મોકલો", pending: "તમારી નોંધ સમીક્ષા માટે મોકલાઈ.", report: "રિપોર્ટ કરો", reported: "રિપોર્ટ નોંધાયો.", admin: "પુસ્તક ચર્ચાની સમીક્ષા", approve: "જાહેર રાખો", hide: "છુપાવો", queueEmpty: "સમીક્ષા માટે કોઈ નોંધ નથી.", more: "વધુ નોંધ", error: "વિનંતી પૂરી થઈ શકી નહીં. ફરી પ્રયાસ કરો.", loading: "લોડ થઈ રહ્યું છે…" },
+  hi: { like: "पसंद", unlike: "पसंद हटाएँ", replies: "जवाब", reply: "अपना जवाब लिखें", title: "पुस्तक चर्चा", empty: "चर्चा में अभी कोई पोस्ट नहीं है।", body: "अपना विचार लिखें", help: "10 से 1,000 अक्षर लिखें। प्रकाशन से पहले एडमिन इसकी समीक्षा करेगा।", send: "समीक्षा के लिए भेजें", pending: "आपकी पोस्ट समीक्षा के लिए भेजी गई।", report: "रिपोर्ट करें", reported: "रिपोर्ट दर्ज हुई।", admin: "पुस्तक चर्चा की समीक्षा", approve: "सार्वजनिक रखें", hide: "छिपाएँ", queueEmpty: "समीक्षा के लिए कोई पोस्ट नहीं है।", more: "और पोस्ट", error: "अनुरोध पूरा नहीं हुआ। फिर कोशिश करें।", loading: "लोड हो रहा है…" },
+  en: { like: "Like", unlike: "Remove like", replies: "Replies", reply: "Write a reply", title: "Book discussion", empty: "There are no posts yet.", body: "Share your thoughts", help: "Write 10 to 1,000 characters. An admin reviews posts before they appear.", send: "Send for review", pending: "Your post was submitted for review.", report: "Report post", reported: "Report received.", admin: "Moderate book discussions", approve: "Make public or keep visible", hide: "Hide post", queueEmpty: "There are no posts to review.", more: "More posts", error: "Could not complete the request. Try again.", loading: "Loading…" },
 };
 
 const style = `
@@ -46,6 +46,7 @@ function DiscussionFeed({ endpoint, threadId }) {
   const { user } = useAuth();
   const { language } = useLanguage();
   const copy = labels[language] ?? labels.en;
+  const feedPath = endpoint + (user ? "?personal=1" : "");
   const [page, setPage] = useState(null);
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
@@ -53,10 +54,10 @@ function DiscussionFeed({ endpoint, threadId }) {
   const [notice, setNotice] = useState("");
   useEffect(() => {
     let active = true;
-    discussionRequest(endpoint).then(result => { if (active) setPage(result); })
+    discussionRequest(feedPath).then(result => { if (active) setPage(result); })
       .catch(() => { if (active) setError(true); });
     return () => { active = false; };
-  }, [endpoint]);
+  }, [feedPath]);
 
   async function act(task) {
     setBusy(true);
@@ -96,10 +97,17 @@ function DiscussionFeed({ endpoint, threadId }) {
         await discussionRequest(endpoint + "/" + post.id + "/report", "POST");
         setNotice(copy.reported);
       })}>{copy.report}</button>}
+      {user ? <button type="button" disabled={busy} aria-pressed={post.liked} onClick={() => act(async () => {
+        const reaction = await discussionRequest(endpoint + "/" + post.id + "/like", post.liked ? "DELETE" : "PUT");
+        setPage(current => ({
+          ...current,
+          posts: current.posts.map(item => item.id === post.id ? { ...item, ...reaction } : item),
+        }));
+      })}>{post.liked ? copy.unlike : copy.like} · {post.likeCount}</button> : <span>{copy.like} · {post.likeCount}</span>}
       {!threadId && <ReplyThread post={post} endpoint={endpoint} copy={copy} />}
     </li>)}</ul>}
     {page?.nextCursor && <button type="button" disabled={busy} onClick={() => act(async () => {
-      const next = await discussionRequest(endpoint + "?cursor=" + encodeURIComponent(page.nextCursor));
+      const next = await discussionRequest(feedPath + (user ? "&" : "?") + "cursor=" + encodeURIComponent(page.nextCursor));
       setPage({ posts: [...page.posts, ...next.posts], nextCursor: next.nextCursor });
     })}>{copy.more}</button>}
   </section>;

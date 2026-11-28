@@ -18,6 +18,13 @@ schema.index({ bookId: 1, status: 1, parentId: 1, _id: -1 });
 schema.index({ needsReview: 1, _id: 1 });
 export const DiscussionPost = mongoose.models.BookDiscussionPost || mongoose.model("BookDiscussionPost", schema);
 
+const likeSchema = new mongoose.Schema({
+  postId: { type: mongoose.Schema.Types.ObjectId, required: true, immutable: true },
+  readerId: { type: mongoose.Schema.Types.ObjectId, required: true, immutable: true, index: true },
+}, { versionKey: false });
+likeSchema.index({ postId: 1, readerId: 1 }, { unique: true });
+export const DiscussionLike = mongoose.models.BookDiscussionLike || mongoose.model("BookDiscussionLike", likeSchema);
+
 const writeLimit = rateLimit({ windowMs: 60_000, limit: 20, standardHeaders: "draft-8", legacyHeaders: false });
 const readLimit = rateLimit({ windowMs: 60_000, limit: 90, standardHeaders: "draft-8", legacyHeaders: false });
 
@@ -51,7 +58,20 @@ async function listPosts(request, response) {
   const filter = { bookId: request.params.bookId, parentId: request.discussionParentId ?? null, status: "approved" };
   if (cursor) filter._id = { $lt: cursor };
   const posts = await DiscussionPost.find(filter).sort({ _id: -1 }).limit(21).lean();
-  const rows = posts.slice(0, 20).map(present);
+  const visible = posts.slice(0, 20);
+  const postIds = visible.map(post => post._id);
+  const [totals, selected] = await Promise.all([
+    DiscussionLike.aggregate([
+      { $match: { postId: { $in: postIds } } },
+      { $group: { _id: "$postId", count: { $sum: 1 } } },
+    ]),
+    request.reader ? DiscussionLike.find({ readerId: request.reader._id, postId: { $in: postIds } }).select("postId -_id").lean() : [],
+  ]);
+  const counts = new Map(totals.map(row => [String(row._id), row.count]));
+  const liked = new Set(selected.map(row => String(row.postId)));
+  const rows = visible.map(post => ({
+    ...present(post), likeCount: counts.get(String(post._id)) ?? 0, liked: liked.has(String(post._id)),
+  }));
   return response.json({ data: { posts: rows, nextCursor: posts.length > 20 ? rows.at(-1).id : null } });
 }
 
@@ -83,12 +103,40 @@ async function reportPost(request, response) {
   return response.json({ data: { reported: true } });
 }
 
-bookDiscussions.get("/", readLimit, listPosts);
+function optionallyRequireReader(request, response, next) {
+  return request.query.personal === "1" ? requireReader(request, response, next) : next();
+}
+
+async function updateLike(request, response) {
+  const postId = request.params.replyId ?? request.params.postId;
+  if (!mongoose.isObjectIdOrHexString(postId) || !await DiscussionPost.exists({
+    _id: postId, bookId: request.params.bookId, parentId: request.discussionParentId ?? null, status: "approved",
+  })) return failure(response, 404, "POST_NOT_FOUND", "Post not found.");
+  const filter = { postId, readerId: request.reader._id };
+  const liked = request.method === "PUT";
+  if (liked) {
+    try {
+      await DiscussionLike.updateOne(filter, { $setOnInsert: filter }, { upsert: true });
+    } catch (error) {
+      if (error.code !== 11000) throw error;
+    }
+  } else {
+    await DiscussionLike.deleteOne(filter);
+  }
+  const likeCount = await DiscussionLike.countDocuments({ postId });
+  return response.json({ data: { liked, likeCount } });
+}
+
+bookDiscussions.get("/", readLimit, optionallyRequireReader, listPosts);
 bookDiscussions.post("/", requireReader, writeLimit, createPost);
 bookDiscussions.post("/:postId/report", requireReader, writeLimit, reportPost);
-bookDiscussions.get("/:postId/replies", readLimit, requirePublicParent, listPosts);
+bookDiscussions.put("/:postId/like", requireReader, writeLimit, updateLike);
+bookDiscussions.delete("/:postId/like", requireReader, writeLimit, updateLike);
+bookDiscussions.get("/:postId/replies", readLimit, optionallyRequireReader, requirePublicParent, listPosts);
 bookDiscussions.post("/:postId/replies", requireReader, writeLimit, requirePublicParent, createPost);
 bookDiscussions.post("/:postId/replies/:replyId/report", requireReader, writeLimit, requirePublicParent, reportPost);
+bookDiscussions.put("/:postId/replies/:replyId/like", requireReader, writeLimit, requirePublicParent, updateLike);
+bookDiscussions.delete("/:postId/replies/:replyId/like", requireReader, writeLimit, requirePublicParent, updateLike);
 
 export const adminDiscussions = Router();
 adminDiscussions.use(requireReader, requireAdmin, (_request, response, next) => {
