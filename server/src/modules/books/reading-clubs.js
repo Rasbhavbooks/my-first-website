@@ -7,6 +7,8 @@ import Book from "./book.model.js";
 const clubSchema = new mongoose.Schema({
   bookId: { type: String, required: true, unique: true, maxlength: 64 },
   active: { type: Boolean, default: true },
+  meetingAt: { type: Date, default: null },
+  meetingNote: { type: String, maxlength: 240, default: "" },
 }, { timestamps: true, versionKey: false });
 const Club = mongoose.models.ReadingClub || mongoose.model("ReadingClub", clubSchema);
 
@@ -33,7 +35,7 @@ async function listClubs(request, response, admin = false) {
     { $lookup: { from: Book.collection.name, localField: "bookId", foreignField: "catalogueId", as: "book" } },
     { $unwind: { path: "$book", preserveNullAndEmptyArrays: admin } },
     { $limit: 50 },
-    { $project: { bookId: 1, active: 1, title: "$book.title" } },
+    { $project: { bookId: 1, active: 1, title: "$book.title", meetingAt: 1, meetingNote: 1 } },
   ]);
   const ids = clubs.map(club => club._id);
   const [totals, joined] = await Promise.all([
@@ -48,6 +50,8 @@ async function listClubs(request, response, admin = false) {
   const membership = new Set(joined.map(String));
   return send(response, { clubs: clubs.map(club => ({
     id: String(club._id), bookId: club.bookId, title: club.title ?? null, active: club.active,
+    meetingAt: admin || club.meetingAt > new Date() ? club.meetingAt ?? null : null,
+    meetingNote: admin || club.meetingAt > new Date() ? club.meetingNote ?? "" : "",
     memberCount: counts.get(String(club._id)) ?? 0, joined: membership.has(String(club._id)),
   })) });
 }
@@ -104,4 +108,18 @@ adminReadingClubs.patch("/:clubId", async (request, response) => {
   const result = await Club.updateOne({ _id: request.params.clubId }, { $set: { active: request.body.active } });
   if (!result.matchedCount) return fail(response, 404, "CLUB_NOT_FOUND", "Club not found.");
   return send(response, { active: request.body.active });
+});
+
+adminReadingClubs.patch("/:clubId/meeting", async (request, response) => {
+  const { clubId } = request.params;
+  const { meetingAt, meetingNote = "" } = request.body ?? {};
+  const date = typeof meetingAt === "string" ? new Date(meetingAt) : null;
+  if (!mongoose.isObjectIdOrHexString(clubId) || typeof meetingNote !== "string" || meetingNote.trim().length > 240
+    || (meetingAt !== null && (!date || !Number.isFinite(date.getTime()) || date.toISOString() !== meetingAt || date <= new Date()))) {
+    return fail(response, 400, "INVALID_CLUB_MEETING", "Choose a future meeting time and an optional short note.");
+  }
+  const update = { meetingAt: date, meetingNote: date ? meetingNote.trim() : "" };
+  const result = await Club.updateOne({ _id: clubId }, { $set: update }, { runValidators: true });
+  if (!result.matchedCount) return fail(response, 404, "CLUB_NOT_FOUND", "Club not found.");
+  return send(response, update);
 });
