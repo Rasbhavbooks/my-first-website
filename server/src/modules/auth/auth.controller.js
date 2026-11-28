@@ -3,6 +3,7 @@ import User from "../users/user.model.js";
 import VerificationToken from "./verification-token.model.js";
 import ReaderSession from "./reader-session.model.js";
 import PasswordResetToken from "./password-reset-token.model.js";
+import { isDatabaseConnected } from "../../config/database.js";
 import { env } from "../../config/env.js";
 import AdminMfa from "./admin-mfa.model.js";
 import { decryptAdminMfaSecret, hashRecoveryCode, verifyAdminMfaCode } from "./admin-mfa.service.js";
@@ -21,6 +22,12 @@ function invalidInput(response) {
       code: "INVALID_REGISTRATION",
       message: "Enter a valid name, email, and password. Passwords need at least 12 characters, including an uppercase letter, a lowercase letter, and a number.",
     },
+  });
+}
+
+function registrationDatabaseUnavailable(response) {
+  return response.status(503).json({
+    error: { code: "DATABASE_UNAVAILABLE", message: "Account registration and verification are temporarily unavailable." },
   });
 }
 
@@ -65,6 +72,8 @@ export async function registerReader(request, response) {
   if (displayName.length < 2 || displayName.length > 80 || !validEmail || !validPassword) {
     return invalidInput(response);
   }
+
+  if (!isDatabaseConnected()) return registrationDatabaseUnavailable(response);
 
   if (await User.exists({ email })) {
     return response.status(409).json({
@@ -134,6 +143,8 @@ export async function requestReaderVerification(request, response) {
   if (!email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return response.json(generic);
   }
+
+  if (!isDatabaseConnected()) return registrationDatabaseUnavailable(response);
 
   const user = await User.findOne({ email, accountStatus: "pending_verification" });
   if (!user) return response.json(generic);
