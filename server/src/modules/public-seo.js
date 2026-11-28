@@ -46,7 +46,7 @@ export async function serveSitemap(_request, response) {
     return records.filter(record => typeof record[field] === "string" && record[field])
       .map(record => prefix + "/" + encodeURIComponent(record[field]));
   }));
-  const paths = ["/", "/blog", ...lists.flat()];
+  const paths = ["/", "/blog", "/community", ...lists.flat()];
   const xml = paths.map(path => "  <url><loc>" + escapeXml(env.appBaseUrl + path) + "</loc></url>").join("\n");
   return response.type("application/xml").send(
     '<?xml version="1.0" encoding="UTF-8"?>\n'
