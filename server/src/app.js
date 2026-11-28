@@ -1,4 +1,4 @@
-import { adminDiscussions } from "./modules/books/book-discussions.js";
+import { adminDiscussions, communityDiscussions } from "./modules/books/book-discussions.js";
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
@@ -76,6 +76,7 @@ app.use("/api/v1/wishlist", wishlistRoutes);
 app.use("/api/v1/reader/orders", readerOrderRoutes);
 app.use("/api/v1/reader/library", readerLibraryRoutes);
 app.use("/api/v1/reader/follows", followsRoutes);
+app.use("/api/v1/community", communityDiscussions);
 app.use("/api/v1/admin/discussions", adminDiscussions);
 app.use("/api/v1/admin/reviews", reviewModerationRoutes);
 app.use("/api/v1/author-applications", authorApplicationsRoutes);

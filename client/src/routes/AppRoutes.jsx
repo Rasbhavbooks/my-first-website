@@ -1,3 +1,4 @@
+import CommunityPage from "../pages/Community/CommunityPage.jsx";
 import { AdminDiscussions } from "../components/books/BookDiscussion.jsx";
 import { useEffect } from "react";
 import { matchPath, Route, Routes, useLocation } from "react-router";
@@ -42,7 +43,7 @@ import AuthorBooksPage from "../pages/Auth/AuthorBooksPage.jsx";
 import PublicAuthorPage from "../pages/Authors/PublicAuthorPage.jsx";
 import NotFoundPage from "../pages/NotFound/NotFoundPage.jsx";
 
-const indexablePaths = ["/", "/books/:bookId", "/categories/:categoryKey", "/authors/:slug", "/blog", "/blog/:slug", "/pages/:slug"];
+const indexablePaths = ["/", "/books/:bookId", "/categories/:categoryKey", "/authors/:slug", "/blog", "/community", "/blog/:slug", "/pages/:slug"];
 
 export default function AppRoutes() {
   const { pathname, search } = useLocation();
@@ -80,6 +81,7 @@ export default function AppRoutes() {
         <Route path="admin/security/mfa" element={<AdminMfaSetupPage />} />
         <Route path="password-reset" element={<PasswordResetPage />} />
         <Route path="pages/:slug" element={<CmsPageView />} />
+        <Route path="community" element={<CommunityPage />} />
         <Route path="blog" element={<BlogPage />} />
         <Route path="blog/:slug" element={<BlogPostPage />} />
         <Route path="author/apply" element={<AuthorApplicationPage />} />

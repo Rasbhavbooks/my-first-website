@@ -206,6 +206,23 @@ bookDiscussions.post("/:postId/replies/:replyId/report", requireReader, writeLim
 bookDiscussions.put("/:postId/replies/:replyId/like", requireReader, writeLimit, requirePublicParent, updateLike);
 bookDiscussions.delete("/:postId/replies/:replyId/like", requireReader, writeLimit, requirePublicParent, updateLike);
 
+export const communityDiscussions = Router();
+communityDiscussions.get("/discussions", readLimit, async (_request, response) => {
+  const books = await DiscussionPost.aggregate([
+    { $match: { status: "approved", parentId: null } },
+    { $group: { _id: "$bookId", postCount: { $sum: 1 }, lastPostAt: { $max: "$createdAt" } } },
+    { $sort: { lastPostAt: -1, _id: 1 } },
+    { $lookup: {
+      from: Book.collection.name, localField: "_id", foreignField: "catalogueId", as: "book",
+      pipeline: [{ $project: { _id: 0, title: 1, author: 1 } }],
+    } },
+    { $unwind: "$book" },
+    { $limit: 24 },
+    { $project: { _id: 0, bookId: "$_id", title: "$book.title", author: "$book.author", postCount: 1 } },
+  ]);
+  return response.set("Cache-Control", "no-store").json({ data: { books } });
+});
+
 export const adminDiscussions = Router();
 adminDiscussions.use(requireReader, requireAdmin, (_request, response, next) => {
   response.set("Cache-Control", "no-store");

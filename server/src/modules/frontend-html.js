@@ -59,11 +59,11 @@ export function mountFrontendHtml(app) {
   app.get(frontendPaths, async (request, response) => {
     const segments = request.path.split("/").filter(Boolean);
     const resource = segments.length === 2 && Object.hasOwn(routes, segments[0]) ? routes[segments[0]] : null;
-    const isPublicRoot = segments.length === 0 || segments.length === 1 && segments[0] === "blog";
+    const isPublicRoot = segments.length === 0 || segments.length === 1 && ["blog", "community"].includes(segments[0]);
     const isCheckout = segments[0] === "books" && request.query.checkout === "preview";
     let status = 200;
     let metadata = { title: defaultTitle, description: defaultDescription, noIndex: !isPublicRoot };
-    if (isPublicRoot) metadata.canonical = env.appBaseUrl + (segments.length ? "/blog" : "/");
+    if (isPublicRoot) metadata.canonical = env.appBaseUrl + (segments.length ? "/" + segments[0] : "/");
     if (resource && !isCheckout) {
       const key = decodeURIComponent(segments[1]);
       if (mongoose.connection.readyState !== 1) {

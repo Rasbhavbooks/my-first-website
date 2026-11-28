@@ -1,3 +1,4 @@
+import { useLocation } from "react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useLanguage } from "../../hooks/useLanguage.js";
@@ -39,6 +40,10 @@ async function discussionRequest(path, method = "GET", body) {
 }
 
 export function BookDiscussion({ bookId }) {
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash === "#book-discussion-title") document.getElementById("book-discussion-title")?.scrollIntoView();
+  }, [hash, bookId]);
   const endpoint = "/api/v1/books/" + encodeURIComponent(bookId) + "/discussions";
   const [revision, setRevision] = useState(0);
   return <DiscussionFeed key={revision} endpoint={endpoint} onBlocksChanged={() => setRevision(value => value + 1)} />;
