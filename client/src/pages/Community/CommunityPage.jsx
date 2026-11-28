@@ -1,3 +1,4 @@
+import { ReadingClubs } from "./ReadingClubs.jsx";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { useLanguage } from "../../hooks/useLanguage.js";
@@ -33,6 +34,7 @@ export default function CommunityPage() {
   const number = new Intl.NumberFormat(language);
   return <main style={{ maxWidth: 900, margin: "32px auto", padding: "16px 24px" }}>
     <h1>{copy.title}</h1>
+    <ReadingClubs />
     {failed && <p role="alert">{copy.error}</p>}
     {!books && !failed && <p role="status">{t.loadingAccount}</p>}
     {books?.length === 0 && <p>{copy.empty}</p>}
