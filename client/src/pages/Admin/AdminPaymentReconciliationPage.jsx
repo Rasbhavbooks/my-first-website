@@ -15,7 +15,7 @@ const copy = {
     loading: "Loading payment events…",
     error: "Payment reconciliation could not be loaded.",
     time: "Received", verified: "Verified", event: "Event", order: "Order", amount: "Amount", status: "Ledger status",
-    posted: "Posted", unposted: "Needs review", ignored: "Ignored",
+    posted: "Posted", unposted: "Needs review", ignored: "Ignored", failed: "Payment failed", failedOnly: "Show failed payments only",
   },
   gu: {
     admin: "એડમિન", dashboard: "એડમિન ડેશબોર્ડ", ledger: "નાણાકીય લેજર", backHome: "મુખ્ય પાનાં પર જાઓ", previous: "પહેલાં", next: "આગળ",
@@ -26,7 +26,7 @@ const copy = {
     loading: "ચુકવણી events લોડ થઈ રહી છે…",
     error: "ચુકવણી મેળવણી ખૂલી શકી નથી.",
     time: "મળ્યાનો સમય", verified: "ચકાસણી સમય", event: "Event", order: "ઓર્ડર", amount: "રકમ", status: "Ledger સ્થિતિ",
-    posted: "પોસ્ટ થયું", unposted: "સમીક્ષા જરૂરી", ignored: "અવગણ્યું",
+    posted: "પોસ્ટ થયું", unposted: "સમીક્ષા જરૂરી", ignored: "અવગણ્યું", failed: "ચુકવણી નિષ્ફળ", failedOnly: "ફક્ત નિષ્ફળ ચુકવણીઓ બતાવો",
   },
   hi: {
     admin: "एडमिन", dashboard: "एडमिन डैशबोर्ड", ledger: "वित्तीय लेजर", backHome: "मुखपृष्ठ पर जाएँ", previous: "पिछला", next: "अगला",
@@ -37,7 +37,7 @@ const copy = {
     loading: "भुगतान events लोड हो रही हैं…",
     error: "भुगतान मिलान लोड नहीं हो सका।",
     time: "प्राप्त समय", verified: "सत्यापन समय", event: "Event", order: "ऑर्डर", amount: "राशि", status: "Ledger स्थिति",
-    posted: "पोस्ट हुआ", unposted: "समीक्षा आवश्यक", ignored: "अनदेखा",
+    posted: "पोस्ट हुआ", unposted: "समीक्षा आवश्यक", ignored: "अनदेखा", failed: "भुगतान विफल", failedOnly: "केवल विफल भुगतान दिखाएँ",
   },
 };
 
@@ -53,7 +53,7 @@ const styles = `
 .admin-recon-table code{overflow-wrap:anywhere}
 .admin-recon-status{font-weight:700}
 .admin-recon-status[data-status="posted"]{color:#28724f}
-.admin-recon-status[data-status="unposted"]{color:#9b4c35}
+.admin-recon-status[data-status="unposted"],.admin-recon-status[data-status="failed"]{color:#9b4c35}
 .admin-recon-status[data-status="ignored"]{color:#796747}
 .admin-recon-error{padding:12px;background:#f8ece8;color:#863d32;font-size:11px}
 .admin-recon-empty{padding:18px;border:1px solid #e4ddd1;background:#fffdfa;color:#77716a;font-size:11px}
@@ -76,6 +76,7 @@ export default function AdminPaymentReconciliationPage() {
   const text = copy[language] || copy.en;
   const [result, setResult] = useState(null);
   const [page, setPage] = useState(1);
+  const [failedOnly, setFailedOnly] = useState(false);
   const [loadingRows, setLoadingRows] = useState(false);
   const [error, setError] = useState("");
 
@@ -83,12 +84,12 @@ export default function AdminPaymentReconciliationPage() {
     let active = true;
     if (user?.role !== "admin") return () => { active = false; };
     setLoadingRows(true);
-    getAdminPaymentReconciliation({ page })
+    getAdminPaymentReconciliation({ page, failedOnly })
       .then((value) => { if (active) { setResult(value); setError(""); } })
       .catch(() => { if (active) setError(text.error); })
       .finally(() => { if (active) setLoadingRows(false); });
     return () => { active = false; };
-  }, [user?.id, user?.role, page, text.error]);
+  }, [user?.id, user?.role, page, failedOnly, text.error]);
 
   if (loading) return <main className="admin-recon"><p>{text.loading}</p></main>;
   if (!user) return <Navigate to="/admin/login" replace />;
@@ -104,6 +105,14 @@ export default function AdminPaymentReconciliationPage() {
       <p className="admin-recon-intro">{text.intro}</p>
       <p className="admin-recon-note">{text.note}</p>
       <p><Link to="/admin">{text.dashboard}</Link> · <Link to="/admin/ledger">{text.ledger}</Link></p>
+      <label>
+        <input type="checkbox" checked={failedOnly} onChange={event => {
+          setPage(1);
+          setResult(null);
+          setFailedOnly(event.target.checked);
+        }} />
+        {" "}{text.failedOnly}
+      </label>
       {error && <p className="admin-recon-error" role="alert">{error}</p>}
       {loadingRows && <p role="status">{text.loading}</p>}
       {!loadingRows && !error && events.length === 0 && <p className="admin-recon-empty">{text.empty}</p>}
