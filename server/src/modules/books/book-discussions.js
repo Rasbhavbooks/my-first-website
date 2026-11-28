@@ -80,7 +80,7 @@ async function listPosts(request, response) {
   const filter = { bookId: request.params.bookId, parentId: request.discussionParentId ?? null, status: "approved" };
   if (cursor) filter._id = { $lt: cursor };
   if (request.reader) filter.authorId = { $nin: await hiddenAuthors(request) };
-  const posts = await DiscussionPost.find(filter).sort({ _id: -1 }).limit(21).lean();
+  const posts = await DiscussionPost.find(filter).select("+authorId").sort({ _id: -1 }).limit(21).lean();
   const visible = posts.slice(0, 20);
   const postIds = visible.map(post => post._id);
   const [totals, selected] = await Promise.all([
@@ -94,6 +94,7 @@ async function listPosts(request, response) {
   const liked = new Set(selected.map(row => String(row.postId)));
   const rows = visible.map(post => ({
     ...present(post), likeCount: counts.get(String(post._id)) ?? 0, liked: liked.has(String(post._id)),
+    owned: Boolean(request.reader && String(post.authorId) === String(request.reader._id)),
   }));
   return response.json({ data: { posts: rows, nextCursor: posts.length > 20 ? rows.at(-1).id : null } });
 }
