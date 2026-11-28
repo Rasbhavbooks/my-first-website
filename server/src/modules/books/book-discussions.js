@@ -239,6 +239,27 @@ communityDiscussions.put("/my-discussions/:postId/seen", requireReader, writeLim
   if (!result.matchedCount) return failure(response, 404, "DISCUSSION_NOT_FOUND", "This decision is unavailable or changed.");
   return response.set("Cache-Control", "private, no-store").json({ data: { unread: false } });
 });
+communityDiscussions.delete("/my-discussions/:postId", requireReader, writeLimit, async (request, response) => {
+  const { postId } = request.params;
+  if (!mongoose.isObjectIdOrHexString(postId)) {
+    return failure(response, 404, "DISCUSSION_NOT_FOUND", "Discussion post not found.");
+  }
+  const removed = await mongoose.connection.transaction(async session => {
+    const post = await DiscussionPost.findOneAndDelete({ _id: postId, authorId: request.reader._id }, { session });
+    if (!post) return false;
+    await DiscussionLike.deleteMany({ postId: post._id }).session(session);
+    if (!post.parentId) {
+      await DiscussionPost.updateMany({ parentId: post._id, status: { $ne: "hidden" } }, {
+        $set: { status: "hidden", needsReview: false, decisionAt: new Date() },
+        $unset: { reportCounts: 1, decisionSeenAt: 1 },
+      }, { session });
+    }
+    return true;
+  });
+  if (!removed) return failure(response, 404, "DISCUSSION_NOT_FOUND", "Discussion post not found.");
+  return response.set("Cache-Control", "private, no-store").json({ data: { removed: true } });
+});
+
 communityDiscussions.get("/discussions", readLimit, async (_request, response) => {
   const books = await DiscussionPost.aggregate([
     { $match: { status: "approved", parentId: null } },
