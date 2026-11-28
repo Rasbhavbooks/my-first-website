@@ -58,8 +58,10 @@ function normalizeVerifiedFacts(verified) {
     throw fail("A successfully signature-verified event is required.", "SIGNATURE_VERIFICATION_REQUIRED");
   }
 
-  // Until additional event lifecycles are implemented, only captured events are actionable.
-  const outcome = eventType === "payment.captured" ? "applied" : "ignored";
+  let outcome = "ignored";
+  if (eventType === "payment.captured") outcome = "applied";
+  // A failed payment can later be captured, even with the same provider payment ID.
+  if (eventType === "payment.failed") outcome = "failed";
   return {
     orderId,
     paymentAttemptId,

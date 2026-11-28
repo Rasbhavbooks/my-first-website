@@ -1,3 +1,4 @@
+import { listAdminPaymentReconciliation } from "../src/modules/admin/admin-payment-reconciliation.controller.js";
 import { listAdminOrders } from "../src/modules/admin/admin-orders.controller.js";
 import { applyConfirmedTestRefund, startFullTestRefund } from "../src/modules/orders/full-refund.service.js";
 import assert from "node:assert/strict";
@@ -613,15 +614,38 @@ async function verifyPurchase(t, referred) {
   const body = JSON.stringify({ event: "payment.captured", payload: { payment: { entity: {
     id: "pay_capture1", order_id: "order_capture1", amount: 13929, currency: "INR",
   } } } });
-  const signature = createHmac("sha256", secret).update(body).digest("hex");
-  function notify(id, digest = signature) {
-    return fetch(url, { method: "POST", body, headers: {
-      "content-type": "application/json", "x-razorpay-event-id": id, "x-razorpay-signature": digest,
+  function notify(id, digest, rawBody = body) {
+    const verifiedDigest = digest ?? createHmac("sha256", secret).update(rawBody).digest("hex");
+    return fetch(url, { method: "POST", body: rawBody, headers: {
+      "content-type": "application/json", "x-razorpay-event-id": id, "x-razorpay-signature": verifiedDigest,
     } });
   }
 
   assert.equal((await notify("evt1", "0".repeat(64))).status, 400);
   assert.equal(await PaymentEvent.countDocuments(), 0);
+  const failedPayload = (amount, currency = "INR", status = "failed") => JSON.stringify({
+    event: "payment.failed", payload: { payment: { entity: {
+      id: "pay_capture1", order_id: "order_capture1", amount, currency, status,
+      error_description: "Private bank details must never be saved",
+    } } },
+  });
+  assert.equal((await notify("evt_failed", "0".repeat(64), failedPayload(13929))).status, 400);
+  assert.equal((await notify("evt_failed", null, failedPayload(13928))).status, 400);
+  assert.equal((await notify("evt_failed", null, failedPayload(13929, "USD"))).status, 400);
+  assert.equal((await notify("evt_failed", null, failedPayload(13929, "INR", "captured"))).status, 400);
+  assert.equal(await PaymentEvent.countDocuments(), 0);
+  const failure = failedPayload(13929, "");
+  for (const result of await Promise.all([notify("evt_failed", null, failure), notify("evt_failed", null, failure)])) {
+    assert.equal(result.status, 200, await result.text());
+  }
+  assert.equal(await PaymentEvent.countDocuments({ outcome: "failed" }), 1);
+  const failedRecord = await PaymentEvent.findOne({ eventId: "evt_failed" }).lean();
+  assert.equal(failedRecord.currency, "INR");
+  assert.ok(!JSON.stringify(failedRecord).includes("Private bank"));
+  assert.equal((await Order.findById(order._id)).status, "pending_payment");
+  assert.equal((await Attempt.findById(attempt._id)).status, "pending");
+  assert.equal(await Ledger.countDocuments({ orderId: order._id }), 0);
+  assert.equal(await Entitlement.countDocuments({ orderId: order._id }), 0);
   // A conflicting record must prevent both the paid transition and the journal write.
   const conflicting = await Entitlement.create({
     readerId: new mongoose.Types.ObjectId(), bookId: order.bookId, orderId: order._id,
@@ -639,6 +663,22 @@ async function verifyPurchase(t, referred) {
     assert.equal(result.status, 200, await result.text());
   }
   assert.equal((await Order.findById(order._id)).status, "paid");
+  const lateFailure = await notify("evt_failed_late", null, failedPayload(13929));
+  assert.equal(lateFailure.status, 200, await lateFailure.text());
+  assert.equal((await Order.findById(order._id)).status, "paid");
+  assert.equal((await Attempt.findById(attempt._id)).status, "captured");
+  const failedEvents = await listAdminPaymentReconciliation({ query: { outcome: "failed", limit: "1" } }, {
+    setHeader() {},
+    json(body) { return body.data; },
+  });
+  assert.equal(failedEvents.total, 2);
+  assert.equal(failedEvents.totalPages, 2);
+  assert.equal(failedEvents.events.length, 1);
+  assert.equal(failedEvents.events[0].status, "failed");
+  assert.equal(failedEvents.events[0].orderId, order.id);
+  assert.ok(!JSON.stringify(failedEvents).includes("pay_capture1"));
+  assert.equal(await Ledger.countDocuments({ orderId: order._id }), 1);
+  assert.equal(await Entitlement.countDocuments({ orderId: order._id }), 1);
   const duplicateBody = JSON.stringify({ event: "payment.captured", payload: { payment: { entity: {
     id: "pay_duplicate1", order_id: "order_capture1", amount: 13929, currency: "INR",
   } } } });

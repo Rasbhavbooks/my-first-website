@@ -30,7 +30,7 @@ const paymentEventSchema = new mongoose.Schema(
     currency: { type: String, enum: ["INR"], required: true, default: "INR", immutable: true },
     signatureVerifiedAt: { type: Date, required: true, immutable: true },
     processedAt: { type: Date, default: Date.now },
-    outcome: { type: String, enum: ["applied", "ignored"], required: true },
+    outcome: { type: String, enum: ["applied", "failed", "ignored"], required: true },
   },
   { timestamps: true, versionKey: false },
 );
