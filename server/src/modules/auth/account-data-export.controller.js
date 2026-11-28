@@ -1,4 +1,4 @@
-import { DiscussionLike, DiscussionPost } from "../books/book-discussions.js";
+import { DiscussionBlock, DiscussionLike, DiscussionPost } from "../books/book-discussions.js";
 import { Completion } from "../orders/reader-challenge.js";
 import { isDatabaseConnected } from "../../config/database.js";
 import UserWishlistItem from "../wishlist/wishlist-item.model.js";
@@ -43,6 +43,7 @@ export async function exportReaderAccountData(request, response) {
     authorBooks,
     chapters,
     readingHistory,
+    discussionBlocks,
     discussionLikes,
     discussionPosts,
     readingCompletions,
@@ -61,6 +62,7 @@ export async function exportReaderAccountData(request, response) {
     AuthorBookChapter.find({ authorId: userId })
       .select("bookId title content order createdAt updatedAt -_id").sort({ bookId: 1, order: 1, createdAt: 1 }).lean(),
     ReaderBookActivity.find({ readerId: userId }).select("bookId lastOpenedAt -_id").sort({ lastOpenedAt: -1 }).lean(),
+    DiscussionBlock.find({ readerId: userId }).select("blockedId createdAt -_id").lean(),
     DiscussionLike.find({ readerId: userId }).select("postId -_id").lean(),
     DiscussionPost.find({ authorId: userId }).select("bookId parentId body status createdAt -_id").sort({ createdAt: -1 }).lean(),
     Completion.find({ readerId: userId }).select("bookId completedAt -_id").sort({ completedAt: -1 }).lean(),
@@ -94,6 +96,7 @@ export async function exportReaderAccountData(request, response) {
       completions: readingCompletions,
       discussionPosts,
       discussionLikes,
+      discussionBlocks,
     },
     author: {
       application: authorApplication,

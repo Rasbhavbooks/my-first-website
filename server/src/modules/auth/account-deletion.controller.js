@@ -1,4 +1,4 @@
-import { DiscussionLike, DiscussionPost } from "../books/book-discussions.js";
+import { DiscussionBlock, DiscussionLike, DiscussionPost } from "../books/book-discussions.js";
 import { Completion } from "../orders/reader-challenge.js";
 import { Referral } from "../orders/reader-referral.js";
 import { randomBytes } from "node:crypto";
@@ -70,6 +70,7 @@ export async function removePrivateRecords(userId, session) {
   await BookReview.deleteMany({ userId }).session(session);
   const discussionPosts = await DiscussionPost.find({ authorId: userId }).select("_id").session(session).lean();
   const discussionIds = discussionPosts.map(post => post._id);
+  await DiscussionBlock.deleteMany({ $or: [{ readerId: userId }, { blockedId: userId }] }).session(session);
   await DiscussionLike.deleteMany({ $or: [
     { readerId: userId },
     ...(discussionIds.length ? [{ postId: { $in: discussionIds } }] : []),

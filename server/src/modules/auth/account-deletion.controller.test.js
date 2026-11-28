@@ -1,4 +1,4 @@
-import { DiscussionLike, DiscussionPost } from "../books/book-discussions.js";
+import { DiscussionBlock, DiscussionLike, DiscussionPost } from "../books/book-discussions.js";
 import { Completion } from "../orders/reader-challenge.js";
 import { Referral } from "../orders/reader-referral.js";
 import test from "node:test";
@@ -64,7 +64,7 @@ test("private account cleanup deletes the user's profile, drafts, activity, revi
     ReaderSession, PasswordResetToken, VerificationToken, AuthorApplication,
     AuthorFollow, AuthorProfile, AuthorBookChapter, AuthorBook, ReviewHelpfulVote,
     ReviewReport, BookReview, ReaderWishlistItem, ReaderBookActivity,
-    ReaderBookBookmark, DigitalBookEntitlement, Completion, Referral, DiscussionPost, DiscussionLike,
+    ReaderBookBookmark, DigitalBookEntitlement, Completion, Referral, DiscussionPost, DiscussionLike, DiscussionBlock,
   ];
   for (const model of models) {
     t.mock.method(model, "deleteMany", filter => {
@@ -103,6 +103,7 @@ test("private account cleanup deletes the user's profile, drafts, activity, revi
     { reporterId: userId }, { reviewId: { $in: [reviewId] } },
   ] });
   assert.deepEqual(deleted.get("BookReview"), { userId });
+  assert.deepEqual(deleted.get("BookDiscussionBlock"), { $or: [{ readerId: userId }, { blockedId: userId }] });
   assert.deepEqual(deleted.get("BookDiscussionPost"), { authorId: userId });
   assert.deepEqual(deleted.get("BookDiscussionLike"), { $or: [{ readerId: userId }, { postId: { $in: [bookId] } }] });
   assert.deepEqual(deleted.get("ReaderWishlistItem"), { userId });
